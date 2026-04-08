@@ -300,7 +300,7 @@
     ks_reden:'', ks_uitkomst:'',
     afwijkend_reden:'', afwijkend_toelichting:'',
     cbf_depot_reden:'', cbf_depot_toelichting:'',
-    winkel_reden:'',
+    winkel_reden:'', ks_advies_uitkomst:'',
     orderOplossing:'', dsWaarde:''
   };
 
@@ -621,12 +621,12 @@
               s.push({key:'uitkomst',label:'Wat was de uitkomst?',type:'uitkomst-select',opties:['Same day gepland','Geen same day mogelijk']});
               if (answeredKeys.includes('uitkomst')) {
                 if (callData.uitkomst==='Same day gepland') s.push({key:'geplandeRoute',label:'Op welke route gepland?',type:'route-input'});
-                else if (callData.uitkomst==='Advies gegeven') s.push({key:'advies_gelukt',label:'Is de service na het advies uitgevoerd?',type:'info-select',opties:['Ja, service uitgevoerd','Nee, geen oplossing door DS']});
+                else if (callData.uitkomst==='KS advies gegeven') s.push({key:'ks_advies_uitkomst',label:'Wat was het advies?',type:'ux-select',opties:['Geen same day optie, KS plant zelf oplossing','DS adviseert andere oplossing aan KS']});
               }
             }
           }
         } else if (callData.ks_reden==='KS vraagt om held terug te sturen' || callData.ks_reden==='Winkel vraagt om held terug te sturen') {
-          s.push({key:'ks_uitkomst',label:'Wat was de uitkomst?',type:'uitkomst-select',opties:['Teamleider stuurt helden terug','Teamleider stuurt helden niet terug','Same day gepland','Next day gepland']});
+          s.push({key:'ks_uitkomst',label:'Wat was de uitkomst?',type:'uitkomst-select',opties:['Teamleider stuurt helden terug','Teamleider stuurt helden niet terug','Same day gepland','Next day gepland','DS vindt terugsturen niet de juiste oplossing']});
           if (answeredKeys.includes('ks_uitkomst')) {
             if (callData.ks_uitkomst==='Same day gepland') s.push({key:'geplandeRoute',label:'Op welke route gepland?',type:'route-input'});
             else if (callData.ks_uitkomst==='Next day gepland') s.push({key:'next_day_reden',label:'Waarom niet same day?',type:'ux-select',opties:nextDayRedenen});
@@ -702,6 +702,7 @@
       }
       if (callData.uitkomst==='Same day gepland') return 'Ja stop gepland (same day)';
       if (callData.uitkomst==='Geen same day mogelijk') return 'Geen same day mogelijk — KS regelt next day nazorg';
+      if (callData.uitkomst==='KS advies gegeven') return callData.ks_advies_uitkomst||'KS advies gegeven';
       return 'Nee, geen oplossing door DS';
     } else if (callData.locatie==='Bij de klant') {
       if (callData.probleem==='Verkeerd gelabeld product') return 'Verkeerd gelabeld product — instructie gegeven aan Held';
@@ -727,13 +728,18 @@
     if (callData.route) h+='<span class="status-line">Route: <b>'+callData.route+'</b></span>';
     if (callData.bellerType) h+='<span class="status-line">Beller: <b>'+callData.bellerType+'</b></span>';
     var lbl={product_keuze:'Model',locatie:'Locatie',probleem:'Taak',ks_reden:'Reden',ks_uitkomst:'KS uitkomst',afwijkend_reden:'Reden',afwijkend_toelichting:'Toelichting',milieuretour_type:'Type ophaling',formaatTV:'TV formaat',uitkomst:'Uitkomst',geplandeRoute:'Route gepland',next_day_reden:'Reden next day',geen_oplossing_reden:'Reden geen oplossing',advies_gelukt:'Advies uitkomst',onderweg_type:'Probleem',onderweg_uitkomst:'Uitkomst',cbf_depot_reden:'Vraag',cbf_depot_toelichting:'Toelichting'};
-    // Model tonen (bij meerdere producten via product_keuze, anders scrapedModel)
+    // Apparaat + model tonen
     if (callData.model && callData.locatie !== 'Klantenservice') {
-      var modelTekst = (meerdereProducten && !answeredKeys.includes('product_keuze'))
-        ? alleGescrapteProducten.length + ' producten gevonden'
-        : callData.model;
-      var typeLabel = (callData.product && answeredKeys.includes('product_keuze')) ? ' — <b>' + callData.product + '</b>' : '';
-      h+='<span class="status-line">Model: <b>'+modelTekst+'</b>'+typeLabel+'</span>';
+      if (meerdereProducten && !answeredKeys.includes('product_keuze')) {
+        h+='<span class="status-line">Apparaten: <b>'+alleGescrapteProducten.length+' producten gevonden</b></span>';
+      } else {
+        // Toon type prominent als dat bekend is, model als secundair
+        if (callData.product) {
+          h+='<span class="status-line">Apparaat: <b>'+callData.product+'</b> <span style="font-weight:400;color:#666;font-size:11px;">('+callData.model+')</span></span>';
+        } else {
+          h+='<span class="status-line">Model: <b>'+callData.model+'</b></span>';
+        }
+      }
     }
     ['locatie','ks_reden','ks_uitkomst','afwijkend_reden','afwijkend_toelichting','probleem','milieuretour_type','formaatTV','uitkomst','geplandeRoute','next_day_reden','geen_oplossing_reden','advies_gelukt','onderweg_type','onderweg_uitkomst','cbf_depot_reden','cbf_depot_toelichting'].forEach(function(k){
       if (answeredKeys.includes(k)&&callData[k]&&k!=='fname'&&k!=='lname')
@@ -772,7 +778,7 @@
             '<button class="park-info-btn" id="btn-park-info">\u2139</button>' +
           '</div>' +
         '</div></div>' +
-        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.9.9</div>' +
+        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.10.0</div>' +
       '</div>';
 
     // Park tooltip
@@ -811,20 +817,31 @@
     advToggle.style.marginBottom=toonAfwijkend?'5px':'0';
     advToggle.innerText='Advies gegeven \u25be';
     var advExpand=idoc.createElement('div'); advExpand.style.cssText='display:none;margin-top:5px;';
-    [{label:'Ja, service alsnog uitgevoerd vandaag', waarde:'Ja, service uitgevoerd'},
-     {label:'Nee, service ook met advies niet uitgevoerd', waarde:'Nee, geen oplossing door DS'}
-    ].forEach(function(opt){
+    var isKSContext = callData.locatie==='Klantenservice' || callData.locatie==='Winkel';
+    var adviesOpties = isKSContext
+      ? [{label:'Geen same day optie, KS plant zelf oplossing', waarde:'Geen same day optie, KS plant zelf oplossing'},
+         {label:'DS adviseert andere oplossing aan KS', waarde:'DS adviseert andere oplossing aan KS'}]
+      : [{label:'Ja, service alsnog uitgevoerd vandaag', waarde:'Ja, service uitgevoerd'},
+         {label:'Nee, service ook met advies niet uitgevoerd', waarde:'Nee, geen oplossing door DS'}];
+    adviesOpties.forEach(function(opt){
       var b=idoc.createElement('button'); b.className='ux-btn'; b.style.marginBottom='4px'; b.innerText=opt.label;
       b.onclick=function(){
-        if (stap.type==='onderweg-select') {
+        if (isKSContext) {
+          callData.uitkomst='KS advies gegeven';
+          if (!answeredKeys.includes('uitkomst')) answeredKeys.push('uitkomst');
+          callData.ks_advies_uitkomst=opt.waarde;
+          if (!answeredKeys.includes('ks_advies_uitkomst')) answeredKeys.push('ks_advies_uitkomst');
+        } else if (stap.type==='onderweg-select') {
           callData.onderweg_type='Advies gegeven';
           if (!answeredKeys.includes('onderweg_type')) answeredKeys.push('onderweg_type');
+          callData.advies_gelukt=opt.waarde;
+          if (!answeredKeys.includes('advies_gelukt')) answeredKeys.push('advies_gelukt');
         } else {
           callData.probleem='Advies gegeven';
           if (!answeredKeys.includes('probleem')) answeredKeys.push('probleem');
+          callData.advies_gelukt=opt.waarde;
+          if (!answeredKeys.includes('advies_gelukt')) answeredKeys.push('advies_gelukt');
         }
-        callData.advies_gelukt=opt.waarde;
-        if (!answeredKeys.includes('advies_gelukt')) answeredKeys.push('advies_gelukt');
         renderApp();
       };
       advExpand.appendChild(b);
