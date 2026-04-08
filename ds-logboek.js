@@ -50,10 +50,10 @@
       const el = document.querySelector("[data-bind*='" + sel + "']");
       return el ? el.innerText.trim() : '';
     };
-    scrapedOrder = (getTxt('OrderNumberTransport').match(/\\d{8}/) || [''])[0];
+    scrapedOrder = (getTxt('OrderNumberTransport').match(/\d{8}/) || [''])[0];
     scrapedRoute  = getTxt('Static.TourName');
     scrapedAdres  = getTxt('Static.Visit.Address') || getTxt('ConsigneeAddress') || '';
-    scrapedPC     = (getTxt('Static.Visit.PostalCode').match(/^\\d{4}\\s?[A-Z]{2}|^\\d{4,5}/i) || [''])[0].trim();
+    scrapedPC     = (getTxt('Static.Visit.PostalCode').match(/^\d{4}\s?[A-Z]{2}|^\d{4,5}/i) || [''])[0].trim();
     var driverEls = document.querySelectorAll("[data-bind*='DriversFirstName']");
     driver1       = driverEls.length > 0 ? driverEls[0].innerText.trim() : '';
     driver2       = driverEls.length > 1 ? driverEls[1].innerText.trim() : '';
@@ -68,7 +68,7 @@
     // ── BASIC MODULE ───────────────────────────────────────────
     // Ordernummer: uit DOM velden via basicField
     var rawOrder = basicField('Pakbonnummer') || basicField('Order nr. verlader') || basicField('Afnemer nummer') || '';
-    scrapedOrder  = (rawOrder.match(/\\d{8}/) || [''])[0];
+    scrapedOrder  = (rawOrder.match(/\d{8}/) || [''])[0];
 
     // Route: Alias geeft het korte formaat ("2M-BEAN-07"), Ritnaam het lange ("2M-BEAN-07-7")
     scrapedRoute  = basicField('Alias') || basicField('Ritnaam') || '';
@@ -150,14 +150,14 @@
 
   function detecteerType(naam) {
     if (!naam) return null;
-    var merk = naam.trim().split(/\\s+/)[0].toLowerCase();
+    var merk = naam.trim().split(/\s+/)[0].toLowerCase();
     if (!prefixTabel[merk]) return { merk:merk, typeGuess:null };
-    var tokens = naam.trim().replace(/^\\S+\\s*/,'').split(/\\s+/).map(function(t){ return t.toUpperCase().replace(/[^A-Z0-9]/g,''); }).filter(function(t){ return t.length>0; });
+    var tokens = naam.trim().replace(/^\S+\s*/,'').split(/\s+/).map(function(t){ return t.toUpperCase().replace(/[^A-Z0-9]/g,''); }).filter(function(t){ return t.length>0; });
     var rules = prefixTabel[merk], lM='', lT='';
     for (var ti=0; ti<tokens.length; ti++) {
       // Probeer eerst het volledige token, dan met leading digits gestript (voor TV's als "65PUS8808")
       var tok = tokens[ti];
-      var tokStripped = tok.replace(/^\\d+/,'');
+      var tokStripped = tok.replace(/^\d+/,'');
       var candidates = tokStripped && tokStripped !== tok ? [tok, tokStripped] : [tok];
       for (var ci=0; ci<candidates.length; ci++) {
         for (var i=0; i<rules.length; i++) {
@@ -337,10 +337,10 @@
     }
     if (answeredKeys.includes('product') && callData.product==='Televisie') {
       // Schermgrootte: strip leading digits voor merken die size-first noteren (Philips, Hisense, TCL)
-      var tvStr = scrapedModel.replace(/^\\S+\\s*/,''); // verwijder merknaam
-      var tvM = tvStr.match(/(?:qe|oled|kd|xr|ue|tx-?)?([4-8]\\d)[a-z]/i) ||
-                tvStr.match(/\\b([4-8]\\d)\\s?(inch|")\\b/i) ||
-                tvStr.match(/^(\\d{2})[A-Z]/i); // size-first: 65PUS, 55U, 55C
+      var tvStr = scrapedModel.replace(/^\S+\s*/,''); // verwijder merknaam
+      var tvM = tvStr.match(/(?:qe|oled|kd|xr|ue|tx-?)?([4-8]\d)[a-z]/i) ||
+                tvStr.match(/\b([4-8]\d)\s?(inch|")\b/i) ||
+                tvStr.match(/^(\d{2})[A-Z]/i); // size-first: 65PUS, 55U, 55C
       if (tvM) {
         callData.formaatTV = parseInt(tvM[1])>=55 ? 'Ja (>= 55 inch)' : 'Nee (< 55 inch)';
         answeredKeys.push('formaatTV'); autoFilledKeys.push('formaatTV');
@@ -389,7 +389,7 @@
     for (var di=0;di<dl.length;di++) { for (var dj=0;dj<dl[di].keys.length;dj++) { if (str.includes(dl[di].keys[dj])) { depotInfo=dl[di]; str=str.replace(dl[di].keys[dj],''); break; } } if (depotInfo) break; }
     if (netwerk==='BK'&&depotInfo&&depotInfo.code==='BEAN') depotInfo={code:'BEWI',name:'Wilrijk'};
     if (netwerk!=='BK'&&depotInfo&&depotInfo.code==='NLOV'&&input.toLowerCase().includes('amsterdam')) depotInfo={code:'NLAL',name:'Almere'};
-    var m=str.match(/\\d+/); if (m) nummer=m[0].padStart(2,'0');
+    var m=str.match(/\d+/); if (m) nummer=m[0].padStart(2,'0');
     if (netwerk&&depotInfo&&nummer) return netwerk+'-'+depotInfo.code+'-'+nummer;
     return input.toUpperCase();
   }
@@ -772,7 +772,7 @@
             '<button class="park-info-btn" id="btn-park-info">\u2139</button>' +
           '</div>' +
         '</div></div>' +
-        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.9.6</div>' +
+        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.9.7</div>' +
       '</div>';
 
     // Park tooltip
@@ -995,7 +995,7 @@
         if (callData.product) { answeredKeys.push('product'); autoFilledKeys.push('product'); isProductAutoGuessed=true; }
         // TV formaatcheck alleen als het type Televisie is
         if (callData.product === 'Televisie') {
-          var tvM2 = origNaam.toLowerCase().match(/(?:qe|oled|kd|xr|ue|gq|tx-)?([4-8]\\d)[a-z]/i)||origNaam.toLowerCase().match(/\\b([4-8]\\d)\\s?(inch|")\\b/i);
+          var tvM2 = origNaam.toLowerCase().match(/(?:qe|oled|kd|xr|ue|gq|tx-)?([4-8]\d)[a-z]/i)||origNaam.toLowerCase().match(/\b([4-8]\d)\s?(inch|")\b/i);
           if (tvM2) { callData.formaatTV=parseInt(tvM2[1])>=55?'Ja (>= 55 inch)':'Nee (< 55 inch)'; answeredKeys.push('formaatTV'); autoFilledKeys.push('formaatTV'); }
         }
       }
@@ -1047,7 +1047,7 @@
         if (!callData.product && (nl2.includes('tv')||nl2.includes('televisie')||nl2.match(/(oled|qled)/))) callData.product='Televisie';
         if (callData.product) { answeredKeys.push('product'); autoFilledKeys.push('product'); isProductAutoGuessed=true; }
         if (callData.product==='Televisie') {
-          var tvM3 = eersteNaam.toLowerCase().match(/(?:qe|oled|kd|xr|ue|gq|tx-)?([4-8]\\d)[a-z]/i)||eersteNaam.toLowerCase().match(/\\b([4-8]\\d)\\s?(inch|")\\b/i);
+          var tvM3 = eersteNaam.toLowerCase().match(/(?:qe|oled|kd|xr|ue|gq|tx-)?([4-8]\d)[a-z]/i)||eersteNaam.toLowerCase().match(/\b([4-8]\d)\s?(inch|")\b/i);
           if (tvM3) { callData.formaatTV=parseInt(tvM3[1])>=55?'Ja (>= 55 inch)':'Nee (< 55 inch)'; answeredKeys.push('formaatTV'); autoFilledKeys.push('formaatTV'); }
         }
         answeredKeys.push('product_keuze');
@@ -1281,27 +1281,27 @@
     if (isBasicPage) {
       // Basic: alle velden staan als losse .details-field entries
       rawPC   = basicField('Postcode');
-      cleanPC = rawPC.replace(/\\s+/g,'').toUpperCase(); // bijv. "9150" of "2000"
+      cleanPC = rawPC.replace(/\s+/g,'').toUpperCase(); // bijv. "9150" of "2000"
       city    = basicField('Woonplaats');
       name    = basicField('Naam');
-      ph      = (basicFieldInSection('Geadresseerde', 'Telefoonnummer') || basicFieldInSection('Geadresseerde', 'Mobiel nummer') || '').replace(/[^\\d+]/g,'');
+      ph      = (basicFieldInSection('Geadresseerde', 'Telefoonnummer') || basicFieldInSection('Geadresseerde', 'Mobiel nummer') || '').replace(/[^\d+]/g,'');
       email   = basicFieldInSection('Geadresseerde', 'E-mailadres');
       address = basicField('Adres');
     } else {
       var gs=function(s){ var el=document.querySelector("[data-bind*='"+s+"']"); return el?el.innerText.trim():''; };
       rawPC=gs('Static.Visit.PostalCode');
-      var dm=rawPC.match(/^(\\d{4}\\s?[A-Z]{2})(\\s|$)/i), bm=rawPC.match(/^(\\d{4,5})(\\s|$)/);
-      if (dm) cleanPC=dm[1].trim(); else if (bm) cleanPC=bm[1].trim(); else cleanPC=(rawPC.match(/^\\d{4}/)||[''])[0];
+      var dm=rawPC.match(/^(\d{4}\s?[A-Z]{2})(\s|$)/i), bm=rawPC.match(/^(\d{4,5})(\s|$)/);
+      if (dm) cleanPC=dm[1].trim(); else if (bm) cleanPC=bm[1].trim(); else cleanPC=(rawPC.match(/^\d{4}/)||[''])[0];
       city    = rawPC.replace(cleanPC,'').trim();
       name    = gs('Static.Visit.ConsigneeName');
-      ph      = gs('Static.Visit.Phone').replace(/[^\\d+]/g,'');
+      ph      = gs('Static.Visit.Phone').replace(/[^\d+]/g,'');
       email   = gs('Static.Visit.Email');
       address = gs('Static.Visit.Address')||gs('ConsigneeAddress')||'';
     }
     var pp={'+31':'0','+32':'0','+49':'0','0031':'0','0032':'0','0049':'0'};
     for (var pfx in pp) { if (ph.startsWith(pfx)) { ph=pp[pfx]+ph.substring(pfx.length); break; } }
-    var country='Nederland', lang='nl', pNS=cleanPC.replace(/\\s/g,'').toUpperCase();
-    if (/[A-Z]/.test(pNS)&&pNS.replace(/\\D/g,'').length===4) { country='Nederland'; lang='nl'; }
+    var country='Nederland', lang='nl', pNS=cleanPC.replace(/\s/g,'').toUpperCase();
+    if (/[A-Z]/.test(pNS)&&pNS.replace(/\D/g,'').length===4) { country='Nederland'; lang='nl'; }
     else if (!/[A-Z]/.test(pNS)&&pNS.length===5) { country='Duitsland'; lang='de'; }
     else if (!/[A-Z]/.test(pNS)&&pNS.length===4) { country='België'; lang='nl'; }
     navigator.clipboard.writeText(JSON.stringify({orderNr:callData.orderBron+'-DS',name:name,phone:ph,email:email,zip:cleanPC,city:city,address:address,detectedCountry:country,detectedLanguage:lang,time:Date.now()}));
