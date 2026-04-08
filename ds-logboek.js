@@ -41,13 +41,20 @@
   // ── SCRAPEN ──────────────────────────────────────────────────
   var scrapedOrder, scrapedRoute, scrapedAdres, scrapedPC, scrapedAdresQuery, driver1, driver2, alleGescrapteProducten;
 
+  // ── ORDERNUMMER UIT URL ──────────────────────────────────────
+  // Beide pagina's hebben het ordernummer in de URL of filter parameter.
+  // Basic: ?filter={"ShipperOrderNumber":"96485763",...}
+  // Consumer portal: ?UK=... of in de DOM
+  var urlOrderMatch = window.location.href.match(/ShipperOrderNumber[^\\d]*(\\d{8})/);
+  var urlOrder = urlOrderMatch ? urlOrderMatch[1] : '';
+
   if (!isBasicPage) {
     // ── CONSUMER PORTAL ────────────────────────────────────────
     const getTxt = (sel) => {
       const el = document.querySelector("[data-bind*='" + sel + "']");
       return el ? el.innerText.trim() : '';
     };
-    scrapedOrder = (getTxt('OrderNumberTransport').match(/\\d{8}/) || [''])[0];
+    scrapedOrder = urlOrder || (getTxt('OrderNumberTransport').match(/\\d{8}/) || [''])[0];
     scrapedRoute  = getTxt('Static.TourName');
     scrapedAdres  = getTxt('Static.Visit.Address') || getTxt('ConsigneeAddress') || '';
     scrapedPC     = (getTxt('Static.Visit.PostalCode').match(/^\\d{4}\\s?[A-Z]{2}|^\\d{4,5}/i) || [''])[0].trim();
@@ -63,9 +70,9 @@
       .filter(function(naam, idx, arr){ return arr.indexOf(naam) === idx; });
   } else {
     // ── BASIC MODULE ───────────────────────────────────────────
-    // Ordernummer: Pakbonnummer bevat bijv. "A-96252916-469922926" → 8-digit match
+    // Ordernummer: eerst uit URL filter param, dan uit DOM velden
     var rawOrder = basicField('Pakbonnummer') || basicField('Order nr. verlader') || basicField('Afnemer nummer') || '';
-    scrapedOrder  = (rawOrder.match(/\\d{8}/) || [''])[0];
+    scrapedOrder  = urlOrder || (rawOrder.match(/\\d{8}/) || [''])[0];
 
     // Route: Alias geeft het korte formaat ("2M-BEAN-07"), Ritnaam het lange ("2M-BEAN-07-7")
     scrapedRoute  = basicField('Alias') || basicField('Ritnaam') || '';
@@ -769,7 +776,7 @@
             '<button class="park-info-btn" id="btn-park-info">\u2139</button>' +
           '</div>' +
         '</div></div>' +
-        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.9.4</div>' +
+        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.9.5</div>' +
       '</div>';
 
     // Park tooltip
