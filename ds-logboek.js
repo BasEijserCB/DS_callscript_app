@@ -176,7 +176,7 @@
   var wrapperPos = 'bottom:20px;left:20px;';
   wrapper.style.cssText = 'position:fixed;' + wrapperPos + 'width:340px;background:#fff;border:2px solid #0090e3;box-shadow:0 8px 24px rgba(0,0,0,0.18);z-index:999999;border-radius:10px;overflow:hidden;';
   var iframe = document.createElement('iframe');
-  iframe.style.cssText = 'width:100%;height:680px;border:none;background:#fff;display:block;';
+  iframe.style.cssText = 'width:100%;height:620px;border:none;background:#fff;display:block;';
   wrapper.appendChild(iframe); document.body.appendChild(wrapper);
   var idoc = iframe.contentDocument || iframe.contentWindow.document;
 
@@ -902,7 +902,7 @@
             '<button class="park-info-btn" id="btn-park-info">\u2139</button>' +
           '</div>' +
         '</div></div>' +
-        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.11.2</div>' +
+        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.11.3</div>' +
       '</div>';
 
     // Park tooltip
