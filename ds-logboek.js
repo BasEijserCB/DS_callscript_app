@@ -300,6 +300,7 @@
     ks_reden:'', ks_uitkomst:'',
     afwijkend_reden:'', afwijkend_toelichting:'',
     cbf_depot_reden:'', cbf_depot_toelichting:'',
+    cbf_pakket_reden:'', cbf_pakket_uitkomst:'',
     winkel_reden:'', ks_advies_uitkomst:'',
     orderOplossing:'', dsWaarde:''
   };
@@ -370,7 +371,7 @@
   function parseToTourAlias(input) {
     if (!input) return '';
     var str=input.toLowerCase(), netwerk='', depotInfo=null, nummer='';
-    var nw=[{code:'1M',keys:['1m']},{code:'2M',keys:['2m']},{code:'1X',keys:['1x']},{code:'BI',keys:['bi','inbouw']},{code:'BK',keys:['bk','fiets','bike']}];
+    var nw=[{code:'1X',keys:['1x','installatie','install','1mans','1 mans']},{code:'1M',keys:['1m']},{code:'2M',keys:['2m']},{code:'BI',keys:['bi','inbouw']},{code:'BK',keys:['bk','fiets','bike']}];
     for (var ni=0;ni<nw.length;ni++) { for (var nj=0;nj<nw[ni].keys.length;nj++) { if (str.includes(nw[ni].keys[nj])) { netwerk=nw[ni].code; str=str.replace(nw[ni].keys[nj],''); break; } } if (netwerk) break; }
     var dl=[
       {code:'NLOV',name:'Overamstel',keys:['overamstel','amsterdam','ams','ova','adam']},{code:'NLAL',name:'Almere',keys:['almere','alm']},
@@ -398,7 +399,7 @@
   if (scrapedRoute) { var rm=scrapedRoute.match(/[A-Z]{4}/); if (rm) { var rg=alleDepots.find(function(d){ return d.code===rm[0]; }); if (rg) callData.depot=rg.name; } }
 
   // ── PROBLEEM OPTIES ───────────────────────────────────────────
-  var alleProbleemOpties=['Trekschakelaar aansluiten','Milieuretour / Pick-up ophalen','Plaatsen / Naar boven tillen','Apparaat inbouwen (Keuken)','Aansluiting controleren','Schade / Defect','TV installeren','TV ophangen en installeren','TV + Soundbar installeren','TV + Soundbar ophangen en installeren','Stapelkit plaatsen','Deur omdraaien','Service niet uitvoerbaar','Verkeerd gelabeld product'];
+  var alleProbleemOpties=['Trekschakelaar aansluiten','Milieuretour / Pick-up ophalen','Plaatsen / Naar boven tillen','Apparaat inbouwen (Keuken)','Aansluiting controleren','Schade / Defect','TV installeren','TV ophangen en installeren','TV + Soundbar installeren','TV + Soundbar ophangen en installeren','Stapelkit plaatsen','Deur omdraaien','Spullen achtergelaten bij klant','Service niet uitvoerbaar','Verkeerd gelabeld product'];
 
   var witgoedTypes = ['wasmachine','wasdroogcombinatie','droger','koelkast','vriezer','koel-vries','vaatwasser','inbouw vaatwasser','inbouw koelkast','inbouw vriezer','oven','magnetron','fornuis','kookplaat'];
 
@@ -482,12 +483,12 @@
 
     // ── CBF FLOW ─────────────────────────────────────────────────
     if (callData.bellerType === 'CBF') {
-      s.push({key:'locatie',label:'Wat is de situatie?',type:'cbf-locatie-select',opties:['Onderweg','Vraag voor het depot']});
+      s.push({key:'locatie',label:'Wat is de situatie?',type:'cbf-locatie-select',opties:['Onderweg','Bij de klant','Vraag voor het depot']});
       if (!answeredKeys.includes('locatie')) return s;
 
       if (callData.locatie === 'Onderweg') {
         // Zelfde onderweg flow als CBB
-        s.push({key:'onderweg_type',label:'Wat is het probleem?',type:'onderweg-select',opties:['Adres niet gevonden','Adres niet bereikbaar','Klant niet bereikbaar / verkeerd nummer']});
+        s.push({key:'onderweg_type',label:'Wat is het probleem?',type:'onderweg-select',opties:['Adres niet gevonden','Adres niet bereikbaar','Klant niet bereikbaar / verkeerd nummer','Vraag over service']});
         if (answeredKeys.includes('onderweg_type')) {
           if (callData.onderweg_type==='Advies gegeven') {
             s.push({key:'advies_gelukt',label:'Is de service na het advies uitgevoerd?',type:'info-select',opties:['Ja, service uitgevoerd','Nee, geen oplossing door DS']});
@@ -497,7 +498,14 @@
             s.push({key:'onderweg_uitkomst',label:'Wat was de uitkomst?',type:'adres-uitkomst-select',opties:['Alternatieve route gevonden voor Held','Nee, geen oplossing door DS']});
           } else if (callData.onderweg_type==='Klant niet bereikbaar / verkeerd nummer') {
             s.push({key:'onderweg_uitkomst',label:'Wat was de uitkomst?',type:'ux-select',opties:['Telefoonnummer gevonden voor Held','Correct nummer doorgegeven aan Held','Nee, geen oplossing door DS']});
+          } else if (callData.onderweg_type==='Vraag over service') {
+            s.push({key:'onderweg_uitkomst',label:'Wat was de uitkomst?',type:'ux-select',opties:['Vraag beantwoord, held kan verder','Nee, geen oplossing door DS']});
           }
+        }
+      } else if (callData.locatie === 'Bij de klant') {
+        s.push({key:'cbf_pakket_reden',label:'Wat is de vraag?',type:'ux-select',opties:['Pakket niet meegenomen (manco)','Pakket verkeerd / beschadigd','Overige vraag over pakket']});
+        if (answeredKeys.includes('cbf_pakket_reden')) {
+          s.push({key:'cbf_pakket_uitkomst',label:'Wat was de uitkomst?',type:'ux-select',opties:['Klant geïnformeerd, manco geregistreerd','Klant geïnformeerd, held regelt verder','Nee, geen oplossing door DS']});
         }
       } else if (callData.locatie === 'Vraag voor het depot') {
         s.push({key:'cbf_depot_reden',label:'Waar gaat de vraag over?',type:'ux-select',opties:['Ziekmelding','Fiets kapot / incident','Informeren waar de vracht is','Anders']});
@@ -533,6 +541,10 @@
         s.push({key:'advies_gelukt',label:'Is de service na het advies uitgevoerd?',type:'info-select',opties:['Ja, service uitgevoerd','Nee, geen oplossing door DS']});
       } else if (callData.probleem==='Verkeerd gelabeld product') {
         // Geen verdere vragen — info paneeltje wordt getoond in render, direct loggen
+      } else if (callData.probleem==='Spullen achtergelaten bij klant') {
+        s.push({key:'uitkomst',label:'Wat was de uitkomst?',type:'ux-select',opties:['Same day gepland','Next day gepland','Helden teruggebeld, rijden terug zonder visit']});
+        if (callData.uitkomst==='Same day gepland') s.push({key:'geplandeRoute',label:'Op welke route gepland?',type:'route-input'});
+        else if (callData.uitkomst==='Next day gepland') s.push({key:'next_day_reden',label:'Waarom niet same day?',type:'ux-select',opties:nextDayRedenen});
       } else {
         if (!answeredKeys.includes('product')) {
           var tvProbleem = callData.probleem.includes('TV') || callData.probleem.includes('Soundbar');
@@ -570,7 +582,7 @@
       }
 
     } else if (callData.locatie==='Onderweg') {
-      s.push({key:'onderweg_type',label:'Wat is het probleem?',type:'onderweg-select',opties:['Adres niet gevonden','Adres niet bereikbaar','Klant niet bereikbaar / verkeerd nummer']});
+      s.push({key:'onderweg_type',label:'Wat is het probleem?',type:'onderweg-select',opties:['Adres niet gevonden','Adres niet bereikbaar','Klant niet bereikbaar / verkeerd nummer','Vraag over service']});
       if (answeredKeys.includes('onderweg_type')) {
         if (callData.onderweg_type==='Advies gegeven') {
           s.push({key:'advies_gelukt',label:'Is de service na het advies uitgevoerd?',type:'info-select',opties:['Ja, service uitgevoerd','Nee, geen oplossing door DS']});
@@ -580,6 +592,8 @@
           s.push({key:'onderweg_uitkomst',label:'Wat was de uitkomst?',type:'adres-uitkomst-select',opties:['Alternatieve route gevonden voor Held','Nee, geen oplossing door DS']});
         } else if (callData.onderweg_type==='Klant niet bereikbaar / verkeerd nummer') {
           s.push({key:'onderweg_uitkomst',label:'Wat was de uitkomst?',type:'ux-select',opties:['Telefoonnummer gevonden voor Held','Correct nummer doorgegeven aan Held','Nee, geen oplossing door DS']});
+        } else if (callData.onderweg_type==='Vraag over service') {
+          s.push({key:'onderweg_uitkomst',label:'Wat was de uitkomst?',type:'ux-select',opties:['Vraag beantwoord, held kan verder','Nee, geen oplossing door DS']});
         }
       }
 
@@ -673,6 +687,9 @@
       if (callData.locatie === 'Vraag voor het depot') {
         return 'Advies gegeven (CBF doorverwezen naar depot) — ' + (callData.cbf_depot_reden||'reden onbekend') + (callData.cbf_depot_toelichting ? ': ' + callData.cbf_depot_toelichting : '');
       }
+      if (callData.locatie === 'Bij de klant') {
+        return callData.cbf_pakket_uitkomst || callData.cbf_pakket_reden || 'Vraag over pakket';
+      }
       // CBF onderweg: zelfde logica als CBB onderweg
       if (callData.onderweg_type==='Advies gegeven') return callData.advies_gelukt==='Ja, service uitgevoerd' ? 'Advies gegeven aan held waardoor service uitgevoerd is' : 'Nee, geen oplossing door DS';
       if (callData.onderweg_uitkomst==='Correct nummer doorgegeven aan Held') return 'Correct nummer doorgegeven aan Held';
@@ -706,6 +723,12 @@
       return 'Nee, geen oplossing door DS';
     } else if (callData.locatie==='Bij de klant') {
       if (callData.probleem==='Verkeerd gelabeld product') return 'Verkeerd gelabeld product — instructie gegeven aan Held';
+      if (callData.probleem==='Spullen achtergelaten bij klant') {
+        if (callData.uitkomst==='Same day gepland') return 'Spullen achtergelaten — same day stop gepland';
+        if (callData.uitkomst==='Next day gepland') return 'Spullen achtergelaten — next day stop gepland';
+        if (callData.uitkomst==='Helden teruggebeld, rijden terug zonder visit') return 'Spullen achtergelaten — helden teruggebeld';
+        return 'Spullen achtergelaten bij klant';
+      }
       var isAdv=callData.probleem==='Advies gegeven'||callData.uitkomst==='Advies gegeven';
       if (isAdv) return callData.advies_gelukt==='Ja, service uitgevoerd' ? 'Advies gegeven aan held waardoor service uitgevoerd is' : 'Nee, geen oplossing door DS';
       if (callData.uitkomst==='Same day gepland')    return 'Ja stop gepland (same day)';
@@ -778,7 +801,7 @@
             '<button class="park-info-btn" id="btn-park-info">\u2139</button>' +
           '</div>' +
         '</div></div>' +
-        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.10.0</div>' +
+        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.10.3</div>' +
       '</div>';
 
     // Park tooltip
@@ -818,6 +841,7 @@
     advToggle.innerText='Advies gegeven \u25be';
     var advExpand=idoc.createElement('div'); advExpand.style.cssText='display:none;margin-top:5px;';
     var isKSContext = callData.locatie==='Klantenservice' || callData.locatie==='Winkel';
+    var isKSTerugsturen = isKSContext && (callData.ks_reden==='KS vraagt om held terug te sturen' || callData.ks_reden==='Winkel vraagt om held terug te sturen');
     var adviesOpties = isKSContext
       ? [{label:'Geen same day optie, KS plant zelf oplossing', waarde:'Geen same day optie, KS plant zelf oplossing'},
          {label:'DS adviseert andere oplossing aan KS', waarde:'DS adviseert andere oplossing aan KS'}]
@@ -827,6 +851,11 @@
       var b=idoc.createElement('button'); b.className='ux-btn'; b.style.marginBottom='4px'; b.innerText=opt.label;
       b.onclick=function(){
         if (isKSContext) {
+          // Bij terugsturen-context: reset ks_uitkomst en zet advies als nieuwe uitkomst
+          if (isKSTerugsturen) {
+            var kix=answeredKeys.indexOf('ks_uitkomst'); if(kix>-1) answeredKeys.splice(kix,1);
+            callData.ks_uitkomst='';
+          }
           callData.uitkomst='KS advies gegeven';
           if (!answeredKeys.includes('uitkomst')) answeredKeys.push('uitkomst');
           callData.ks_advies_uitkomst=opt.waarde;
@@ -1260,6 +1289,8 @@
     if (callData.bellerType === 'CBF') {
       if (callData.locatie === 'Vraag voor het depot') {
         probLog = 'Vraag voor het depot: ' + (callData.cbf_depot_reden||'') + (callData.cbf_depot_toelichting ? ' — ' + callData.cbf_depot_toelichting : '');
+      } else if (callData.locatie === 'Bij de klant') {
+        probLog = 'Vraag over pakket: ' + (callData.cbf_pakket_reden||'');
       } else {
         probLog = 'Onderweg: ' + callData.onderweg_type;
       }
