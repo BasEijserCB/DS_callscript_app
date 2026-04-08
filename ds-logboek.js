@@ -117,7 +117,7 @@
     'aeg':      [['WD','wasdroogcombinatie'],['L9WBG','wasdroogcombinatie'],['L8WBG','wasdroogcombinatie'],['L7WBG','wasdroogcombinatie'],['L6','wasmachine'],['L7','wasmachine'],['L8','wasmachine'],['L9','wasmachine'],['T7','droger'],['T8','droger'],['T9','droger'],['BEB','oven'],['BES','oven'],['BCK','oven'],['BSK','oven'],['BEK','oven'],['MBE','magnetron'],['MBB','magnetron'],['MSB','magnetron'],['IAE','kookplaat'],['IKE','kookplaat'],['IEE','kookplaat'],['IKB','kookplaat'],['IPE','kookplaat'],['HK','kookplaat'],['FFB','vaatwasser'],['FEE','vaatwasser'],['FSE','inbouw vaatwasser'],['FES','vaatwasser'],['RCB','koelkast'],['SCB','koelkast'],['ABE','koelkast'],['SKB','inbouw koelkast'],['SFB','inbouw koelkast'],['RKB','koelkast'],['AGN','vriezer'],['ABB','vriezer'],['AGB','vriezer'],['AFB','vriezer']],
     'atag':     [['KD','koelkast'],['KS','koelkast'],['KB','koelkast'],['VA','vaatwasser'],['DW8','inbouw vaatwasser'],['DW','vaatwasser'],['OP','oven'],['FG','fornuis'],['CR','fornuis'],['HG','kookplaat'],['HI','kookplaat'],['HE','kookplaat']],
     'beko':     [['WTV','wasmachine'],['WTE','wasmachine'],['WUE','wasmachine'],['B3WFU','wasdroogcombinatie'],['BUI','wasdroogcombinatie'],['WT','wasmachine'],['WU','wasmachine'],['WM','wasmachine'],['B1W','wasmachine'],['BM3W','wasmachine'],['B3W','wasmachine'],['DH','droger'],['DPY','droger'],['B3T','droger'],['BDIN','inbouw vaatwasser'],['DIN','inbouw vaatwasser'],['BDI','inbouw vaatwasser'],['DFN','vaatwasser'],['BDFN','vaatwasser'],['HII','kookplaat'],['HIG','kookplaat'],['HIW','kookplaat'],['HICD','kookplaat'],['BIM','oven'],['BIE','oven'],['BIC','oven'],['BBO','oven'],['RFNE','vriezer'],['B1RFNE','vriezer'],['GN','vriezer'],['RCNA','koelkast'],['BCNA','koelkast'],['RDSA','koelkast'],['BSSA','koelkast'],['SSE','koelkast']],
-    'bosch':    [['WNA','wasdroogcombinatie'],['WDU','wasdroogcombinatie'],['WAN','wasmachine'],['WAX','wasmachine'],['WAU','wasmachine'],['WGB','wasmachine'],['WGG','wasmachine'],['WUU','wasmachine'],['WA','wasmachine'],['WG','wasmachine'],['WN','wasmachine'],['WU','wasmachine'],['WTH','droger'],['WTL','droger'],['WTW','droger'],['WTX','droger'],['WQG','droger'],['WQ','droger'],['WT','droger'],['WP','droger'],['SMS','vaatwasser'],['SPS','vaatwasser'],['SMV','inbouw vaatwasser'],['SMI','inbouw vaatwasser'],['SMU','inbouw vaatwasser'],['SMD','inbouw vaatwasser'],['SPV','inbouw vaatwasser'],['SPI','inbouw vaatwasser'],['SBD','inbouw vaatwasser'],['SBV','inbouw vaatwasser'],['KIL','inbouw koelkast'],['KIR','inbouw koelkast'],['KGN','koelkast'],['KGE','koelkast'],['KGL','koelkast'],['KGV','koel-vries combo'],['KGC','koelkast'],['KSV','koelkast'],['KFN','koelkast'],['KAN','koelkast'],['KG','koelkast'],['GIN','inbouw vriezer'],['GID','inbouw vriezer'],['GSN','vriezer'],['GSD','vriezer'],['HBG','oven'],['HBA','oven'],['HBD','oven'],['HRG','oven'],['HND','oven'],['HNG','oven'],['HBC','oven'],['BFL','magnetron'],['BFR','magnetron'],['BEL','magnetron'],['BER','magnetron'],['FEL','magnetron'],['HGD','fornuis'],['HKS','fornuis'],['HKR','fornuis'],['HLN','fornuis'],['PKN','kookplaat'],['PKE','kookplaat'],['PIX','kookplaat'],['PVS','kookplaat'],['PID','kookplaat'],['PIF','kookplaat'],['PIE','kookplaat'],['NIT','kookplaat'],['NGM','kookplaat']],
+    'bosch':    [['WNA','wasdroogcombinatie'],['WDU','wasdroogcombinatie'],['WAN','wasmachine'],['WAX','wasmachine'],['WAU','wasmachine'],['WGB','wasmachine'],['WGG','wasmachine'],['WUU','wasmachine'],['WA','wasmachine'],['WG','wasmachine'],['WN','wasmachine'],['WU','wasmachine'],['WTH','droger'],['WTL','droger'],['WTW','droger'],['WTX','droger'],['WQG','droger'],['WQ','droger'],['WT','droger'],['WP','droger'],['SMS','vaatwasser'],['SPS','vaatwasser'],['SMV','inbouw vaatwasser'],['SMI','inbouw vaatwasser'],['SMU','inbouw vaatwasser'],['SMD','inbouw vaatwasser'],['SPV','inbouw vaatwasser'],['SPI','inbouw vaatwasser'],['SBD','inbouw vaatwasser'],['SBV','inbouw vaatwasser'],['KIL','inbouw koelkast'],['KIR','inbouw koelkast'],['KGN','koelkast'],['KGE','koelkast'],['KGL','koelkast'],['KGV','koel-vries combo'],['KGC','koelkast'],['KSV','koelkast'],['KFN','koelkast'],['KAN','koelkast'],['KG','koelkast'],['GIN','inbouw vriezer'],['GID','inbouw vriezer'],['GSN','vriezer'],['GSD','vriezer'],['HBG','oven'],['HBA','oven'],['HBD','oven'],['HRG','oven'],['HND','oven'],['HNG','oven'],['HBC','oven'],['CMG','oven'],['CMA','oven'],['CSG','oven'],['BFL','magnetron'],['BFR','magnetron'],['BEL','magnetron'],['BER','magnetron'],['FEL','magnetron'],['HGD','fornuis'],['HKS','fornuis'],['HKR','fornuis'],['HLN','fornuis'],['PKN','kookplaat'],['PKE','kookplaat'],['PIX','kookplaat'],['PVS','kookplaat'],['PID','kookplaat'],['PIF','kookplaat'],['PIE','kookplaat'],['NIT','kookplaat'],['NGM','kookplaat']],
     'etna':     [['KK','koelkast'],['KC','koelkast'],['KS','koelkast'],['AKV','koelkast'],['VW','vaatwasser'],['FI','vaatwasser'],['OEP','oven'],['OEM','oven'],['MAG','magnetron'],['FGV','fornuis'],['FEC','fornuis'],['KIF','kookplaat'],['KIG','kookplaat'],['KEK','kookplaat']],
     'haier':    [['HTF','koelkast'],['AFD','koelkast'],['HBW','koelkast'],['H2F','vriezer'],['HFR','koelkast'],['HW','wasmachine']],
     'hoover':   [['H3','wasmachine'],['H5','wasmachine'],['DX','wasmachine'],['HL','wasmachine'],['HWP','wasmachine'],['VT','wasmachine']],
@@ -772,7 +772,7 @@
             '<button class="park-info-btn" id="btn-park-info">\u2139</button>' +
           '</div>' +
         '</div></div>' +
-        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.9.7</div>' +
+        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.9.8</div>' +
       '</div>';
 
     // Park tooltip
@@ -811,9 +811,6 @@
     advToggle.style.marginBottom=toonAfwijkend?'5px':'0';
     advToggle.innerText='Advies gegeven \u25be';
     var advExpand=idoc.createElement('div'); advExpand.style.cssText='display:none;margin-top:5px;';
-    var advInfo=idoc.createElement('div'); advInfo.className='info-box'; advInfo.style.marginBottom='6px';
-    advInfo.innerText=stapInfo['Advies gegeven']||'';
-    advExpand.appendChild(advInfo);
     [{label:'Ja, service alsnog uitgevoerd vandaag', waarde:'Ja, service uitgevoerd'},
      {label:'Nee, service ook met advies niet uitgevoerd', waarde:'Nee, geen oplossing door DS'}
     ].forEach(function(opt){
@@ -862,7 +859,20 @@
     ac.appendChild(inner);
   }
 
-  var adresLinks = '<a href="https://bagviewer.kadaster.nl/lvbag/bag-viewer/?searchQuery=' + scrapedAdresQuery + '&zoomlevel=15" target="_blank" style="color:#0090e3;display:block;margin-top:6px;">📍 Bagviewer (Kadaster)</a>' +
+  // Landdetectie op basis van postcode voor adreslinks
+  var adresLand = (function() {
+    var p = scrapedPC.replace(/\s/g,'').toUpperCase();
+    if (/[A-Z]/.test(p) && p.replace(/\D/g,'').length===4) return 'NL';
+    if (!/[A-Z]/.test(p) && p.length===4) return 'BE';
+    if (!/[A-Z]/.test(p) && p.length===5) return 'DE';
+    return 'NL';
+  })();
+  var adresLinks = (adresLand==='NL'
+    ? '<a href="https://bagviewer.kadaster.nl/lvbag/bag-viewer/?searchQuery=' + scrapedAdresQuery + '&zoomlevel=15" target="_blank" style="color:#0090e3;display:block;margin-top:6px;">🇳🇱 Bagviewer (Kadaster)</a>'
+    : '') +
+    (adresLand==='BE'
+    ? '<a href="https://www.geopunt.be/kaart?zoomLevel=14&locationSearch=' + scrapedAdresQuery + '" target="_blank" style="color:#0090e3;display:block;margin-top:6px;">🇧🇪 Geopunt</a>'
+    : '') +
     '<a href="https://www.google.com/maps/search/' + scrapedAdresQuery + '" target="_blank" style="color:#0090e3;display:block;margin-top:4px;">🗺 Google Maps</a>' +
     '<a href="https://www.bing.com/maps?q=' + scrapedAdresQuery + '" target="_blank" style="color:#0090e3;display:block;margin-top:4px;">🗺 Bing Maps</a>';
 
@@ -1132,9 +1142,6 @@
       var lbl3=idoc.createElement('div'); lbl3.className='section-label'; lbl3.innerText='Anders'; container.appendChild(lbl3);
       var advToggle2=idoc.createElement('button'); advToggle2.className='ux-btn advies-btn'; advToggle2.innerText='Advies gegeven \u25be';
       var advExpand2=idoc.createElement('div'); advExpand2.style.cssText='display:none;margin-top:5px;';
-      var advInfo2=idoc.createElement('div'); advInfo2.className='info-box'; advInfo2.style.marginBottom='6px';
-      advInfo2.innerText=stapInfo['Advies gegeven']||'';
-      advExpand2.appendChild(advInfo2);
       [{label:'Ja, service alsnog uitgevoerd vandaag', waarde:'Ja, service uitgevoerd'},
        {label:'Nee, service ook met advies niet uitgevoerd', waarde:'Nee, geen oplossing door DS'}
       ].forEach(function(opt){
@@ -1235,9 +1242,9 @@
     var probLog, redenGeenOplossing, redenNextDay, routeLog, orderOplLog;
     if (callData.bellerType === 'CBF') {
       if (callData.locatie === 'Vraag voor het depot') {
-        probLog = 'CBF — Vraag voor het depot: ' + (callData.cbf_depot_reden||'') + (callData.cbf_depot_toelichting ? ' — ' + callData.cbf_depot_toelichting : '');
+        probLog = 'Vraag voor het depot: ' + (callData.cbf_depot_reden||'') + (callData.cbf_depot_toelichting ? ' — ' + callData.cbf_depot_toelichting : '');
       } else {
-        probLog = 'CBF — Onderweg: ' + callData.onderweg_type;
+        probLog = 'Onderweg: ' + callData.onderweg_type;
       }
       redenGeenOplossing = ''; redenNextDay = ''; routeLog = ''; orderOplLog = '';
     } else if (callData.locatie==='Afhandeling buiten DS') {
