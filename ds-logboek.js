@@ -116,7 +116,7 @@
     // ── BESTAANDE MERKEN (ongewijzigd) ──────────────────────────
     'aeg':      [['WD','wasdroogcombinatie'],['L9WBG','wasdroogcombinatie'],['L8WBG','wasdroogcombinatie'],['L7WBG','wasdroogcombinatie'],['LF','wasmachine'],['LR','wasmachine'],['L6','wasmachine'],['L7','wasmachine'],['L8','wasmachine'],['L9','wasmachine'],['T7','droger'],['T8','droger'],['T9','droger'],['BEB','oven'],['BES','oven'],['BCK','oven'],['BSK','oven'],['BEK','oven'],['MBE','magnetron'],['MBB','magnetron'],['MSB','magnetron'],['IAE','kookplaat'],['IKE','kookplaat'],['IEE','kookplaat'],['IKB','kookplaat'],['IPE','kookplaat'],['HK','kookplaat'],['FFB','vaatwasser'],['FEE','vaatwasser'],['FSE','inbouw vaatwasser'],['FES','vaatwasser'],['RCB','koelkast'],['SCB','koelkast'],['ABE','koelkast'],['SKB','inbouw koelkast'],['SFB','inbouw koelkast'],['RKB','koelkast'],['AGN','vriezer'],['ABB','vriezer'],['AGB','vriezer'],['AFB','vriezer']],
     'atag':     [['KD','koelkast'],['KS','koelkast'],['KB','koelkast'],['VA','vaatwasser'],['DW8','inbouw vaatwasser'],['DW','vaatwasser'],['OP','oven'],['FG','fornuis'],['CR','fornuis'],['HG','kookplaat'],['HI','kookplaat'],['HE','kookplaat']],
-    'beko':     [['WTV','wasmachine'],['WTE','wasmachine'],['WUE','wasmachine'],['B3WFU','wasdroogcombinatie'],['BUI','wasdroogcombinatie'],['WT','wasmachine'],['WU','wasmachine'],['WM','wasmachine'],['B1W','wasmachine'],['BM3W','wasmachine'],['B3W','wasmachine'],['DH','droger'],['DPY','droger'],['B3T','droger'],['BDIN','inbouw vaatwasser'],['DIN','inbouw vaatwasser'],['BDI','inbouw vaatwasser'],['DFN','vaatwasser'],['BDFN','vaatwasser'],['HII','kookplaat'],['HIG','kookplaat'],['HIW','kookplaat'],['HICD','kookplaat'],['BIM','oven'],['BIE','oven'],['BIC','oven'],['BBO','oven'],['RFNE','vriezer'],['B1RFNE','vriezer'],['GN','vriezer'],['RCNA','koelkast'],['BCNA','koelkast'],['RDSA','koelkast'],['BSSA','koelkast'],['SSE','koelkast']],
+    'beko':     [['WTV','wasmachine'],['WTE','wasmachine'],['WUE','wasmachine'],['B3WFU','wasdroogcombinatie'],['BUI','wasdroogcombinatie'],['WT','wasmachine'],['WU','wasmachine'],['WM','wasmachine'],['B1W','wasmachine'],['BM3W','wasmachine'],['B3W','wasmachine'],['DH','droger'],['DPY','droger'],['B3T','droger'],['BDIN','inbouw vaatwasser'],['DIN','inbouw vaatwasser'],['BDI','inbouw vaatwasser'],['DFN','vaatwasser'],['BDFN','vaatwasser'],['HII','kookplaat'],['HIG','kookplaat'],['HIW','kookplaat'],['HICD','kookplaat'],['MCI','combi-oven'],['BIM','oven'],['BIE','oven'],['BIC','oven'],['BBO','oven'],['RFNE','vriezer'],['B1RFNE','vriezer'],['GN','vriezer'],['RCNA','koelkast'],['BCNA','koelkast'],['RDSA','koelkast'],['BSSA','koelkast'],['SSE','koelkast']],
     'bosch':    [['WNA','wasdroogcombinatie'],['WDU','wasdroogcombinatie'],['WAN','wasmachine'],['WAX','wasmachine'],['WAU','wasmachine'],['WGB','wasmachine'],['WGG','wasmachine'],['WUU','wasmachine'],['WA','wasmachine'],['WG','wasmachine'],['WN','wasmachine'],['WU','wasmachine'],['WTH','droger'],['WTL','droger'],['WTW','droger'],['WTX','droger'],['WQG','droger'],['WQ','droger'],['WT','droger'],['WP','droger'],['SMS','vaatwasser'],['SPS','vaatwasser'],['SMV','inbouw vaatwasser'],['SMI','inbouw vaatwasser'],['SMU','inbouw vaatwasser'],['SMD','inbouw vaatwasser'],['SPV','inbouw vaatwasser'],['SPI','inbouw vaatwasser'],['SBD','inbouw vaatwasser'],['SBV','inbouw vaatwasser'],['KIL','inbouw koelkast'],['KIR','inbouw koelkast'],['KGN','koelkast'],['KGE','koelkast'],['KGL','koelkast'],['KGV','koel-vries combo'],['KGC','koelkast'],['KSV','koelkast'],['KFN','koelkast'],['KAN','koelkast'],['KG','koelkast'],['GIN','inbouw vriezer'],['GID','inbouw vriezer'],['GSN','vriezer'],['GSD','vriezer'],['HBG','oven'],['HBA','oven'],['HBD','oven'],['HRG','oven'],['HND','oven'],['HNG','oven'],['HBC','oven'],['CMG','oven'],['CMA','oven'],['CSG','oven'],['BFL','magnetron'],['BFR','magnetron'],['BEL','magnetron'],['BER','magnetron'],['FEL','magnetron'],['HGD','fornuis'],['HKS','fornuis'],['HKR','fornuis'],['HLN','fornuis'],['PKN','kookplaat'],['PKE','kookplaat'],['PIX','kookplaat'],['PVS','kookplaat'],['PID','kookplaat'],['PIF','kookplaat'],['PIE','kookplaat'],['NIT','kookplaat'],['NGM','kookplaat']],
     'etna':     [['KK','koelkast'],['KC','koelkast'],['KS','koelkast'],['AKV','koelkast'],['VW','vaatwasser'],['FI','vaatwasser'],['OEP','oven'],['OEM','oven'],['MAG','magnetron'],['FGV','fornuis'],['FEC','fornuis'],['KIF','kookplaat'],['KIG','kookplaat'],['KEK','kookplaat']],
     'haier':    [['HTF','koelkast'],['AFD','koelkast'],['HBW','koelkast'],['H2F','vriezer'],['HFR','koelkast'],['HW','wasmachine']],
@@ -353,6 +353,7 @@
       if (det && det.typeGuess) {
         var tg = det.typeGuess;
         if (tg==='soundbar') { callData.product='Soundbar'; answeredKeys.push('product'); autoFilledKeys.push('product'); isProductAutoGuessed=true; }
+        else if (tg==='combi-oven') { callData.product='Combi-oven'; answeredKeys.push('product'); autoFilledKeys.push('product'); isProductAutoGuessed=true; }
         else if (tg==='oven'||tg==='magnetron') { callData.product='Oven / Magnetron'; answeredKeys.push('product'); autoFilledKeys.push('product'); isProductAutoGuessed=true; }
         else if (tg==='fornuis') { callData.product='Fornuis'; answeredKeys.push('product'); autoFilledKeys.push('product'); isProductAutoGuessed=true; }
         else if (tg==='kookplaat') { callData.product='Kookplaat'; answeredKeys.push('product'); autoFilledKeys.push('product'); isProductAutoGuessed=true; }
@@ -519,7 +520,7 @@
   function getTypeKey(t) {
     var tl=(t||'').toLowerCase();
     if (tl==='koelkast / vriezer'||tl==='koelkast'||tl==='vriezer') return 'koelkast';
-    if (tl==='oven / magnetron'||tl==='oven') return 'oven';
+    if (tl==='oven / magnetron'||tl==='oven'||tl==='combi-oven') return 'oven';
     if (tl==='wasdroger') return 'droger';
     if (tl==='televisie+soundbar') return 'televisie+soundbar';
     return tl;
@@ -902,7 +903,7 @@
             '<button class="park-info-btn" id="btn-park-info">\u2139</button>' +
           '</div>' +
         '</div></div>' +
-        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.11.5</div>' +
+        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.11.6</div>' +
       '</div>';
 
     // Park tooltip
