@@ -1096,8 +1096,7 @@
 
     // SAMENVATTING
     if (!stap) {
-      var isGepland=callData.uitkomst==='Same day gepland'||callData.uitkomst==='Next day gepland';
-      var isKS=callData.locatie==='Klantenservice'||callData.locatie==='Winkel';
+      var isGepland=callData.uitkomst==='Same day gepland'||callData.uitkomst==='Next day gepland'||callData.ks_uitkomst==='Same day gepland'||callData.ks_uitkomst==='Next day gepland';
       var submitHtml = '';
 
       // Blauw info paneeltje voor CBF depot vraag
@@ -1120,7 +1119,7 @@
         submitHtml += '<div class="info-box">ℹ️ <b>Advies aan de winkel:</b><br>Voor informatie over de vracht kunnen zij het best contact opnemen met het depot dat de levering verzorgt' + (callData.depot && callData.depot !== 'Onbekend' ? ': <b>' + callData.depot + '</b>' : '') + '.</div>';
       }
 
-      if (!isKS && (callData.uitkomst === 'Same day gepland' || callData.uitkomst === 'Next day gepland')) {
+      if (callData.uitkomst === 'Same day gepland' || callData.uitkomst === 'Next day gepland') {
         // Controle vragen + DireXtion link in één blauw paneeltje
         var controleItems = '<div class="controle-item">📦 Kan het product bij de klant blijven?</div>';
         if (callData.uitkomst === 'Same day gepland') controleItems += '<div class="controle-item">🏠 Is de klant later vandaag nog thuis?</div>';
@@ -1133,9 +1132,9 @@
           '<a href="' + direxUrl + '" target="_blank" style="color:#0090e3;font-weight:600;">→ Open order ' + callData.orderBron + ' in DireXtion</a></div>' +
           '</div>';
       }
-      submitHtml += '<button id="btn-submit" class="action-btn submit-btn">'+(isGepland&&!isKS?'Loggen & Klembord':'Loggen')+'</button>';
+      submitHtml += '<button id="btn-submit" class="action-btn submit-btn">'+(isGepland?'Loggen & Klembord':'Loggen')+'</button>';
       container.innerHTML = submitHtml;
-      idoc.getElementById('btn-submit').onclick=isGepland&&!isKS?verstuurEnKopieer:verstuurAlleen;
+      idoc.getElementById('btn-submit').onclick=isGepland?verstuurEnKopieer:verstuurAlleen;
       renderAndersSection(null, null);
       return;
     }
