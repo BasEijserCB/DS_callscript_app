@@ -853,7 +853,7 @@
     if (callData.bellerType) h+='<span class="status-line">Beller: <b>'+callData.bellerType+'</b></span>';
     var lbl={product_keuze:'Model',locatie:'Locatie',probleem:'Taak',ks_reden:'Reden',ks_uitkomst:'KS uitkomst',afwijkend_reden:'Reden',afwijkend_toelichting:'Toelichting',milieuretour_type:'Type ophaling',formaatTV:'TV formaat',uitkomst:'Uitkomst',geplandeRoute:'Route gepland',next_day_reden:'Reden next day',geen_oplossing_reden:'Reden geen oplossing',advies_gelukt:'Advies uitkomst',onderweg_type:'Probleem',onderweg_uitkomst:'Uitkomst',cbf_depot_reden:'Vraag',cbf_depot_toelichting:'Toelichting'};
     // Apparaat + model tonen
-    if (callData.model && callData.locatie !== 'Klantenservice') {
+    if (callData.model) {
       if (meerdereProducten && !answeredKeys.includes('product_keuze')) {
         h+='<span class="status-line">Apparaten: <b>'+alleGescrapteProducten.length+' producten gevonden</b></span>';
       } else {
@@ -902,7 +902,7 @@
             '<button class="park-info-btn" id="btn-park-info">\u2139</button>' +
           '</div>' +
         '</div></div>' +
-        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.11.4</div>' +
+        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.11.5</div>' +
       '</div>';
 
     // Park tooltip
