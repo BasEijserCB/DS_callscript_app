@@ -42,7 +42,7 @@
   // Het ordernummer is het anker: als dat er is, is de DOM klaar.
   // We pollen max 3 seconden voordat we verdergaan (ook als het leeg blijft).
   function doScrapeAndInit() {
-  var scrapedOrder, scrapedRoute, scrapedAdres, scrapedPC, scrapedAdresQuery, driver1, driver2, alleGescrapteProducten;
+  var scrapedOrder, scrapedRoute, scrapedAdres, scrapedPC, scrapedAdresQuery, driver1, driver2, alleGescrapteProducten, scrapedTijdvak, scrapedAankomsttijd;
 
   if (!isBasicPage) {
     // ── CONSUMER PORTAL ────────────────────────────────────────
@@ -64,6 +64,10 @@
         return naam && !n.includes('coolblue-doos') && !n.includes('coolblue box') && !n.includes('rest van je bestelling') && !n.includes('rest of your order');
       })
       .filter(function(naam, idx, arr){ return arr.indexOf(naam) === idx; });
+    var tvStart = getTxt('Static.Visit.EarliestArrivalTimeStamp');
+    var tvEind  = getTxt('Static.Visit.LatestArrivalTimeStamp');
+    scrapedTijdvak      = (tvStart && tvEind) ? tvStart + ' - ' + tvEind : (tvStart || tvEind);
+    scrapedAankomsttijd = getTxt('ActualArrivalDateTime');
   } else {
     // ── BASIC MODULE ───────────────────────────────────────────
     // Ordernummer: uit DOM velden via basicField
@@ -80,6 +84,8 @@
     // Rijders staan niet op de Basic orderdetailpagina
     driver1 = '';
     driver2 = '';
+    scrapedTijdvak      = basicField('Tijdsvenster').replace(/\s+/g, ' ').trim();
+    scrapedAankomsttijd = basicField('Geplande aankomsttijd');
 
     // Producten uit de DevExpress artikelentabel (Articles_XXXXXXX).
     // Rijen hebben klasse dxgvDataRow_Office2010Silver. Celindices per rij:
@@ -304,7 +310,8 @@
     cbf_depot_reden:'', cbf_depot_toelichting:'',
     cbf_pakket_reden:'', cbf_pakket_uitkomst:'',
     winkel_reden:'', ks_advies_uitkomst:'',
-    orderOplossing:'', dsWaarde:''
+    orderOplossing:'', dsWaarde:'',
+    tijdvak: scrapedTijdvak||'', aankomsttijd: scrapedAankomsttijd||''
   };
 
   if (bFname) { callData.fname=bFname; answeredKeys.push('fname'); autoFilledKeys.push('fname'); }
@@ -815,14 +822,14 @@
         if (callData.ks_uitkomst==='Next day gepland')  return 'Ja stop gepland (next day)';
         return callData.ks_uitkomst || '';
       }
-      if (callData.uitkomst==='Same day gepland') return 'Ja stop gepland (same day)';
-      if (callData.uitkomst==='Geen same day mogelijk') return 'Geen same day mogelijk — KS regelt next day nazorg';
-      if (callData.uitkomst==='KS advies gegeven') return callData.ks_advies_uitkomst||'KS advies gegeven';
       if (callData.ks_reden==='Spullen achtergelaten bij klant') {
         if (callData.uitkomst==='Same day gepland') return 'Spullen achtergelaten — same day stop gepland';
         if (callData.uitkomst==='Next day gepland') return 'Spullen achtergelaten — next day stop gepland';
         if (callData.uitkomst==='Helden teruggebeld, rijden terug zonder visit') return 'Spullen achtergelaten — helden teruggebeld';
       }
+      if (callData.uitkomst==='Same day gepland') return 'Ja stop gepland (same day)';
+      if (callData.uitkomst==='Geen same day mogelijk') return 'Geen same day mogelijk — KS regelt next day nazorg';
+      if (callData.uitkomst==='KS advies gegeven') return callData.ks_advies_uitkomst||'KS advies gegeven';
       return 'Nee, geen oplossing door DS';
     } else if (callData.locatie==='Bij de klant') {
       if (callData.probleem==='Verkeerd gelabeld product') return 'Verkeerd gelabeld product — instructie gegeven aan Held';
@@ -904,7 +911,7 @@
             '<button class="park-info-btn" id="btn-park-info">\u2139</button>' +
           '</div>' +
         '</div></div>' +
-        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.11.7</div>' +
+        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.11.11</div>' +
       '</div>';
 
     // Park tooltip
@@ -1325,17 +1332,28 @@
                 cqTxt.innerText='Geldt "'+disp+'" ook voor de '+otherNames2+'?'; cq.appendChild(cqTxt);
                 var jaBtn2=idoc.createElement('button'); jaBtn2.className='ux-btn';
                 jaBtn2.style.cssText='margin-bottom:4px;background:#d4edda;border-color:#00B900;color:#155724;font-weight:600;';
-                jaBtn2.innerText='Ja, voor beide';
+                jaBtn2.innerText=otherSecs2.length > 1 ? 'Ja, voor alle' : 'Ja, voor beide';
                 jaBtn2.onclick=(function(allS2){ return function(){
                   var allModels2=allS2.map(function(s3){ return s3.origNaam; }).filter(Boolean);
                   callData.product_keuze=allS2.map(function(s3){ return s3.typeLabel; }).join(', ');
                   callData.model=allModels2.join(', ');
                   renderApp();
                 }; })([s].concat(otherSecs2));
-                var neeBtn2=idoc.createElement('button'); neeBtn2.className='ux-btn'; neeBtn2.style.marginBottom='0';
+                var neeBtn2=idoc.createElement('button'); neeBtn2.className='ux-btn';
                 neeBtn2.innerText='Nee, alleen '+s.typeLabel;
                 neeBtn2.onclick=function(){ renderApp(); };
                 cq.appendChild(jaBtn2); cq.appendChild(neeBtn2);
+                if (otherSecs2.length > 1) {
+                  var kiesBtn=idoc.createElement('button'); kiesBtn.className='ux-btn'; kiesBtn.style.cssText='margin-top:4px;margin-bottom:0;';
+                  kiesBtn.innerText='Kies zelf welke producten';
+                  kiesBtn.onclick=function(){
+                    answeredKeys=answeredKeys.filter(function(k){ return k!=='product_keuze'&&k!=='product'&&k!=='formaatTV'; });
+                    autoFilledKeys=autoFilledKeys.filter(function(k){ return k!=='product'&&k!=='formaatTV'; });
+                    callData.product_keuze=''; callData.product=''; callData.formaatTV='';
+                    renderApp();
+                  };
+                  cq.appendChild(kiesBtn);
+                }
                 // Zet controlevraag bovenaan container
                 var firstChild = container.firstChild;
                 container.insertBefore(cq, firstChild);
@@ -1532,6 +1550,8 @@
   function bouwLogParams() {
     callData.dsWaarde = berekenDsWaarde();
     var probLog, redenGeenOplossing, redenNextDay, routeLog, orderOplLog;
+    var logDriver1 = callData.driver1, logDriver2 = callData.driver2, logOrderBron = callData.orderBron;
+    var skipRouteFields = false;
     if (callData.bellerType === 'CBF') {
       if (callData.locatie === 'Vraag voor het depot') {
         probLog = 'Vraag voor het depot: ' + (callData.cbf_depot_reden||'') + (callData.cbf_depot_toelichting ? ' — ' + callData.cbf_depot_toelichting : '');
@@ -1551,6 +1571,10 @@
       redenNextDay       = callData.next_day_reden||'';
       routeLog           = (winkelOpl==='Next day gepland') ? 'Next Day' : callData.geplandeRoute;
       orderOplLog        = (winkelOpl==='Same day gepland'||winkelOpl==='Next day gepland') ? callData.orderBron+'-DS' : '';
+      if (callData.ks_reden==='Informatie over vracht' || callData.ks_reden==='Witgoed Demo Wissel') {
+        logDriver1 = ''; logDriver2 = ''; logOrderBron = '';
+        probLog = ''; routeLog = ''; skipRouteFields = true;
+      }
     } else if (callData.locatie==='Klantenservice') {
       var ksOpl = callData.ks_reden==='KS vraagt om held terug te sturen' ? callData.ks_uitkomst : callData.uitkomst;
       probLog            = 'KS: ' + callData.ks_reden + (callData.probleem ? ' — ' + callData.probleem : '');
@@ -1571,9 +1595,9 @@
       routeLog           = '';
       orderOplLog        = '';
     }
-    var prodLog = callData.product+(callData.formaatTV?' ('+callData.formaatTV+')':'');
+    var prodLog = skipRouteFields ? '' : callData.product+(callData.formaatTV?' ('+callData.formaatTV+')':'');
     var bellerLog = callData.locatie==='Klantenservice' ? 'Klantenservice' : callData.locatie==='Winkel' ? 'Winkel' : callData.bellerType||'';
-    return '?id='+Date.now()+'&user='+encodeURIComponent(callData.user)+'&route='+encodeURIComponent(callData.route)+'&depot='+encodeURIComponent(callData.depot)+'&driver1='+encodeURIComponent(callData.driver1)+'&driver2='+encodeURIComponent(callData.driver2)+'&orderBron='+encodeURIComponent(callData.orderBron)+'&product='+encodeURIComponent(prodLog)+'&probleem='+encodeURIComponent(probLog)+'&redenGeenOplossing='+encodeURIComponent(redenGeenOplossing)+'&redenNextDay='+encodeURIComponent(redenNextDay)+'&orderOplossing='+encodeURIComponent(orderOplLog)+'&geplandeRoute='+encodeURIComponent(routeLog)+'&dsWaarde='+encodeURIComponent(callData.dsWaarde)+'&bellerType='+encodeURIComponent(bellerLog);
+    return '?id='+Date.now()+'&user='+encodeURIComponent(callData.user)+'&route='+encodeURIComponent(callData.route)+'&depot='+encodeURIComponent(callData.depot)+'&driver1='+encodeURIComponent(logDriver1)+'&driver2='+encodeURIComponent(logDriver2)+'&orderBron='+encodeURIComponent(logOrderBron)+'&product='+encodeURIComponent(prodLog)+'&probleem='+encodeURIComponent(probLog)+'&redenGeenOplossing='+encodeURIComponent(redenGeenOplossing)+'&redenNextDay='+encodeURIComponent(redenNextDay)+'&orderOplossing='+encodeURIComponent(orderOplLog)+'&geplandeRoute='+encodeURIComponent(routeLog)+'&dsWaarde='+encodeURIComponent(callData.dsWaarde)+'&bellerType='+encodeURIComponent(bellerLog)+'&tijdvak='+encodeURIComponent(callData.tijdvak)+'&aankomsttijd='+encodeURIComponent(callData.aankomsttijd);
   }
 
   // ── VERSTUUR: GEPLAND (loggen + klembord) ────────────────────
