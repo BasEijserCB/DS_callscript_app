@@ -690,7 +690,7 @@
       var ksLabel = isWinkel ? 'Wat is de reden van het winkelbelletje?' : 'Wat is de reden van het KS-belletje?';
       var ksOpties = isWinkel
         ? ['Nazorg nodig','Winkel vraagt om held terug te sturen','Advies gegeven aan Winkel','Informatie over vracht','Witgoed Demo Wissel','Spullen achtergelaten bij klant']
-        : ['Nazorg nodig','KS vraagt om held terug te sturen','Advies gegeven aan KS','Spullen achtergelaten bij klant'];
+        : ['Nazorg nodig','KS vraagt om held terug te sturen','Advies gegeven aan KS','Spullen achtergelaten bij klant','Bezorgadres/telefoonnummer klant doorgeven aan held'];
       s.push({key:'ks_reden',label:ksLabel,type:'ux-select',opties:ksOpties});
       if (answeredKeys.includes('ks_reden')) {
         if (callData.ks_reden==='Informatie over vracht') {
@@ -809,6 +809,7 @@
       return 'Nee, geen oplossing door DS';
     } else if (callData.locatie==='Klantenservice') {
       if (callData.ks_reden==='Advies gegeven aan KS') return 'Advies gegeven aan KS';
+      if (callData.ks_reden==='Bezorgadres/telefoonnummer klant doorgeven aan held') return 'Bezorgadres/telefoonnummer klant doorgegeven aan held';
       if (callData.ks_reden==='KS vraagt om held terug te sturen') {
         if (callData.ks_uitkomst==='Same day gepland') return 'Ja stop gepland (same day)';
         if (callData.ks_uitkomst==='Next day gepland')  return 'Ja stop gepland (next day)';
@@ -903,7 +904,7 @@
             '<button class="park-info-btn" id="btn-park-info">\u2139</button>' +
           '</div>' +
         '</div></div>' +
-        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.11.6</div>' +
+        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.11.7</div>' +
       '</div>';
 
     // Park tooltip
