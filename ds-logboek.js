@@ -195,7 +195,7 @@
     '.toggle-btn{font-size:10px;background:#F3F3F3;border:1px solid #DDDDDD;color:#999999;padding:3px 9px;border-radius:4px;cursor:pointer;}' +
     '.close-btn{font-size:16px;background:none;border:none;color:#999999;cursor:pointer;padding:0 4px;line-height:1;font-weight:300;}' +
     '.close-btn:hover{color:#333333;}' +
-    '.content{flex:1;overflow-y:auto;padding:14px;}' +
+    '.content{flex-shrink:0;padding:14px;}' +
     '.status-bar{font-size:11px;background:#F2F7FC;border:1px solid #cce9f9;padding:8px 12px;border-radius:6px;margin-bottom:12px;color:#285dab;}' +
     '.status-line{display:block;margin-bottom:2px;}' +
     '.footer{padding:10px 14px;border-top:1px solid #DDDDDD;flex-shrink:0;background:#fff;}' +
@@ -235,7 +235,8 @@
     '.park-melding b{color:#533f03;}' +
     '.main-row{display:flex;flex:1;min-height:0;overflow:hidden;}' +
     '.main-row .content{flex:1;overflow-y:auto;min-width:0;padding:14px;}' +
-    '.sidebar{flex:1;flex-shrink:0;border-left:2px solid #DDDDDD;overflow-y:auto;background:#FAFAFA;padding:8px 10px;box-sizing:border-box;font-size:12px;}' +
+    '.sidebar{flex:1;border-left:2px solid #DDDDDD;overflow-y:auto;background:#FAFAFA;padding:8px 10px;box-sizing:border-box;font-size:12px;}' +
+    '.anders-scroll{flex:1;overflow-y:auto;min-height:0;padding:8px 14px;box-sizing:border-box;border-top:1px solid #DDDDDD;}' +
     '.resize-btn{font-size:11px;background:#F3F3F3;border:1px solid #DDDDDD;color:#666;padding:3px 8px;border-radius:4px;cursor:pointer;font-weight:600;}' +
     '.resize-btn:hover{background:#E8E8E8;}' +
     '.advies-knop{background:#F0FFF0;border-color:#b2dfb2;}' +
@@ -925,7 +926,7 @@
     if (dsWide) {
       mainContent = '<div class="main-row"><div class="content">' + statusAndContent + '</div><div id="anders-container" class="sidebar"></div></div>';
     } else {
-      mainContent = '<div class="content">' + statusAndContent + '</div><div id="anders-container" style="flex-shrink:0;"></div>';
+      mainContent = '<div class="content">' + statusAndContent + '</div><div id="anders-container" class="anders-scroll"></div>';
     }
 
     appContainer.innerHTML =
@@ -946,7 +947,7 @@
             '<button class="park-info-btn" id="btn-park-info">\u2139</button>' +
           '</div>' +
         '</div></div>' +
-        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.11.25</div>' +
+        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.11.26</div>' +
       '</div>';
 
     // Park tooltip
@@ -1047,11 +1048,8 @@
 
     // Afhandeling buiten DS sectie
     if (toonAfwijkend) {
-      if (!dsWide) {
-        var sep=idoc.createElement('hr'); sep.style.cssText='border:none;border-top:1px solid #DDDDDD;margin:10px 0 8px;';
-        cont.appendChild(sep);
-      }
       var afwLbl=idoc.createElement('div'); afwLbl.className='section-label'; afwLbl.innerText='Afhandeling buiten DS';
+      if (!dsWide) afwLbl.style.marginTop='10px';
       cont.appendChild(afwLbl);
       ['Product niet aanwezig','Klant moet KS bellen','Held moet dit bij afmelden regelen met TL','Verkeerd gelabeld product','Overig'].forEach(function(opt){ cont.appendChild(maakAfwijkendKnop(opt)); });
     }
