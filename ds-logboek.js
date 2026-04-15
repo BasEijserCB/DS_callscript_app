@@ -946,7 +946,7 @@
             '<button class="park-info-btn" id="btn-park-info">\u2139</button>' +
           '</div>' +
         '</div></div>' +
-        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.11.23</div>' +
+        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.11.24</div>' +
       '</div>';
 
     // Park tooltip
@@ -998,7 +998,7 @@
          {label:'Nee, service ook met advies niet uitgevoerd', waarde:'Nee, geen oplossing door DS'}];
 
     function maakAdviesKnop(opt) {
-      var b=idoc.createElement('button'); b.className='ux-btn'; b.style.marginBottom='4px'; b.innerText=opt.label;
+      var b=idoc.createElement('button'); b.className='ux-btn advies-knop'; b.style.marginBottom='4px'; b.innerText=opt.label;
       b.onclick=function(){
         if (isKSContext) {
           if (isKSTerugsturen) { var kix=answeredKeys.indexOf('ks_uitkomst'); if(kix>-1) answeredKeys.splice(kix,1); callData.ks_uitkomst=''; }
@@ -1024,7 +1024,7 @@
     }
 
     function maakAfwijkendKnop(opt) {
-      var b=idoc.createElement('button'); b.className='ux-btn'; b.style.cssText='font-size:12px;padding:6px 10px;margin-bottom:4px;'; b.innerText=opt;
+      var b=idoc.createElement('button'); b.className='ux-btn afwijkend-knop'; b.style.cssText='font-size:12px;padding:6px 10px;margin-bottom:4px;'; b.innerText=opt;
       b.onclick=function(){
         ['probleem','product','formaatTV','milieuretour_type','uitkomst','geplandeRoute','next_day_reden','geen_oplossing_reden','advies_gelukt','product_keuze'].forEach(function(k){
           callData[k]=''; var ix=answeredKeys.indexOf(k); if(ix>-1) answeredKeys.splice(ix,1); var ax=autoFilledKeys.indexOf(k); if(ax>-1) autoFilledKeys.splice(ax,1);
@@ -1037,62 +1037,26 @@
       return b;
     }
 
-    var useToggle = !dsWide && dsHeight < 760;
+    // Altijd zichtbaar: advies gegeven + afhandeling buiten DS opties
+    var cont=idoc.createElement('div');
 
-    if (dsWide || !useToggle) {
-      // BREDE MODUS OF GROTE HOOGTE: alles zichtbaar met gekleurde secties
-      var cont=idoc.createElement('div');
+    // Advies gegeven sectie
+    var advLbl=idoc.createElement('div'); advLbl.className='section-label'; advLbl.innerText='Advies gegeven';
+    cont.appendChild(advLbl);
+    adviesOpties.forEach(function(opt){ cont.appendChild(maakAdviesKnop(opt)); });
 
-      // Advies gegeven sectie
-      var advSection=idoc.createElement('div'); advSection.className='advies-section';
-      var advLbl=idoc.createElement('div'); advLbl.className='section-label'; advLbl.innerText='Advies gegeven';
-      advSection.appendChild(advLbl);
-      adviesOpties.forEach(function(opt){ advSection.appendChild(maakAdviesKnop(opt)); });
-      cont.appendChild(advSection);
-
-      // Afhandeling buiten DS sectie
-      if (toonAfwijkend) {
-        var afwSection=idoc.createElement('div'); afwSection.className='afwijkend-section';
-        var afwLbl=idoc.createElement('div'); afwLbl.className='section-label'; afwLbl.innerText='Afhandeling buiten DS';
-        afwSection.appendChild(afwLbl);
-        ['Product niet aanwezig','Klant moet KS bellen','Held moet dit bij afmelden regelen met TL','Verkeerd gelabeld product','Overig'].forEach(function(opt){ afwSection.appendChild(maakAfwijkendKnop(opt)); });
-        cont.appendChild(afwSection);
+    // Afhandeling buiten DS sectie
+    if (toonAfwijkend) {
+      if (!dsWide) {
+        var sep=idoc.createElement('hr'); sep.style.cssText='border:none;border-top:1px solid #DDDDDD;margin:10px 0 8px;';
+        cont.appendChild(sep);
       }
-
-      ac.appendChild(cont);
-    } else {
-      // SMALLE MODUS MET TOGGLES: origineel gedrag
-      var sep=idoc.createElement('hr'); sep.style.cssText='border:none;border-top:1px solid #DDDDDD;margin:0;';
-      ac.appendChild(sep);
-      var inner=idoc.createElement('div'); inner.style.cssText='padding:8px 14px 10px;';
-      var lbl=idoc.createElement('div'); lbl.className='section-label'; lbl.innerText='Anders'; inner.appendChild(lbl);
-
-      // Advies gegeven toggle
-      var advToggle=idoc.createElement('button'); advToggle.className='ux-btn advies-btn';
-      advToggle.style.marginBottom=toonAfwijkend?'5px':'0';
-      advToggle.innerText='Advies gegeven \u25be';
-      var advExpand=idoc.createElement('div'); advExpand.style.cssText='display:none;margin-top:5px;';
-      adviesOpties.forEach(function(opt){ advExpand.appendChild(maakAdviesKnop(opt)); });
-      advToggle.onclick=function(){ var h=advExpand.style.display==='none'; advExpand.style.display=h?'block':'none'; advToggle.innerText=h?'Advies gegeven \u25b4':'Advies gegeven \u25be'; };
-      inner.appendChild(advToggle); inner.appendChild(advExpand);
-
-      if (toonAfwijkend) {
-        var afwLabel=idoc.createElement('div'); afwLabel.className='section-label'; afwLabel.innerText='Afhandeling buiten DS'; afwLabel.style.marginTop='10px';
-        inner.appendChild(afwLabel);
-        var afwGrid=idoc.createElement('div'); afwGrid.style.cssText='display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-bottom:5px;';
-        ['Product niet aanwezig','Klant moet KS bellen','Held moet dit bij afmelden regelen met TL','Verkeerd gelabeld product'].forEach(function(opt){ afwGrid.appendChild(maakAfwijkendKnop(opt)); });
-        inner.appendChild(afwGrid);
-
-        // Overig toggle
-        var afwToggle=idoc.createElement('button'); afwToggle.className='ux-btn advies-btn'; afwToggle.style.marginBottom='0'; afwToggle.innerText='Overig \u25be';
-        var afwExpand=idoc.createElement('div'); afwExpand.style.cssText='display:none;margin-top:5px;';
-        afwExpand.appendChild(maakAfwijkendKnop('Overig'));
-        afwToggle.onclick=function(){ var h=afwExpand.style.display==='none'; afwExpand.style.display=h?'block':'none'; afwToggle.innerText=h?'Overig \u25b4':'Overig \u25be'; };
-        inner.appendChild(afwToggle); inner.appendChild(afwExpand);
-      }
-
-      ac.appendChild(inner);
+      var afwLbl=idoc.createElement('div'); afwLbl.className='section-label'; afwLbl.innerText='Afhandeling buiten DS';
+      cont.appendChild(afwLbl);
+      ['Product niet aanwezig','Klant moet KS bellen','Held moet dit bij afmelden regelen met TL','Verkeerd gelabeld product','Overig'].forEach(function(opt){ cont.appendChild(maakAfwijkendKnop(opt)); });
     }
+
+    ac.appendChild(cont);
   }
 
   // Landdetectie op basis van postcode voor adreslinks
