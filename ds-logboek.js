@@ -233,6 +233,11 @@
     '.park-info-btn{background:none;border:none;color:#ffc107;font-size:14px;cursor:default;padding:0 4px;position:relative;}' +
     '.park-melding{background:#fff8e1;border:1px solid #ffc107;border-left:4px solid #ffc107;border-radius:6px;padding:10px 12px;font-size:12px;color:#856404;margin-bottom:12px;line-height:1.5;}' +
     '.park-melding b{color:#533f03;}' +
+    '.main-row{display:flex;flex:1;min-height:0;overflow:hidden;}' +
+    '.main-row .content{flex:1;overflow-y:auto;min-width:0;padding:14px;}' +
+    '.sidebar{width:190px;flex-shrink:0;border-left:2px solid #DDDDDD;overflow-y:auto;background:#FAFAFA;padding:8px 10px;box-sizing:border-box;font-size:12px;}' +
+    '.resize-btn{font-size:11px;background:#F3F3F3;border:1px solid #DDDDDD;color:#666;padding:3px 8px;border-radius:4px;cursor:pointer;font-weight:600;}' +
+    '.resize-btn:hover{background:#E8E8E8;}' +
     '</style>';
 
   var appContainer = idoc.createElement('div');
@@ -240,7 +245,13 @@
 
   // ── STATE ─────────────────────────────────────────────────────
   var bFname = localStorage.getItem('ds_fname'), bLname = localStorage.getItem('ds_lname');
+  var dsHeight = parseInt(localStorage.getItem('ds_height') || '620');
+  var dsWide = localStorage.getItem('ds_wide') === '1';
   var answeredKeys = [], autoFilledKeys = [];
+
+  // Apply initial sizing
+  iframe.style.height = dsHeight + 'px';
+  wrapper.style.width = dsWide ? '600px' : '340px';
 
   // ── PARKEER FUNCTIE ───────────────────────────────────────────
   var PARK_KEY = 'ds_park_' + scrapedOrder;
@@ -907,16 +918,25 @@
     var backClass = canGoBack() ? 'back-btn active' : 'back-btn';
     var parkInfoTekst = 'Gebruik de parkeerknop wanneer je de uitkomst van dit gesprek nog niet definitief kunt vastleggen \u2014 bijvoorbeeld omdat je eerst overleg moet plegen met een teamleider van een van onze depots. De tool slaat je huidige voortgang op en sluit zichzelf. Wanneer je later terugkeert naar dezelfde bestelling en de tool opnieuw opent, kun je precies verder gaan waar je gebleven was. Zolang een sessie geparkeerd staat blijft de tool normaal beschikbaar voor andere bestellingen.';
 
+    var statusAndContent = buildStatusHtml() + '<div id="stap-container"></div>';
+    var mainContent = '';
+    if (dsWide) {
+      mainContent = '<div class="main-row"><div class="content">' + statusAndContent + '</div><div id="anders-container" class="sidebar"></div></div>';
+    } else {
+      mainContent = '<div class="content">' + statusAndContent + '</div><div id="anders-container" style="flex-shrink:0;"></div>';
+    }
+
     appContainer.innerHTML =
       '<div class="app">' +
         '<div class="header">' +
           '<span class="header-title">DS Logboek</span>' +
           '<div class="header-actions">' +
+            '<button class="resize-btn" id="btn-height">\u2195 ' + (dsHeight===620?'S':dsHeight===760?'M':'L') + '</button>' +
+            '<button class="resize-btn" id="btn-wide">' + (dsWide?'\u2b0c 2K':'\u2194') + '</button>' +
             '<button class="close-btn" id="btn-close">\u2715</button>' +
           '</div>' +
         '</div>' +
-        '<div class="content">' + buildStatusHtml() + '<div id="stap-container"></div></div>' +
-        '<div id="anders-container" style="flex-shrink:0;"></div>' +
+        mainContent +
         '<div class="footer"><div class="footer-inner" style="display:flex;flex-direction:row;justify-content:space-between;align-items:center;gap:8px;">' +
           '<button class="' + backClass + '" id="btn-terug" style="flex:1;">\u2190 Terug</button>' +
           '<div style="display:flex;gap:4px;align-items:center;flex-shrink:0;">' +
@@ -924,7 +944,7 @@
             '<button class="park-info-btn" id="btn-park-info">\u2139</button>' +
           '</div>' +
         '</div></div>' +
-        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.11.20</div>' +
+        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.11.21</div>' +
       '</div>';
 
     // Park tooltip
@@ -934,6 +954,20 @@
     idoc.body.appendChild(parkTooltip);
 
     idoc.getElementById('btn-close').onclick = function(){ wrapper.remove(); };
+    idoc.getElementById('btn-height').onclick = function() {
+      var stappen = [620, 760, 900];
+      var idx = stappen.indexOf(dsHeight);
+      dsHeight = stappen[(idx + 1) % stappen.length];
+      localStorage.setItem('ds_height', dsHeight);
+      iframe.style.height = dsHeight + 'px';
+      renderApp();
+    };
+    idoc.getElementById('btn-wide').onclick = function() {
+      dsWide = !dsWide;
+      localStorage.setItem('ds_wide', dsWide ? '1' : '0');
+      wrapper.style.width = dsWide ? '600px' : '340px';
+      renderApp();
+    };
     if (canGoBack()) idoc.getElementById('btn-terug').onclick = goBack;
     idoc.getElementById('btn-park').onclick = parkeerSessie;
     idoc.getElementById('btn-park-info').onmouseenter = function(){ parkTooltip.style.display = 'block'; };
