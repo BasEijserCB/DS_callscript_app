@@ -1026,7 +1026,7 @@
             '<button class="park-info-btn" id="btn-park-info">\u2139</button>' +
           '</div>' +
         '</div></div>' +
-        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.12.2</div>' +
+        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.12.3</div>' +
       '</div>';
 
     // Park tooltip
@@ -1785,7 +1785,7 @@
       if (dm) cleanPC=dm[1].trim(); else if (bm) cleanPC=bm[1].trim(); else cleanPC=(rawPC.match(/^\d{4}/)||[''])[0];
       city = gs('Static.Visit.City')||gs('City')||'';
       name = gs('Static.Visit.ContactName')||gs('ConsigneeName')||'';
-      ph = (gs('Static.Visit.PhoneNumber')||gs('PhoneNumber')||'').replace(/[^\d+]/g,'');
+      ph = (gs('Static.Visit.Phone')||gs('Static.Visit.PhoneNumber')||gs('PhoneNumber')||'').replace(/[^\d+]/g,'');
       email = gs('Static.Visit.Email')||gs('Email')||'';
       address = gs('Static.Visit.Address')||gs('ConsigneeAddress')||'';
     }
