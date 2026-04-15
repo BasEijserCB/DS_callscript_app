@@ -238,9 +238,8 @@
     '.sidebar{width:190px;flex-shrink:0;border-left:2px solid #DDDDDD;overflow-y:auto;background:#FAFAFA;padding:8px 10px;box-sizing:border-box;font-size:12px;}' +
     '.resize-btn{font-size:11px;background:#F3F3F3;border:1px solid #DDDDDD;color:#666;padding:3px 8px;border-radius:4px;cursor:pointer;font-weight:600;}' +
     '.resize-btn:hover{background:#E8E8E8;}' +
-    '.advies-section{background:#F0FFF0;padding:8px;border-radius:6px;margin-bottom:10px;}' +
-    '.afwijkend-section{background:#FFFFF0;padding:8px;border-radius:6px;margin-bottom:10px;}' +
-    '.advies-section .section-label,.afwijkend-section .section-label{margin-bottom:6px;}' +
+    '.advies-knop{background:#F0FFF0;border-color:#b2dfb2;}' +
+    '.afwijkend-knop{background:#FFFFF0;border-color:#e0e0a0;}' +
     '</style>';
 
   var appContainer = idoc.createElement('div');
