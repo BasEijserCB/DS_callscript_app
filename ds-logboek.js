@@ -250,9 +250,14 @@
   var bFname = localStorage.getItem('ds_fname'), bLname = localStorage.getItem('ds_lname');
   var dsHeight = parseInt(localStorage.getItem('ds_height') || '620');
   var dsWide = localStorage.getItem('ds_wide') === '1';
+
+  // Maximale hoogte op basis van viewport, met 40px marge (20px boven + 20px onder)
+  function maxViewportHeight() { return window.innerHeight - 40; }
+  function clampHeight(h) { return Math.min(h, maxViewportHeight()); }
   var answeredKeys = [], autoFilledKeys = [];
 
   // Apply initial sizing
+  dsHeight = clampHeight(dsHeight);
   iframe.style.height = dsHeight + 'px';
   wrapper.style.width = dsWide ? '600px' : '340px';
 
@@ -1021,7 +1026,7 @@
             '<button class="park-info-btn" id="btn-park-info">\u2139</button>' +
           '</div>' +
         '</div></div>' +
-        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.12.1</div>' +
+        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.12.2</div>' +
       '</div>';
 
     // Park tooltip
@@ -1032,7 +1037,8 @@
 
     idoc.getElementById('btn-close').onclick = function(){ wrapper.remove(); };
     idoc.getElementById('btn-height').onclick = function() {
-      var stappen = [620, 760, 900];
+      var stappen = [620, 760, 900].filter(function(h){ return h <= maxViewportHeight(); });
+      if (stappen.length === 0) stappen = [clampHeight(620)];
       var idx = stappen.indexOf(dsHeight);
       dsHeight = stappen[(idx + 1) % stappen.length];
       localStorage.setItem('ds_height', dsHeight);
@@ -1809,6 +1815,15 @@
 
   renderApp();
   } // einde doScrapeAndInit
+
+  // Herbereken hoogte als venster van grootte verandert (bijv. monitor koppelen/ontkoppelen)
+  window.addEventListener('resize', function() {
+    var clamped = clampHeight(dsHeight);
+    if (clamped !== dsHeight) {
+      dsHeight = clamped;
+      iframe.style.height = dsHeight + 'px';
+    }
+  });
 
   // Poll tot ordernummer beschikbaar is in DOM, max 3 seconden
   var pollCount = 0;
