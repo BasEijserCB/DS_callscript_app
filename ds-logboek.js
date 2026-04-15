@@ -238,6 +238,9 @@
     '.sidebar{width:190px;flex-shrink:0;border-left:2px solid #DDDDDD;overflow-y:auto;background:#FAFAFA;padding:8px 10px;box-sizing:border-box;font-size:12px;}' +
     '.resize-btn{font-size:11px;background:#F3F3F3;border:1px solid #DDDDDD;color:#666;padding:3px 8px;border-radius:4px;cursor:pointer;font-weight:600;}' +
     '.resize-btn:hover{background:#E8E8E8;}' +
+    '.advies-section{background:#F0FFF0;padding:8px;border-radius:6px;margin-bottom:10px;}' +
+    '.afwijkend-section{background:#FFFFF0;padding:8px;border-radius:6px;margin-bottom:10px;}' +
+    '.advies-section .section-label,.afwijkend-section .section-label{margin-bottom:6px;}' +
     '</style>';
 
   var appContainer = idoc.createElement('div');
@@ -944,7 +947,7 @@
             '<button class="park-info-btn" id="btn-park-info">\u2139</button>' +
           '</div>' +
         '</div></div>' +
-        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.11.22</div>' +
+        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.11.23</div>' +
       '</div>';
 
     // Park tooltip
@@ -1035,22 +1038,31 @@
       return b;
     }
 
-    if (dsWide) {
-      // BREDE MODUS: alles direct zichtbaar, geen toggles, 1 kolom
-      var cont=idoc.createElement('div');
-      var advLbl=idoc.createElement('div'); advLbl.className='section-label'; advLbl.innerText='Advies gegeven'; advLbl.style.marginBottom='6px';
-      cont.appendChild(advLbl);
-      adviesOpties.forEach(function(opt){ cont.appendChild(maakAdviesKnop(opt)); });
+    var useToggle = !dsWide && dsHeight < 760;
 
+    if (dsWide || !useToggle) {
+      // BREDE MODUS OF GROTE HOOGTE: alles zichtbaar met gekleurde secties
+      var cont=idoc.createElement('div');
+
+      // Advies gegeven sectie
+      var advSection=idoc.createElement('div'); advSection.className='advies-section';
+      var advLbl=idoc.createElement('div'); advLbl.className='section-label'; advLbl.innerText='Advies gegeven';
+      advSection.appendChild(advLbl);
+      adviesOpties.forEach(function(opt){ advSection.appendChild(maakAdviesKnop(opt)); });
+      cont.appendChild(advSection);
+
+      // Afhandeling buiten DS sectie
       if (toonAfwijkend) {
-        var afwLbl=idoc.createElement('div'); afwLbl.className='section-label'; afwLbl.innerText='Afhandeling buiten DS'; afwLbl.style.cssText='margin-top:10px;margin-bottom:6px;';
-        cont.appendChild(afwLbl);
-        ['Product niet aanwezig','Klant moet KS bellen','Held moet dit bij afmelden regelen met TL','Verkeerd gelabeld product','Overig'].forEach(function(opt){ cont.appendChild(maakAfwijkendKnop(opt)); });
+        var afwSection=idoc.createElement('div'); afwSection.className='afwijkend-section';
+        var afwLbl=idoc.createElement('div'); afwLbl.className='section-label'; afwLbl.innerText='Afhandeling buiten DS';
+        afwSection.appendChild(afwLbl);
+        ['Product niet aanwezig','Klant moet KS bellen','Held moet dit bij afmelden regelen met TL','Verkeerd gelabeld product','Overig'].forEach(function(opt){ afwSection.appendChild(maakAfwijkendKnop(opt)); });
+        cont.appendChild(afwSection);
       }
 
       ac.appendChild(cont);
     } else {
-      // SMALLE MODUS: toggles, 2x2 grid voor afhandeling DS
+      // SMALLE MODUS MET TOGGLES: origineel gedrag
       var sep=idoc.createElement('hr'); sep.style.cssText='border:none;border-top:1px solid #DDDDDD;margin:0;';
       ac.appendChild(sep);
       var inner=idoc.createElement('div'); inner.style.cssText='padding:8px 14px 10px;';
