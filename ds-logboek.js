@@ -235,7 +235,7 @@
     '.park-melding b{color:#533f03;}' +
     '.main-row{display:flex;flex:1;min-height:0;overflow:hidden;}' +
     '.main-row .content{flex:1;overflow-y:auto;min-width:0;padding:14px;}' +
-    '.sidebar{width:190px;flex-shrink:0;border-left:2px solid #DDDDDD;overflow-y:auto;background:#FAFAFA;padding:8px 10px;box-sizing:border-box;font-size:12px;}' +
+    '.sidebar{flex:1;flex-shrink:0;border-left:2px solid #DDDDDD;overflow-y:auto;background:#FAFAFA;padding:8px 10px;box-sizing:border-box;font-size:12px;}' +
     '.resize-btn{font-size:11px;background:#F3F3F3;border:1px solid #DDDDDD;color:#666;padding:3px 8px;border-radius:4px;cursor:pointer;font-weight:600;}' +
     '.resize-btn:hover{background:#E8E8E8;}' +
     '.advies-knop{background:#F0FFF0;border-color:#b2dfb2;}' +
@@ -920,7 +920,7 @@
     var backClass = canGoBack() ? 'back-btn active' : 'back-btn';
     var parkInfoTekst = 'Gebruik de parkeerknop wanneer je de uitkomst van dit gesprek nog niet definitief kunt vastleggen \u2014 bijvoorbeeld omdat je eerst overleg moet plegen met een teamleider van een van onze depots. De tool slaat je huidige voortgang op en sluit zichzelf. Wanneer je later terugkeert naar dezelfde bestelling en de tool opnieuw opent, kun je precies verder gaan waar je gebleven was. Zolang een sessie geparkeerd staat blijft de tool normaal beschikbaar voor andere bestellingen.';
 
-    var statusAndContent = buildStatusHtml() + '<div id="stap-container"></div>';
+    var statusAndContent = '<div id="stap-container"></div>';
     var mainContent = '';
     if (dsWide) {
       mainContent = '<div class="main-row"><div class="content">' + statusAndContent + '</div><div id="anders-container" class="sidebar"></div></div>';
@@ -946,7 +946,7 @@
             '<button class="park-info-btn" id="btn-park-info">\u2139</button>' +
           '</div>' +
         '</div></div>' +
-        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.11.24</div>' +
+        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.11.25</div>' +
       '</div>';
 
     // Park tooltip
@@ -1024,7 +1024,7 @@
     }
 
     function maakAfwijkendKnop(opt) {
-      var b=idoc.createElement('button'); b.className='ux-btn afwijkend-knop'; b.style.cssText='font-size:12px;padding:6px 10px;margin-bottom:4px;'; b.innerText=opt;
+      var b=idoc.createElement('button'); b.className='ux-btn afwijkend-knop'; b.style.marginBottom='4px'; b.innerText=opt;
       b.onclick=function(){
         ['probleem','product','formaatTV','milieuretour_type','uitkomst','geplandeRoute','next_day_reden','geen_oplossing_reden','advies_gelukt','product_keuze'].forEach(function(k){
           callData[k]=''; var ix=answeredKeys.indexOf(k); if(ix>-1) answeredKeys.splice(ix,1); var ax=autoFilledKeys.indexOf(k); if(ax>-1) autoFilledKeys.splice(ax,1);
