@@ -439,7 +439,8 @@
     var p = type.toLowerCase();
     if (p==='televisie'||p.includes('tv')||p.includes('televisie')||p.match(/(oled|qled|inch)/)) return ['TV installeren','TV ophangen en installeren','Milieuretour / Pick-up ophalen','Schade / Defect'];
     if (p==='soundbar'||p.includes('soundbar')) return ['TV + Soundbar installeren','TV + Soundbar ophangen en installeren','Milieuretour / Pick-up ophalen','Schade / Defect'];
-    if (p==='oven'||p==='magnetron'||p==='fornuis'||p.includes('oven')||p.includes('magnetron')||p.includes('fornuis')||p.includes('kookplaat')||p.includes('afzuigkap')||p.includes('wasemkap')) return ['Apparaat inbouwen (Keuken)','Milieuretour / Pick-up ophalen','Aansluiting controleren','Schade / Defect'];
+    if (p==='oven'||p==='magnetron'||p.includes('oven')||p.includes('magnetron')||p.includes('kookplaat')||p.includes('afzuigkap')||p.includes('wasemkap')) return ['Apparaat inbouwen (Keuken)','Milieuretour / Pick-up ophalen','Aansluiting controleren','Schade / Defect'];
+    if (p==='fornuis'||p.includes('fornuis')) return [];
     if (p.includes('inbouw')) return ['Apparaat inbouwen (Keuken)','Milieuretour / Pick-up ophalen','Aansluiting controleren','Deur omdraaien'];
     if (p.includes('wasmachine')||p.includes('wasdroog')) return ['Trekschakelaar aansluiten','Plaatsen / Naar boven tillen','Stapelkit plaatsen','Milieuretour / Pick-up ophalen','Aansluiting controleren'];
     if (p.includes('droger')) return ['Trekschakelaar aansluiten','Plaatsen / Naar boven tillen','Stapelkit plaatsen','Deur omdraaien','Milieuretour / Pick-up ophalen','Aansluiting controleren'];
@@ -516,7 +517,7 @@
     'inbouw vaatwasser': ['Inbouwen','Deur omdraaien','Aansluiting','Milieuretour / pick-up','Schade / defect','Milieuretour past niet in bus'],
     'oven':              ['Inbouwen','Aansluiting','Milieuretour / pick-up','Schade / defect','Niet uitvoerbaar','Milieuretour past niet in bus'],
     'magnetron':         ['Inbouwen','Aansluiting','Milieuretour / pick-up','Schade / defect','Niet uitvoerbaar','Milieuretour past niet in bus'],
-    'fornuis':           ['Inbouwen','Aansluiting','Milieuretour / pick-up','Schade / defect','Niet uitvoerbaar','Milieuretour past niet in bus'],
+    'fornuis':           ['Niet uitvoerbaar','Milieuretour / pick-up','Schade / defect'],
     'kookplaat':         ['Milieuretour / pick-up','Schade / defect','Niet uitvoerbaar','Milieuretour past niet in bus'],
     'televisie':         ['TV installeren','TV ophangen','Milieuretour / pick-up','Schade / defect','Niet uitvoerbaar','Milieuretour past niet in bus'],
     'televisie+soundbar':['TV + Soundbar','TV + Soundbar ophangen','Milieuretour / pick-up','Schade / defect','Niet uitvoerbaar','Milieuretour past niet in bus'],
@@ -665,7 +666,7 @@
         if (prodKlaar&&milKlaar) {
           // Advies gegeven alleen als escape op uitkomststap als probleem zelf geen concreet probleem is
           var uitkomstType = callData.probleem === 'Advies gegeven' ? 'ux-select' : 'uitkomst-select';
-          s.push({key:'uitkomst',label:'Wat was de uitkomst?',type:uitkomstType,opties:['Same day gepland','Next day gepland','Geen oplossing gepland']});
+          s.push({key:'uitkomst',label:'Wat was de uitkomst?',type:uitkomstType,opties:['Same day gepland','Next day gepland','Klant ziet af van service (meerkosten)','Geen oplossing gepland']});
           if (answeredKeys.includes('uitkomst')) {
             if (callData.uitkomst==='Same day gepland') {
               s.push({key:'geplandeRoute',label:'Op welke route gepland?',type:'route-input'});
@@ -713,7 +714,7 @@
           }
           s.push({key:'probleem',label:'Wat moet er gebeuren bij de klant?',type:'probleem-grouped',opties:getProbleemOpties()});
           if (!answeredKeys.includes('probleem')) return s;
-          if (callData.probleem==='Advies gegeven') {
+          if (callData.probleem==='Advies gegeven' && callData.uitkomst !== 'KS advies gegeven') {
             s.push({key:'advies_gelukt',label:'Is de service na het advies uitgevoerd?',type:'info-select',opties:['Ja, service uitgevoerd','Nee, geen oplossing door DS']});
           } else {
             if (!answeredKeys.includes('product')) {
@@ -734,7 +735,7 @@
             var prodKlaar2 = answeredKeys.includes('product')&&(callData.product!=='Televisie'||answeredKeys.includes('formaatTV')||isTVInstallatie2);
             var milKlaar2  = callData.probleem!=='Milieuretour / Pick-up ophalen'||answeredKeys.includes('milieuretour_type');
             if (prodKlaar2&&milKlaar2) {
-              s.push({key:'uitkomst',label:'Wat was de uitkomst?',type:'uitkomst-select',opties:['Same day gepland','Geen same day mogelijk']});
+              s.push({key:'uitkomst',label:'Wat was de uitkomst?',type:'uitkomst-select',opties:['Same day gepland','Klant ziet af van service (meerkosten)','Geen same day mogelijk']});
               if (answeredKeys.includes('uitkomst')) {
                 if (callData.uitkomst==='Same day gepland') s.push({key:'geplandeRoute',label:'Op welke route gepland?',type:'route-input'});
                 else if (callData.uitkomst==='KS advies gegeven') s.push({key:'ks_advies_uitkomst',label:'Wat was het advies?',type:'ux-select',opties:['Geen same day optie, KS plant zelf oplossing','DS adviseert andere oplossing aan KS']});
@@ -832,6 +833,7 @@
         if (callData.uitkomst==='Helden teruggebeld, rijden terug zonder visit') return 'Spullen achtergelaten — helden teruggebeld';
       }
       if (callData.uitkomst==='Same day gepland') return 'Ja stop gepland (same day)';
+      if (callData.uitkomst==='Klant ziet af van service (meerkosten)') return 'Klant ziet af van service vanwege meerkosten';
       if (callData.uitkomst==='Geen same day mogelijk') return 'Geen same day mogelijk — KS regelt next day nazorg';
       if (callData.uitkomst==='KS advies gegeven') return callData.ks_advies_uitkomst||'KS advies gegeven';
       return 'Nee, geen oplossing door DS';
@@ -853,6 +855,7 @@
       if (isAdv) return callData.advies_gelukt==='Ja, service uitgevoerd' ? 'Advies gegeven aan held waardoor service uitgevoerd is' : 'Nee, geen oplossing door DS';
       if (callData.uitkomst==='Same day gepland')    return 'Ja stop gepland (same day)';
       if (callData.uitkomst==='Next day gepland')    return 'Ja stop gepland (next day)';
+      if (callData.uitkomst==='Klant ziet af van service (meerkosten)') return 'Klant ziet af van service vanwege meerkosten';
       if (callData.uitkomst==='Geen oplossing gepland') return 'Geen oplossing gepland door DS';
       return 'Nee, geen oplossing door DS';
     } else {
@@ -921,7 +924,7 @@
             '<button class="park-info-btn" id="btn-park-info">\u2139</button>' +
           '</div>' +
         '</div></div>' +
-        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.11.12</div>' +
+        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.11.20</div>' +
       '</div>';
 
     // Park tooltip
@@ -1001,13 +1004,15 @@
     advToggle.onclick=function(){ var h=advExpand.style.display==='none'; advExpand.style.display=h?'block':'none'; advToggle.innerText=h?'Advies gegeven \u25b4':'Advies gegeven \u25be'; };
     inner.appendChild(advToggle); inner.appendChild(advExpand);
 
-    // Afhandeling buiten DS — alleen op probleem-select
+    // Afhandeling buiten DS — altijd zichtbaar (eerste 4 opties in 2x2 grid)
     if (toonAfwijkend) {
-      var afwToggle=idoc.createElement('button'); afwToggle.className='ux-btn advies-btn';
-      afwToggle.style.marginBottom='0'; afwToggle.innerText='Afhandeling buiten DS \u25be';
-      var afwExpand=idoc.createElement('div'); afwExpand.style.cssText='display:none;margin-top:5px;';
-      ['Product niet aanwezig','Klant moet KS bellen','Held moet dit bij afmelden regelen met TL','Verkeerd gelabeld product','Overig'].forEach(function(opt){
-        var b=idoc.createElement('button'); b.className='ux-btn'; b.style.marginBottom='4px'; b.innerText=opt;
+      var afwLabel=idoc.createElement('div'); afwLabel.className='section-label'; afwLabel.innerText='Afhandeling buiten DS'; afwLabel.style.marginTop='10px';
+      inner.appendChild(afwLabel);
+
+      var afwGrid=idoc.createElement('div'); afwGrid.style.cssText='display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-bottom:5px;';
+      var standardOpts=['Product niet aanwezig','Klant moet KS bellen','Held moet dit bij afmelden regelen met TL','Verkeerd gelabeld product'];
+      standardOpts.forEach(function(opt){
+        var b=idoc.createElement('button'); b.className='ux-btn'; b.style.cssText='font-size:12px;padding:6px 10px;'; b.innerText=opt;
         b.onclick=function(){
           ['probleem','product','formaatTV','milieuretour_type','uitkomst','geplandeRoute','next_day_reden','geen_oplossing_reden','advies_gelukt','product_keuze'].forEach(function(k){
             callData[k]='';
@@ -1019,9 +1024,27 @@
           if(!answeredKeys.includes('afwijkend_reden')) answeredKeys.push('afwijkend_reden');
           renderApp();
         };
-        afwExpand.appendChild(b);
+        afwGrid.appendChild(b);
       });
-      afwToggle.onclick=function(){ var h=afwExpand.style.display==='none'; afwExpand.style.display=h?'block':'none'; afwToggle.innerText=h?'Afhandeling buiten DS \u25b4':'Afhandeling buiten DS \u25be'; };
+      inner.appendChild(afwGrid);
+
+      // Overig in een aparte toggle
+      var afwToggle=idoc.createElement('button'); afwToggle.className='ux-btn advies-btn'; afwToggle.style.marginBottom='0'; afwToggle.innerText='Overig \u25be';
+      var afwExpand=idoc.createElement('div'); afwExpand.style.cssText='display:none;margin-top:5px;';
+      var b=idoc.createElement('button'); b.className='ux-btn'; b.style.marginBottom='4px'; b.innerText='Overig';
+      b.onclick=function(){
+        ['probleem','product','formaatTV','milieuretour_type','uitkomst','geplandeRoute','next_day_reden','geen_oplossing_reden','advies_gelukt','product_keuze'].forEach(function(k){
+          callData[k]='';
+          var ix=answeredKeys.indexOf(k); if(ix>-1) answeredKeys.splice(ix,1);
+          var ax=autoFilledKeys.indexOf(k); if(ax>-1) autoFilledKeys.splice(ax,1);
+        });
+        callData.locatie='Afhandeling buiten DS'; callData.afwijkend_reden='Overig';
+        if(!answeredKeys.includes('locatie')) answeredKeys.push('locatie');
+        if(!answeredKeys.includes('afwijkend_reden')) answeredKeys.push('afwijkend_reden');
+        renderApp();
+      };
+      afwExpand.appendChild(b);
+      afwToggle.onclick=function(){ var h=afwExpand.style.display==='none'; afwExpand.style.display=h?'block':'none'; afwToggle.innerText=h?'Overig \u25b4':'Overig \u25be'; };
       inner.appendChild(afwToggle); inner.appendChild(afwExpand);
     }
 
@@ -1137,6 +1160,10 @@
       if (callData.locatie==='Winkel' && callData.ks_reden==='Informatie over vracht') {
         submitHtml += '<div class="info-box">ℹ️ <b>Advies aan de winkel:</b><br>Voor informatie over de vracht kunnen zij het best contact opnemen met het depot dat de levering verzorgt' + (callData.depot && callData.depot !== 'Onbekend' ? ': <b>' + callData.depot + '</b>' : '') + '.</div>';
       }
+      // Rode warning voor fornuis
+      if (callData.product==='Fornuis') {
+        submitHtml += '<div class="info-box" style="background:#FFE6E6;border-color:#E63946;color:#C1121F;">⚠️ <b>DS serveert geen fornuizen!</b><br>Deze bestelling kan niet via DS geplaatst worden. Kies "Niet uitvoerbaar" of "Afhandeling buiten DS" voor verdere afhandeling.</div>';
+      }
 
       if (callData.uitkomst === 'Same day gepland' || callData.uitkomst === 'Next day gepland') {
         // Controle vragen + DireXtion link in één blauw paneeltje
@@ -1151,9 +1178,19 @@
           '<a href="' + direxUrl + '" target="_blank" style="color:#0090e3;font-weight:600;">→ Open order ' + callData.orderBron + ' in DireXtion</a></div>' +
           '</div>';
       }
-      submitHtml += '<button id="btn-submit" class="action-btn submit-btn">'+(isGepland?'Loggen & Klembord':'Loggen')+'</button>';
+      if (isGepland) {
+        submitHtml += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:10px;"><button id="btn-clipboard" class="action-btn submit-btn">📋 Klembord</button><button id="btn-loggen" class="action-btn submit-btn">✓ Loggen</button><button id="btn-both" class="action-btn submit-btn">Loggen + Klembord</button></div>';
+      } else {
+        submitHtml += '<button id="btn-loggen" class="action-btn submit-btn">✓ Loggen</button>';
+      }
       container.innerHTML = submitHtml;
-      idoc.getElementById('btn-submit').onclick=isGepland?verstuurEnKopieer:verstuurAlleen;
+      if (isGepland) {
+        idoc.getElementById('btn-clipboard').onclick = function() { kopieerNaarKlembord(); };
+        idoc.getElementById('btn-loggen').onclick = function() { verstuurAlleen(); };
+        idoc.getElementById('btn-both').onclick = function() { verstuurEnKopieer(); };
+      } else {
+        idoc.getElementById('btn-loggen').onclick = function() { verstuurAlleen(); };
+      }
       renderAndersSection(null, null);
       return;
     }
@@ -1565,6 +1602,7 @@
     if (callData.bellerType === 'CBF') {
       if (callData.locatie === 'Vraag voor het depot') {
         probLog = 'Vraag voor het depot: ' + (callData.cbf_depot_reden||'') + (callData.cbf_depot_toelichting ? ' — ' + callData.cbf_depot_toelichting : '');
+        logDriver1 = ''; logDriver2 = ''; logOrderBron = '';
       } else if (callData.locatie === 'Bij de klant') {
         probLog = 'Vraag over pakket: ' + (callData.cbf_pakket_reden||'');
       } else {
@@ -1572,7 +1610,7 @@
       }
       redenGeenOplossing = ''; redenNextDay = ''; routeLog = ''; orderOplLog = '';
     } else if (callData.locatie==='Afhandeling buiten DS') {
-      probLog            = 'Afhandeling buiten DS: ' + callData.afwijkend_reden + (callData.afwijkend_toelichting ? ' — ' + callData.afwijkend_toelichting : '');
+      probLog            = 'Afhandeling buiten DS: ' + callData.afwijkend_reden;
       redenGeenOplossing = ''; redenNextDay = ''; routeLog = ''; orderOplLog = '';
     } else if (callData.locatie==='Winkel') {
       var winkelOpl = callData.ks_reden==='Winkel vraagt om held terug te sturen' ? callData.ks_uitkomst : callData.uitkomst;
@@ -1607,16 +1645,18 @@
     }
     var prodLog = skipRouteFields ? '' : callData.product+(callData.formaatTV?' ('+callData.formaatTV+')':'');
     var bellerLog = callData.locatie==='Klantenservice' ? 'Klantenservice' : callData.locatie==='Winkel' ? 'Winkel' : callData.bellerType||'';
-    return '?id='+Date.now()+'&user='+encodeURIComponent(callData.user)+'&route='+encodeURIComponent(callData.route)+'&depot='+encodeURIComponent(callData.depot)+'&driver1='+encodeURIComponent(logDriver1)+'&driver2='+encodeURIComponent(logDriver2)+'&orderBron='+encodeURIComponent(logOrderBron)+'&product='+encodeURIComponent(prodLog)+'&probleem='+encodeURIComponent(probLog)+'&redenGeenOplossing='+encodeURIComponent(redenGeenOplossing)+'&redenNextDay='+encodeURIComponent(redenNextDay)+'&orderOplossing='+encodeURIComponent(orderOplLog)+'&geplandeRoute='+encodeURIComponent(routeLog)+'&dsWaarde='+encodeURIComponent(callData.dsWaarde)+'&bellerType='+encodeURIComponent(bellerLog)+'&tijdvak='+encodeURIComponent(callData.tijdvak)+'&aankomsttijd='+encodeURIComponent(callData.aankomsttijd);
+    var extraInfo = callData.locatie==='Afhandeling buiten DS' && callData.afwijkend_reden==='Overig' ? callData.afwijkend_toelichting : '';
+    var extraDienst = (callData.locatie==='Klantenservice'||callData.locatie==='Winkel') && callData.ks_reden==='Nazorg nodig' ? 'Ja' : '';
+    return '?id='+Date.now()+'&user='+encodeURIComponent(callData.user)+'&route='+encodeURIComponent(callData.route)+'&depot='+encodeURIComponent(callData.depot)+'&driver1='+encodeURIComponent(logDriver1)+'&driver2='+encodeURIComponent(logDriver2)+'&orderBron='+encodeURIComponent(logOrderBron)+'&product='+encodeURIComponent(prodLog)+'&probleem='+encodeURIComponent(probLog)+'&redenGeenOplossing='+encodeURIComponent(redenGeenOplossing)+'&redenNextDay='+encodeURIComponent(redenNextDay)+'&orderOplossing='+encodeURIComponent(orderOplLog)+'&geplandeRoute='+encodeURIComponent(routeLog)+'&dsWaarde='+encodeURIComponent(callData.dsWaarde)+'&bellerType='+encodeURIComponent(bellerLog)+'&tijdvak='+encodeURIComponent(callData.tijdvak)+'&aankomsttijd='+encodeURIComponent(callData.aankomsttijd)+'&extra_info='+encodeURIComponent(extraInfo)+'&extra_dienst='+encodeURIComponent(extraDienst);
   }
 
-  // ── VERSTUUR: GEPLAND (loggen + klembord) ────────────────────
-  function verstuurEnKopieer() {
+  // ── KLEMBORD ALLEEN ─────────────────────────────────────────
+  function kopieerNaarKlembord() {
     var rawPC, cleanPC='', name, ph, email, address, city;
     if (isBasicPage) {
       // Basic: alle velden staan als losse .details-field entries
       rawPC   = basicField('Postcode');
-      cleanPC = rawPC.replace(/\s+/g,'').toUpperCase(); // bijv. "9150" of "2000"
+      cleanPC = rawPC.replace(/\s+/g,'').toUpperCase();
       city    = basicField('Woonplaats');
       name    = basicField('Naam');
       ph      = (basicFieldInSection('Geadresseerde', 'Telefoonnummer') || basicFieldInSection('Geadresseerde', 'Mobiel nummer') || '').replace(/[^\d+]/g,'');
@@ -1627,10 +1667,10 @@
       rawPC=gs('Static.Visit.PostalCode');
       var dm=rawPC.match(/^(\d{4}\s?[A-Z]{2})(\s|$)/i), bm=rawPC.match(/^(\d{4,5})(\s|$)/);
       if (dm) cleanPC=dm[1].trim(); else if (bm) cleanPC=bm[1].trim(); else cleanPC=(rawPC.match(/^\d{4}/)||[''])[0];
-      city    = rawPC.replace(cleanPC,'').trim();
-      name    = gs('Static.Visit.ConsigneeName');
-      ph      = gs('Static.Visit.Phone').replace(/[^\d+]/g,'');
-      email   = gs('Static.Visit.Email');
+      city = gs('Static.Visit.City')||gs('City')||'';
+      name = gs('Static.Visit.ContactName')||gs('ConsigneeName')||'';
+      ph = (gs('Static.Visit.PhoneNumber')||gs('PhoneNumber')||'').replace(/[^\d+]/g,'');
+      email = gs('Static.Visit.Email')||gs('Email')||'';
       address = gs('Static.Visit.Address')||gs('ConsigneeAddress')||'';
     }
     var pp={'+31':'0','+32':'0','+49':'0','0031':'0','0032':'0','0049':'0'};
@@ -1640,6 +1680,11 @@
     else if (!/[A-Z]/.test(pNS)&&pNS.length===5) { country='Duitsland'; lang='de'; }
     else if (!/[A-Z]/.test(pNS)&&pNS.length===4) { country='België'; lang='nl'; }
     navigator.clipboard.writeText(JSON.stringify({orderNr:callData.orderBron+'-DS',name:name,phone:ph,email:email,zip:cleanPC,city:city,address:address,detectedCountry:country,detectedLanguage:lang,time:Date.now()}));
+  }
+
+  // ── VERSTUUR: GEPLAND (loggen + klembord) ────────────────────
+  function verstuurEnKopieer() {
+    kopieerNaarKlembord();
     verwijderGeparkeerd();
     wrapper.remove();
     fetch('https://script.google.com/a/macros/coolblue.nl/s/AKfycbxb-OwLCFGlDQ48qz3KnGnmsgnVLWxuOjvEr7UG3M3z0WzO0kVsTKGd_8mZjtvHvPHnEg/exec'+bouwLogParams()).catch(function(){});
