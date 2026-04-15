@@ -947,7 +947,7 @@
             '<button class="park-info-btn" id="btn-park-info">\u2139</button>' +
           '</div>' +
         '</div></div>' +
-        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.11.26</div>' +
+        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.11.27</div>' +
       '</div>';
 
     // Park tooltip
@@ -1111,9 +1111,26 @@
     var container=idoc.getElementById('stap-container');
     var stap=getNextStep();
 
+    // Product chip bovenaan
+    var productChip = '';
+    if (callData.model) {
+      var productLabel = '';
+      if (meerdereProducten && !answeredKeys.includes('product_keuze')) {
+        productLabel = 'Apparaten: ' + alleGescrapteProducten.length + ' gevonden';
+      } else if (callData.product) {
+        productLabel = callData.product + ' (' + callData.model + ')';
+      } else {
+        productLabel = 'Model: ' + callData.model;
+      }
+      if (productLabel) {
+        productChip = '<div style="font-size:11px; color:#666; background:#F3F3F3; border:1px solid #E0E0E0; border-radius:12px; padding:3px 8px; display:inline-block; margin-bottom:8px;">' + productLabel + '</div>';
+      }
+    }
+
     // Hervatten scherm bij geparkeerde sessie zelfde order
     if (startMelding === 'hervatten') {
-      container.innerHTML = '<div class="park-melding" style="background:#d4edda;border-color:#00B900;border-left-color:#00B900;color:#155724;">' +
+      container.innerHTML = productChip +
+        '<div class="park-melding" style="background:#d4edda;border-color:#00B900;border-left-color:#00B900;color:#155724;">' +
         '\u23f8 Er is een geparkeerde sessie gevonden voor deze bestelling. Wil je verder gaan waar je gebleven was?' +
         '</div>' +
         '<button id="btn-hervat" class="action-btn submit-btn" style="margin-bottom:8px;">Ja, verder gaan</button>' +
@@ -1134,6 +1151,7 @@
       return;
     }
     if (startMelding && startMelding.startsWith('andere_orders:')) {
+      if (productChip) container.innerHTML = productChip;
       var andereOrders = startMelding.split(':')[1].split(',');
       var meldingDiv = idoc.createElement('div');
       meldingDiv.className = 'park-melding';
@@ -1145,7 +1163,7 @@
     // SAMENVATTING
     if (!stap) {
       var isGepland=callData.uitkomst==='Same day gepland'||callData.uitkomst==='Next day gepland'||callData.uitkomst==='Same day visit gepland'||callData.uitkomst==='Next day visit gepland'||callData.ks_uitkomst==='Same day gepland'||callData.ks_uitkomst==='Next day gepland';
-      var submitHtml = '';
+      var submitHtml = productChip;
 
       // Blauw info paneeltje voor CBF depot vraag
       if (callData.bellerType==='CBF' && callData.locatie==='Vraag voor het depot') {
@@ -1201,7 +1219,7 @@
       return;
     }
 
-    container.innerHTML='<label>'+stap.label+'</label>';
+    container.innerHTML=productChip+'<label>'+stap.label+'</label>';
 
     var handleSelect=function(o) {
       callData[stap.key]=o; answeredKeys.push(stap.key);
