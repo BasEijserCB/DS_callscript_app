@@ -480,6 +480,13 @@ try {
 
   await navigator.clipboard.writeText('');
 
+  // ── MELDING: CONTROLEER DE INGEVULDE VELDEN ──────────────────
+  const toast = document.createElement('div');
+  toast.innerHTML = '<b>DS Logboek</b> — Controleer de automatisch ingevulde velden voor je opslaat.';
+  toast.style.cssText = 'position:fixed;bottom:24px;right:24px;z-index:99999;background:#1A1A2E;color:#fff;padding:14px 18px;border-radius:8px;font-size:13px;font-family:sans-serif;box-shadow:0 4px 12px rgba(0,0,0,.4);max-width:320px;line-height:1.5;';
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 6000);
+
 } catch(error) {
   console.log('error:', error);
 }
