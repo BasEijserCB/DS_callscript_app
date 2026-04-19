@@ -19,12 +19,14 @@ try {
 
   const setDxTagBox = (fieldId, valueArray) => {
     const input = document.querySelector(`input[id$="${fieldId}"]`);
+    console.log('[DS] setDxTagBox input:', input, 'values:', valueArray);
     if (!input) return;
-    // dxTagBox instance is on the outer wrapper (parent of .dx-tag-container)
     const tagContainer = input.closest('.dx-tag-container');
     const container = tagContainer ? tagContainer.parentElement : input.closest('.dx-widget');
+    console.log('[DS] setDxTagBox tagContainer:', tagContainer, 'container:', container);
     if (!container) return;
     const instance = $(container).dxTagBox('instance');
+    console.log('[DS] setDxTagBox instance:', instance);
     if (instance) instance.option('value', valueArray);
   };
 
@@ -467,27 +469,26 @@ try {
   setDxDropdown('_language', orderData.detectedLanguage);
 
   // ── STAP 4b: SAME DAY — KANAAL / NETWERK / SERVICE ───────────
+  console.log('[DS] isSameDay:', isSameDay, 'serviceTypeId:', orderData.serviceTypeId);
   if (isSameDay && orderData.serviceTypeId) {
-    // Determine which kanaal group this service belongs to
     const builtInServices = [277249, 51068, 322997, 277248, 254509, 254508, 490316, 490317];
     const needsBuiltIn = builtInServices.includes(parseInt(orderData.serviceTypeId));
+    console.log('[DS] needsBuiltIn:', needsBuiltIn, 'parsed id:', parseInt(orderData.serviceTypeId));
 
-    // 1. Set initial Kanaal (either Built-in or 2M) to enable service options
     const initialChannelId = needsBuiltIn ? 132134 : 16;
     setDxDropdown('_channelId', initialChannelId);
+    console.log('[DS] set channelId to', initialChannelId);
     await new Promise(resolve => setTimeout(resolve, 600));
 
-    // 2. Set Service (single-value TagBox)
     setDxTagBox('_services', [orderData.serviceTypeId]);
     await new Promise(resolve => setTimeout(resolve, 400));
 
-    // 3. If we used Built-in temporarily, reset Kanaal back to 2M
     if (needsBuiltIn) {
       setDxDropdown('_channelId', 16);
       await new Promise(resolve => setTimeout(resolve, 400));
     }
 
-    // 4. Set Netwerk to 2M
+    console.log('[DS] setting networkId to 12');
     setDxDropdown('_networkId', 12);
   }
 
