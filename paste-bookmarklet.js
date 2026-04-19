@@ -21,12 +21,25 @@ try {
     const input = document.querySelector(`input[id$="${fieldId}"]`);
     if (!input) return;
     let el = input.parentElement;
-    let instance = null;
-    while (el && !instance) {
-      try { instance = $(el).dxTagBox('instance'); } catch(e) {}
-      if (!instance) el = el.parentElement;
+    while (el) {
+      const components = $(el).data('dxComponents');
+      if (components && components.length) {
+        console.log('[DS] dxComponents at el:', components, el.className);
+        for (const comp of components) {
+          try {
+            const inst = $(el)[comp]('instance');
+            if (inst) {
+              console.log('[DS] got instance for', comp, '- setting value', valueArray);
+              inst.option('value', valueArray);
+              console.log('[DS] value after set:', inst.option('value'));
+              return;
+            }
+          } catch(e) {}
+        }
+      }
+      el = el.parentElement;
     }
-    if (instance) instance.option('value', valueArray);
+    console.log('[DS] no dxTagBox-like instance found for', fieldId);
   };
 
   const isSameDay = (orderData.uitkomst || '').toLowerCase().includes('same day');
