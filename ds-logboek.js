@@ -746,6 +746,7 @@
           if (answeredKeys.includes('uitkomst')) {
             if (callData.uitkomst==='Same day gepland') {
               s.push({key:'geplandeRoute',label:'Op welke route gepland?',type:'route-input'});
+              if (answeredKeys.includes('geplandeRoute')&&!skipDienstType()) s.push({key:'dienstType',label:'Is dit Nazorg of een Extra dienst?',type:'dienst-select'});
             } else if (callData.uitkomst==='Next day gepland') {
               if (!skipDienstType()) s.push({key:'dienstType',label:'Is dit Nazorg of een Extra dienst?',type:'dienst-select'});
               if (answeredKeys.includes('dienstType')||skipDienstType()) s.push({key:'next_day_reden',label:'Waarom niet same day?',type:'ux-select',opties:nextDayRedenen});
@@ -832,8 +833,10 @@
         } else if (callData.ks_reden==='KS vraagt om held terug te sturen' || callData.ks_reden==='Winkel vraagt om held terug te sturen') {
           s.push({key:'ks_uitkomst',label:'Wat was de uitkomst?',type:'uitkomst-select',opties:['Teamleider stuurt helden terug','Teamleider stuurt helden niet terug','Same day gepland','Next day gepland','DS vindt terugsturen niet de juiste oplossing']});
           if (answeredKeys.includes('ks_uitkomst')) {
-            if (callData.ks_uitkomst==='Same day gepland') s.push({key:'geplandeRoute',label:'Op welke route gepland?',type:'route-input'});
-            else if (callData.ks_uitkomst==='Next day gepland') {
+            if (callData.ks_uitkomst==='Same day gepland') {
+              s.push({key:'geplandeRoute',label:'Op welke route gepland?',type:'route-input'});
+              if (answeredKeys.includes('geplandeRoute')&&!skipDienstType()) s.push({key:'dienstType',label:'Is dit Nazorg of een Extra dienst?',type:'dienst-select'});
+            } else if (callData.ks_uitkomst==='Next day gepland') {
               if (!skipDienstType()) s.push({key:'dienstType',label:'Is dit Nazorg of een Extra dienst?',type:'dienst-select'});
               if (answeredKeys.includes('dienstType')||skipDienstType()) s.push({key:'next_day_reden',label:'Waarom niet same day?',type:'ux-select',opties:nextDayRedenen});
             }
@@ -1026,7 +1029,7 @@
             '<button class="park-info-btn" id="btn-park-info">\u2139</button>' +
           '</div>' +
         '</div></div>' +
-        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.12.13</div>' +
+        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.12.14</div>' +
       '</div>';
 
     // Park tooltip
@@ -1797,15 +1800,16 @@
     else if (!/[A-Z]/.test(pNS)&&pNS.length===5) { country='Duitsland'; lang='de'; }
     else if (!/[A-Z]/.test(pNS)&&pNS.length===4) { country='België'; lang='nl'; }
     var prob=(callData.probleem||'').toLowerCase();
+    var isNazorg = callData.dienstType !== 'Extra dienst (betaald)';
     var serviceTypeId=null;
-    if (prob.includes('plaatsen')||prob.includes('tillen')) serviceTypeId=51072;
+    if (prob.includes('plaatsen')||prob.includes('tillen')) serviceTypeId=isNazorg?51072:1544947;
     else if (prob.includes('aansluiting')) serviceTypeId=51060;
     else if (prob.includes('slang')) serviceTypeId=51064;
     else if (prob.includes('trekschakelaar')) serviceTypeId=277249;
     else if (prob.includes('milieuretour')) serviceTypeId=20;
     else if (prob.includes('deur omdraaien')) serviceTypeId=51068;
     else if (prob.includes('inbouwen')) serviceTypeId=322997;
-    else if (prob.includes('stapelkit')) serviceTypeId=727124;
+    else if (prob.includes('stapelkit')) serviceTypeId=isNazorg?727124:727123;
     else if (prob.includes('spullen achtergelaten')) serviceTypeId=51076;
     else if (prob.includes('frontpaneel')) serviceTypeId=277248;
     else if (prob.includes('tv ophangen')||prob.includes('ophangen')) serviceTypeId=254508;
