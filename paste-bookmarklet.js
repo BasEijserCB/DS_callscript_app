@@ -466,11 +466,23 @@ try {
 
   // ── STAP 4b: SAME DAY — KANAAL / NETWERK / SERVICE ───────────
   if (isSameDay && orderData.serviceTypeId) {
-    setDxDropdown('_channelId', 16);
-    await new Promise(resolve => setTimeout(resolve, 800));
-    setDxTagBox('_services', [parseInt(orderData.serviceTypeId)]);
-    await new Promise(resolve => setTimeout(resolve, 400));
-    setDxDropdown('_networkId', 12);
+    const builtInServices = [277249, 51068, 322997, 277248, 254509, 254508, 490316, 490317];
+    const needsBuiltIn = builtInServices.includes(parseInt(orderData.serviceTypeId));
+    if (needsBuiltIn) {
+      setDxDropdown('_channelId', 132134);
+      await new Promise(resolve => setTimeout(resolve, 800));
+      setDxTagBox('_services', [parseInt(orderData.serviceTypeId)]);
+      await new Promise(resolve => setTimeout(resolve, 400));
+      setDxDropdown('_networkId', 12);
+      await new Promise(resolve => setTimeout(resolve, 400));
+      setDxDropdown('_channelId', 16);
+    } else {
+      setDxDropdown('_channelId', 16);
+      await new Promise(resolve => setTimeout(resolve, 800));
+      setDxDropdown('_networkId', 12);
+      await new Promise(resolve => setTimeout(resolve, 400));
+      setDxTagBox('_services', [parseInt(orderData.serviceTypeId)]);
+    }
   }
 
   // ── STAP 5: SHOW ON DEVICE ────────────────────────────────────
