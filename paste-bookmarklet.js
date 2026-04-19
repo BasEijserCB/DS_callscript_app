@@ -20,7 +20,7 @@ try {
   const setDxTagBox = (fieldId, valueArray) => {
     const input = document.querySelector(`input[id$="${fieldId}"]`);
     if (!input) return;
-    const container = input.closest('.dx-widget') || input.closest('.dx-tagbox');
+    const container = input.closest('.dx-tag-container') || input.closest('.dx-widget');
     if (!container) return;
     const instance = $(container).dxTagBox('instance');
     if (instance) instance.option('value', valueArray);
