@@ -488,7 +488,7 @@ try {
     setDxDropdown('_channelId', initialChannelId);
     await new Promise(resolve => setTimeout(resolve, 600));
 
-    setDxTagBox('_services', [orderData.serviceTypeId]);
+    setDxTagBox('_services', [String(orderData.serviceTypeId)]);
     await new Promise(resolve => setTimeout(resolve, 400));
 
     if (needsBuiltIn) {
