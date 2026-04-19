@@ -1,7 +1,7 @@
 # DS Logboek — Projectoverzicht & Technische Documentatie
 
 **Delivery Support — Coolblue**
-Versie 1.11.x — April 2026
+Versie 1.12.7 — April 2026
 
 ---
 

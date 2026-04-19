@@ -1,8 +1,37 @@
 # DS Logboek — Sessielog April 2026
 
 **Versie aan begin sessie:** v1.11.27  
-**Versie aan einde sessie:** v1.12.3  
-**Bestanden gewijzigd:** `ds-logboek.js`, nieuw bestand `paste-bookmarklet.js`
+**Versie aan einde sessie (vorige update):** v1.12.3  
+**Huidige versie:** v1.12.7  
+**Bestanden gewijzigd:** `ds-logboek.js`, `paste-bookmarklet.js`, `build.py`
+
+---
+
+## Aanvullingen na v1.12.3
+
+### v1.12.4 — Polen telefoonnormalisatie
+- Toegevoegd: +48 en 0048 (Polen) aan de telefoonprefixkaart in `ds-logboek.js`
+- Effect: nummers van Polen worden nu correct gestript naar lokaal formaat
+
+### v1.12.5 — Same-day ondersteuning
+- **Uitgebreide clipboard JSON** met `uitkomst` en `geplandeRoute` velden
+- **Paste bookmarklet logica bijgewerkt:**
+  - Detecteert same-day planning via `uitkomst.includes('same day')`
+  - Slaat sjabloon over voor same-day
+  - Vult automatisch shipper (`1012729` = Coolblue DeliverySupport) en depot
+  - Depot wordt bepaald uit de gebruiker-opgegeven route (4-letter code)
+- **Effect:** Same-day orders hoeven geen sjabloon meer te selecteren; shipper + depot worden automatisch ingevuld
+
+### v1.12.6 — Toast melding & build.py opruiming
+- **Toast notification toegevoegd** aan paste bookmarklet: reminders gebruiker om ingevulde velden te controleren
+- **Build.py vereenvoudigd:**
+  - Verwijderd: regex backslash correctie (niet meer nodig sinds we niet via GAS werken)
+  - Toegevoegd: versie header in `paste-bookmarklet-min.txt` voor traceerbaarheid
+
+### v1.12.7 — Toast styling
+- Toast melding verplaatst naar top-right hoek
+- Grootte vergroot (font 15px, padding 16/22px, max-width 380px)
+- Doel: meer zichtbaar en opvallend
 
 ---
 
