@@ -20,26 +20,10 @@ try {
   const setDxTagBox = (fieldId, valueArray) => {
     const input = document.querySelector(`input[id$="${fieldId}"]`);
     if (!input) return;
-    let el = input.parentElement;
-    while (el) {
-      const components = $(el).data('dxComponents');
-      if (components && components.length) {
-        console.log('[DS] dxComponents at el:', components, el.className);
-        for (const comp of components) {
-          try {
-            const inst = $(el)[comp]('instance');
-            if (inst) {
-              console.log('[DS] got instance for', comp, '- setting value', valueArray);
-              inst.option('value', valueArray);
-              console.log('[DS] value after set:', inst.option('value'));
-              return;
-            }
-          } catch(e) {}
-        }
-      }
-      el = el.parentElement;
-    }
-    console.log('[DS] no dxTagBox-like instance found for', fieldId);
+    const container = input.closest('.dx-tagbox');
+    if (!container) return;
+    const instance = $(container).dxTagBox('instance');
+    if (instance) instance.option('value', valueArray);
   };
 
   const isSameDay = (orderData.uitkomst || '').toLowerCase().includes('same day');
@@ -482,20 +466,10 @@ try {
 
   // ── STAP 4b: SAME DAY — KANAAL / NETWERK / SERVICE ───────────
   if (isSameDay && orderData.serviceTypeId) {
-    const builtInServices = [277249, 51068, 322997, 277248, 254509, 254508, 490316, 490317];
-    const needsBuiltIn = builtInServices.includes(parseInt(orderData.serviceTypeId));
-    const initialChannelId = needsBuiltIn ? 132134 : 16;
-    setDxDropdown('_channelId', initialChannelId);
-    await new Promise(resolve => setTimeout(resolve, 600));
-
-    setDxTagBox('_services', [String(orderData.serviceTypeId)]);
+    setDxDropdown('_channelId', 16);
+    await new Promise(resolve => setTimeout(resolve, 800));
+    setDxTagBox('_services', [parseInt(orderData.serviceTypeId)]);
     await new Promise(resolve => setTimeout(resolve, 400));
-
-    if (needsBuiltIn) {
-      setDxDropdown('_channelId', 16);
-      await new Promise(resolve => setTimeout(resolve, 400));
-    }
-
     setDxDropdown('_networkId', 12);
   }
 
