@@ -1029,7 +1029,7 @@
             '<button class="park-info-btn" id="btn-park-info">\u2139</button>' +
           '</div>' +
         '</div></div>' +
-        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.12.14</div>' +
+        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.12.15</div>' +
       '</div>';
 
     // Park tooltip
@@ -1802,7 +1802,7 @@
     var prob=(callData.probleem||'').toLowerCase();
     var isNazorg = callData.dienstType !== 'Extra dienst (betaald)';
     var serviceTypeId=null;
-    if (prob.includes('plaatsen')||prob.includes('tillen')) serviceTypeId=isNazorg?51072:1544947;
+    if (prob.includes('plaatsen')||prob.includes('tillen')) serviceTypeId=51072;
     else if (prob.includes('aansluiting')) serviceTypeId=51060;
     else if (prob.includes('slang')) serviceTypeId=51064;
     else if (prob.includes('trekschakelaar')) serviceTypeId=277249;
