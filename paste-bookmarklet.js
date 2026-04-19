@@ -17,6 +17,15 @@ try {
     if (instance) instance.option('value', fieldValue);
   };
 
+  const setDxTagBox = (fieldId, valueArray) => {
+    const input = document.querySelector(`input[id$="${fieldId}"]`);
+    if (!input) return;
+    const container = input.closest('.dx-widget') || input.closest('.dx-tagbox');
+    if (!container) return;
+    const instance = $(container).dxTagBox('instance');
+    if (instance) instance.option('value', valueArray);
+  };
+
   const isSameDay = (orderData.uitkomst || '').toLowerCase().includes('same day');
 
   // ── STAP 1: SJABLOON EERST (zodat het geen velden overschrijft) ──
@@ -454,6 +463,32 @@ try {
   setDxDropdown('_countryId', countryIds[orderData.detectedCountry]);
   await new Promise(resolve => setTimeout(resolve, 500));
   setDxDropdown('_language', orderData.detectedLanguage);
+
+  // ── STAP 4b: SAME DAY — KANAAL / NETWERK / SERVICE ───────────
+  if (isSameDay && orderData.serviceTypeId) {
+    // Determine which kanaal group this service belongs to
+    const builtInServices = [277249, 51068, 322997, 277248, 254509, 254508, 490316, 490317];
+    const needsBuiltIn = builtInServices.includes(parseInt(orderData.serviceTypeId));
+
+    if (needsBuiltIn) {
+      // Set to Built-in, select service, reset to 2M
+      setDxDropdown('_channelId', 132134);
+      await new Promise(resolve => setTimeout(resolve, 600));
+    }
+
+    // Set Service (single-value TagBox)
+    setDxTagBox('_services', [orderData.serviceTypeId]);
+    await new Promise(resolve => setTimeout(resolve, 400));
+
+    if (needsBuiltIn) {
+      // Reset Kanaal to 2M
+      setDxDropdown('_channelId', 16);
+      await new Promise(resolve => setTimeout(resolve, 400));
+    }
+
+    // Set Netwerk to 2M
+    setDxDropdown('_networkId', 12);
+  }
 
   // ── STAP 5: SHOW ON DEVICE ────────────────────────────────────
   const checkbox = document.querySelector('input[name="showOnDevice"]');

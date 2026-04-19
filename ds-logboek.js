@@ -1026,7 +1026,7 @@
             '<button class="park-info-btn" id="btn-park-info">\u2139</button>' +
           '</div>' +
         '</div></div>' +
-        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.12.7</div>' +
+        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.12.8</div>' +
       '</div>';
 
     // Park tooltip
@@ -1795,7 +1795,23 @@
     if (/[A-Z]/.test(pNS)&&pNS.replace(/\D/g,'').length===4) { country='Nederland'; lang='nl'; }
     else if (!/[A-Z]/.test(pNS)&&pNS.length===5) { country='Duitsland'; lang='de'; }
     else if (!/[A-Z]/.test(pNS)&&pNS.length===4) { country='België'; lang='nl'; }
-    navigator.clipboard.writeText(JSON.stringify({orderNr:callData.orderBron+'-DS',name:name,phone:ph,email:email,zip:cleanPC,city:city,address:address,detectedCountry:country,detectedLanguage:lang,product:effectiefProduct(),probleem:callData.probleem,dienstType:callData.dienstType,formaatTV:callData.formaatTV,uitkomst:callData.uitkomst||callData.ks_uitkomst||'',geplandeRoute:callData.geplandeRoute||'',time:Date.now()}));
+    var prob=(callData.probleem||'').toLowerCase();
+    var serviceTypeId=null;
+    if (prob.includes('plaatsen')||prob.includes('tillen')) serviceTypeId=51072;
+    else if (prob.includes('aansluiting')) serviceTypeId=51060;
+    else if (prob.includes('slang')) serviceTypeId=51064;
+    else if (prob.includes('trekschakelaar')) serviceTypeId=277249;
+    else if (prob.includes('milieuretour')) serviceTypeId=20;
+    else if (prob.includes('deur omdraaien')) serviceTypeId=51068;
+    else if (prob.includes('inbouwen')) serviceTypeId=322997;
+    else if (prob.includes('stapelkit')) serviceTypeId=727124;
+    else if (prob.includes('spullen achtergelaten')) serviceTypeId=51076;
+    else if (prob.includes('frontpaneel')) serviceTypeId=277248;
+    else if (prob.includes('tv ophangen')||prob.includes('ophangen')) serviceTypeId=254508;
+    else if (prob.includes('tv installeren')||prob.includes('aansluiten')) serviceTypeId=254509;
+    else if (prob.includes('tv + soundbar ophang')) serviceTypeId=490317;
+    else if (prob.includes('tv + soundbar')) serviceTypeId=490316;
+    navigator.clipboard.writeText(JSON.stringify({orderNr:callData.orderBron+'-DS',name:name,phone:ph,email:email,zip:cleanPC,city:city,address:address,detectedCountry:country,detectedLanguage:lang,product:effectiefProduct(),probleem:callData.probleem,dienstType:callData.dienstType,formaatTV:callData.formaatTV,uitkomst:callData.uitkomst||callData.ks_uitkomst||'',geplandeRoute:callData.geplandeRoute||'',serviceTypeId:serviceTypeId,time:Date.now()}));
   }
 
   // ── VERSTUUR: GEPLAND (loggen + klembord) ────────────────────
