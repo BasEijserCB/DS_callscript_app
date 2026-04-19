@@ -22,7 +22,7 @@ try {
     console.log('[DS] setDxTagBox input:', input, 'values:', valueArray);
     if (!input) return;
     const tagContainer = input.closest('.dx-tag-container');
-    const container = tagContainer ? tagContainer.parentElement : input.closest('.dx-widget');
+    const container = tagContainer ? tagContainer.parentElement.parentElement : input.closest('.dx-widget');
     console.log('[DS] setDxTagBox tagContainer:', tagContainer, 'container:', container);
     if (!container) return;
     const instance = $(container).dxTagBox('instance');
