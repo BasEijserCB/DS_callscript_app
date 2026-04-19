@@ -17,8 +17,10 @@ try {
     if (instance) instance.option('value', fieldValue);
   };
 
+  const isSameDay = (orderData.uitkomst || '').toLowerCase().includes('same day');
+
   // ── STAP 1: SJABLOON EERST (zodat het geen velden overschrijft) ──
-  if (orderData.dienstType) {
+  if (orderData.dienstType && !isSameDay) {
     const land    = orderData.detectedCountry;
     const product = (orderData.product || '').toLowerCase();
     const probleem = (orderData.probleem || '').toLowerCase();
@@ -392,6 +394,28 @@ try {
           await new Promise(resolve => setTimeout(resolve, 800));
         }
       }
+    }
+  }
+
+  // ── STAP 1b: SAME DAY — AFZENDER + DEPOT ─────────────────────
+  if (isSameDay) {
+    const depotCodeIds = {
+      'NLAL': '2021191', 'NLDE': '696250',  'NLGR': '4885',
+      'NLRO': '1721',    'NLTI': '13',       'NLUT': '14',
+      'NLVE': '421593',  'NLEI': '56669',    'NLDH': '85705',
+      'NLOV': '94515',   'DEDU': '558485',   'DEKE': '1301373',
+      'DEHA': '1578843', 'DELA': '1819366',  'DEHM': '1858536',
+      'DESC': '2106913', 'DETA': '2009534',  'DENU': '2249404',
+      'DEES': '815480',  'BEAN': '18808',    'BEGE': '35210',
+      'BENI': '696230',  'BEZA': '231149',   'BEWI': '158831',
+    };
+    setDxDropdown('_shipperId', '1012729');
+    await new Promise(resolve => setTimeout(resolve, 500));
+    const routeCode = (orderData.geplandeRoute || '').match(/[A-Z]{4}/)?.[0];
+    const depotId = routeCode && depotCodeIds[routeCode];
+    if (depotId) {
+      setDxDropdown('_depotId', depotId);
+      await new Promise(resolve => setTimeout(resolve, 500));
     }
   }
 
