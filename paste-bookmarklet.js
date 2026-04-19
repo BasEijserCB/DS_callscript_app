@@ -470,23 +470,22 @@ try {
     const builtInServices = [277249, 51068, 322997, 277248, 254509, 254508, 490316, 490317];
     const needsBuiltIn = builtInServices.includes(parseInt(orderData.serviceTypeId));
 
-    if (needsBuiltIn) {
-      // Set to Built-in, select service, reset to 2M
-      setDxDropdown('_channelId', 132134);
-      await new Promise(resolve => setTimeout(resolve, 600));
-    }
+    // 1. Set initial Kanaal (either Built-in or 2M) to enable service options
+    const initialChannelId = needsBuiltIn ? 132134 : 16;
+    setDxDropdown('_channelId', initialChannelId);
+    await new Promise(resolve => setTimeout(resolve, 600));
 
-    // Set Service (single-value TagBox)
+    // 2. Set Service (single-value TagBox)
     setDxTagBox('_services', [orderData.serviceTypeId]);
     await new Promise(resolve => setTimeout(resolve, 400));
 
+    // 3. If we used Built-in temporarily, reset Kanaal back to 2M
     if (needsBuiltIn) {
-      // Reset Kanaal to 2M
       setDxDropdown('_channelId', 16);
       await new Promise(resolve => setTimeout(resolve, 400));
     }
 
-    // Set Netwerk to 2M
+    // 4. Set Netwerk to 2M
     setDxDropdown('_networkId', 12);
   }
 
