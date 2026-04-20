@@ -29,6 +29,16 @@ localStorage.removeItem('ds_app_prod_cache')
 
 **Versienummer** alleen ophogen bij wijzigingen aan `ds-logboek.js` — zonder te vragen. Patch voor bugfix, minor voor nieuwe feature.
 
+**BELANGRIJK:** `install.html` en `paste-bookmarklet-min.txt` moeten altijd in sync zijn. Na `python3 build.py` moet je `install.html` updaten:
+- Versie in badge en footer → paste-bookmarklet-min.txt regel 1
+- `href` in de bookmarklet-link → paste-bookmarklet-min.txt regel 2 (volledige URL)
+
+Controleer met:
+```python
+# Extract paste-bookmarklet-min.txt regel 2
+# en vergelijk met href in install.html
+```
+
 ---
 
 ## Architectuur
