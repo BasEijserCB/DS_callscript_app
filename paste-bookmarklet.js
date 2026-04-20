@@ -452,13 +452,11 @@ try {
         addBtn.click();
         await new Promise(resolve => setTimeout(resolve, 500));
 
-        // Click on the newly added article to select it (needed for 2nd+ products)
-        if (pidx > 0) {
-          const articles = document.querySelectorAll('[data-options*="dxTemplate"][data-options*="article"]');
-          if (articles.length > pidx) {
-            articles[pidx].click();
-            await new Promise(resolve => setTimeout(resolve, 300));
-          }
+        // Click on the article to select it (activates DX form fields for this row)
+        const articles = document.querySelectorAll('[data-options*="dxTemplate"][data-options*="article"]');
+        if (articles.length > pidx) {
+          articles[pidx].click();
+          await new Promise(resolve => setTimeout(resolve, 300));
         }
 
         // Set code = "1"
@@ -468,6 +466,7 @@ try {
           codeInput.focus();
           codeInput.value = '1';
           ['input', 'change', 'blur'].forEach(t => codeInput.dispatchEvent(new Event(t, {bubbles: true})));
+          await new Promise(resolve => setTimeout(resolve, 300));
         }
 
         // Set services TagBox to plaatsen (51072)
