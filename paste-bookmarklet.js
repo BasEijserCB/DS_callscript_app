@@ -428,6 +428,58 @@ try {
     }
   }
 
+  // ── STAP 1c: SAME DAY PLAATSEN/TILLEN — PRODUCT RIJ TOEVOEGEN ─
+  if (isSameDay && (orderData.probleem || '').toLowerCase().match(/plaatsen|tillen/)) {
+    const articleTypeIds = {
+      'wasmachine': 133,
+      'wasdroogcombinatie': 361,
+      'droger': 358,
+      'koelkast': 330,
+      'vriezer': 352,
+      'amerikaanse koelkast': 253782,
+      'amerikaanse koelkast met waterdispenser': 253782,
+      'side-by-side koelkast': 330,
+      'inbouw koelkast': 330,
+      'inbouw vriezer': 352,
+    };
+    const addBtn = document.querySelector('.dx-icon-add')?.closest('.dx-button');
+    if (addBtn) {
+      addBtn.click();
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      // Set code = "1"
+      const codeInputs = document.querySelectorAll('input[name="code"]');
+      const codeInput = codeInputs[codeInputs.length - 1];
+      if (codeInput) {
+        codeInput.focus();
+        codeInput.value = '1';
+        ['input', 'change', 'blur'].forEach(t => codeInput.dispatchEvent(new Event(t, {bubbles: true})));
+      }
+
+      // Set services TagBox to (Nazorg) plaatsen/aansluiten
+      const svcInputs = document.querySelectorAll('input[id$="_services"]');
+      const svcInput = svcInputs[svcInputs.length - 1];
+      if (svcInput) {
+        const container = svcInput.closest('.dx-tagbox');
+        const instance = container && $(container).dxTagBox('instance');
+        if (instance) instance.option('value', [51072]);
+      }
+
+      // Set articleTypeId based on product
+      const productKey = normaliseerProduct(orderData.product || '');
+      const articleTypeId = productKey && articleTypeIds[productKey];
+      if (articleTypeId) {
+        const artInputs = document.querySelectorAll('input[id$="_articleTypeId"]');
+        const artInput = artInputs[artInputs.length - 1];
+        if (artInput) {
+          const container = artInput.closest('.dx-selectbox');
+          const instance = container && $(container).dxSelectBox('instance');
+          if (instance) instance.option('value', articleTypeId);
+        }
+      }
+    }
+  }
+
   // ── STAP 2: ADRES SPLITSEN ────────────────────────────────────
   let streetName = orderData.address, houseNumber = '';
   const addressMatch = orderData.address.match(/^(.*?)\s?(\d+.*)$/);
