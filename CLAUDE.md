@@ -141,6 +141,45 @@ const setDxTagBox = (fieldId, valueArray) => {
 
 ---
 
+## Console commands — DOM selectors ontdekken
+
+Gebruik browser DevTools console op de DireXtion Import formulierpagina om selectors te testen:
+
+```javascript
+// Vind alle elementen die voldoen aan een selector
+document.querySelectorAll('[data-options*="dxTemplate"][data-options*="article"]')
+
+// Inspecteer wat er in een attribuut zit
+document.querySelector('input[id$="_services"]')?.getAttribute('id')
+
+// Test DevExtreme instance ophalen (bijv. SelectBox, TagBox, Form)
+const input = document.querySelector('input[id$="_countryId"]');
+const container = input?.closest('.dx-selectbox');
+const instance = $(container).dxSelectBox('instance');
+instance?.option('value')  // huidige waarde
+
+// Vind de tweede form (voor remark/opmerking veld)
+document.querySelectorAll('.dx-form')[1]
+
+// Test artikel elementen klikken en hun index bepalen
+const articles = document.querySelectorAll('[data-options*="dxTemplate"][data-options*="article"]');
+articles[0].click();  // klik op artikel 1
+articles[1].click();  // klik op artikel 2 (na add-button klik)
+
+// Vind de add-button (voor meerdere artikelen)
+document.querySelector('.dx-icon-add')?.closest('.dx-button')
+```
+
+**Workflow voor nieuwe DOM manipulatie:**
+1. Open DevTools (F12), ga naar Console tab
+2. Voer `document.querySelectorAll('...')` uit om elementen te vinden
+3. Test selectors met verschillende attributen: `[id$="..."]`, `[data-bind*="..."]`, `[data-options*="..."]`, etc.
+4. Zodra je de juiste selector hebt, test je de manipulatie: `element.click()`, `instance.option('value', x)`
+5. Gebruik `await new Promise(resolve => setTimeout(resolve, 500))` voor async operaties
+6. Implementeer in paste-bookmarklet.js en test met bookmarklet op echte DireXtion pagina
+
+---
+
 ## ds-logboek.js — relevante functies
 
 ```javascript
