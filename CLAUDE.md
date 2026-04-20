@@ -60,12 +60,13 @@ ds-logboek.js  (scrapet DOM → gespreksflow → twee outputs)
   detectedCountry,    // 'Nederland' | 'België' | 'Duitsland'
   detectedLanguage,   // 'nl' | 'de'
   product,            // effectiefProduct() — meest granulaire waarde
+  products,           // [array] — alleen bij plaatsen service met meerdere producten (product_keuze)
   probleem,           // geselecteerde taak
   dienstType,         // 'Nazorg (gratis)' | 'Extra dienst (betaald)' | ''
   formaatTV,          // 'Ja (>= 55 inch)' | 'Nee (< 55 inch)'
   uitkomst,           // bijv. 'Same day gepland'
   geplandeRoute,      // bijv. '2M-NLOV-07'
-  serviceTypeId,      // numerieke service ID voor same-day TagBox
+  serviceTypeId,      // numerieke service ID voor same-day TagBox (51072 voor plaatsen)
   time                // Date.now() — payload vervalt na 5 minuten
 }
 ```
@@ -76,12 +77,13 @@ ds-logboek.js  (scrapet DOM → gespreksflow → twee outputs)
 
 1. **Sjabloon eerst** (`_orderTemplateId`) + 800ms wacht — anders overschrijft sjabloon later ingevulde velden. Alleen bij next-day (`dienstType` aanwezig).
 2. **Same-day: shipper + depot** — shipper altijd `1012729` (Coolblue DeliverySupport); depot via 4-letter routecode uit `geplandeRoute` (bijv. `NLOV` → depot ID).
-3. Standaard velden: naam, telefoon, email, postcode, straat, huisnummer, woonplaats.
-4. Land (`_countryId`) + 500ms wacht.
-5. Taal (`_language`).
-6. **Same-day: kanaal / service / netwerk** (zie hieronder).
-7. Show on device checkbox.
-8. Opmerkingenveld: `product - probleem`.
+3. **Meerdere producten (plaatsen service)** — loop voor elk product in `products` array: click add-button, click article item (voor 2e+), fill details, service = 51072.
+4. Standaard velden: naam, telefoon, email, postcode, straat, huisnummer, woonplaats.
+5. Land (`_countryId`) + 500ms wacht.
+6. Taal (`_language`).
+7. **Same-day: kanaal / service / netwerk** (zie hieronder).
+8. Show on device checkbox.
+9. Opmerkingenveld: `product(s) - probleem` (multiple products als comma-separated).
 
 ---
 
@@ -175,6 +177,7 @@ Prefixen worden gestript naar lokaal formaat: NL (+31/0031), BE (+32/0032), DE (
 
 | Versie | Wijziging |
 |---|---|
+| v1.12.16 | Add: meerdere producten ondersteuning voor plaatsen service (product_keuze → products array) |
 | v1.12.15 | Fix: plaatsen Extra dienst mapping teruggedraaid naar Nazorg default (51072) |
 | v1.12.14 | Add: dienstType vraag in same-day flow; serviceTypeId stapelkit N/E onderscheid |
 | v1.12.13 | Fix: volgorde kanaal/service/netwerk hersteld; builtInServices branch terug |
