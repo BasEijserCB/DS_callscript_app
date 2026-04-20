@@ -28,6 +28,44 @@ try {
 
   const isSameDay = (orderData.uitkomst || '').toLowerCase().includes('same day');
 
+  function normaliseerProbleem(p) {
+    if (p.includes('trekschakelaar'))              return 'trekschakelaar';
+    if (p.includes('stapelkit'))                   return 'stapelkit';
+    if (p.includes('milieuretour') || p.includes('pick-up')) return 'milieuretour';
+    if (p.includes('inbouwen') || p.includes('inbouw'))      return 'inbouwen';
+    if (p.includes('frontpaneel'))                 return 'frontpaneel';
+    if (p.includes('deur omdraaien'))              return 'deur omdraaien';
+    if (p.includes('plaatsen') || p.includes('tillen')) return 'plaatsen';
+    if (p.includes('aansluiting') || p.includes('aansluiten en plaatsen')) return 'aansluiting';
+    if (p.includes('tv + soundbar') && (p.includes('ophang') || p.includes('hangen'))) return 'tv + soundbar ophang';
+    if (p.includes('tv + soundbar'))               return 'tv + soundbar';
+    if (p.includes('tv ophangen') || (p.includes('tv') && p.includes('ophangen'))) return 'tv ophangen';
+    if (p.includes('tv installeren') || p.includes('tv aansluiten')) return 'tv installeren';
+    return null;
+  }
+  function normaliseerProduct(p) {
+    p = p.toLowerCase();
+    if (p.includes('was-droog') || p.includes('wasdroog')) return 'wasdroogcombinatie';
+    if (p.includes('wasmachine'))                   return 'wasmachine';
+    if (p.includes('droger') || p.includes('droog')) return 'droger';
+    if (p.includes('amerikaanse') && p.includes('water')) return 'amerikaanse koelkast met waterdispenser';
+    if (p.includes('amerikaanse'))                  return 'amerikaanse koelkast';
+    if (p.includes('side') || p.includes('side-by-side')) return 'side-by-side koelkast';
+    if (p.includes('inbouw koelkast') || p.includes('inbouw koel')) return 'inbouw koelkast';
+    if (p.includes('inbouw vriezer'))               return 'inbouw vriezer';
+    if (p.includes('koelkast') || p.includes('vriezer') || p.includes('koel-vries')) return 'koelkast';
+    if (p.includes('inbouw vaatwasser'))            return 'inbouw vaatwasser';
+    if (p.includes('vrijstaande vaatwasser') || p.includes('vaatwasser')) return 'vrijstaande vaatwasser';
+    if (p.includes('inbouw magnetron'))             return 'inbouw magnetron';
+    if (p.includes('inbouw oven'))                  return 'inbouw oven';
+    if (p.includes('magnetron'))                    return 'magnetron';
+    if (p.includes('oven'))                         return 'inbouw oven';
+    if (p.includes('televisie') || p.includes('tv')) return 'televisie';
+    if (p.includes('soundbar'))                     return 'soundbar';
+    if (p.includes('stapelkit'))                    return 'stapelkit';
+    return null;
+  }
+
   // ── STAP 1: SJABLOON EERST (zodat het geen velden overschrijft) ──
   if (orderData.dienstType && !isSameDay) {
     const land    = orderData.detectedCountry;
@@ -353,43 +391,6 @@ try {
         },
       },
     };
-    function normaliseerProbleem(p) {
-      if (p.includes('trekschakelaar'))              return 'trekschakelaar';
-      if (p.includes('stapelkit'))                   return 'stapelkit';
-      if (p.includes('milieuretour') || p.includes('pick-up')) return 'milieuretour';
-      if (p.includes('inbouwen') || p.includes('inbouw'))      return 'inbouwen';
-      if (p.includes('frontpaneel'))                 return 'frontpaneel';
-      if (p.includes('deur omdraaien'))              return 'deur omdraaien';
-      if (p.includes('plaatsen') || p.includes('tillen')) return 'plaatsen';
-      if (p.includes('aansluiting') || p.includes('aansluiten en plaatsen')) return 'aansluiting';
-      if (p.includes('tv + soundbar') && (p.includes('ophang') || p.includes('hangen'))) return 'tv + soundbar ophang';
-      if (p.includes('tv + soundbar'))               return 'tv + soundbar';
-      if (p.includes('tv ophangen') || (p.includes('tv') && p.includes('ophangen'))) return 'tv ophangen';
-      if (p.includes('tv installeren') || p.includes('tv aansluiten')) return 'tv installeren';
-      return null;
-    }
-    function normaliseerProduct(p) {
-      p = p.toLowerCase();
-      if (p.includes('was-droog') || p.includes('wasdroog')) return 'wasdroogcombinatie';
-      if (p.includes('wasmachine'))                   return 'wasmachine';
-      if (p.includes('droger') || p.includes('droog')) return 'droger';
-      if (p.includes('amerikaanse') && p.includes('water')) return 'amerikaanse koelkast met waterdispenser';
-      if (p.includes('amerikaanse'))                  return 'amerikaanse koelkast';
-      if (p.includes('side') || p.includes('side-by-side')) return 'side-by-side koelkast';
-      if (p.includes('inbouw koelkast') || p.includes('inbouw koel')) return 'inbouw koelkast';
-      if (p.includes('inbouw vriezer'))               return 'inbouw vriezer';
-      if (p.includes('koelkast') || p.includes('vriezer') || p.includes('koel-vries')) return 'koelkast';
-      if (p.includes('inbouw vaatwasser'))            return 'inbouw vaatwasser';
-      if (p.includes('vrijstaande vaatwasser') || p.includes('vaatwasser')) return 'vrijstaande vaatwasser';
-      if (p.includes('inbouw magnetron'))             return 'inbouw magnetron';
-      if (p.includes('inbouw oven'))                  return 'inbouw oven';
-      if (p.includes('magnetron'))                    return 'magnetron';
-      if (p.includes('oven'))                         return 'inbouw oven';
-      if (p.includes('televisie') || p.includes('tv')) return 'televisie';
-      if (p.includes('soundbar'))                     return 'soundbar';
-      if (p.includes('stapelkit'))                    return 'stapelkit';
-      return null;
-    }
     const landData   = sjablonen[land];
     const productKey = normaliseerProduct(product);
     const probleemKey = normaliseerProbleem(probleem);
