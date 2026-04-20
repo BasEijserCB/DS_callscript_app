@@ -429,99 +429,36 @@ try {
     }
   }
 
-  // ── STAP 1c: SAME DAY / NEXT DAY PLAATSEN/TILLEN — PRODUCT RIJ TOEVOEGEN ─
+  // ── STAP 1c FASE 1: PRODUCT RIJEN TOEVOEGEN (code only, DX fields ingesteld na kanaal) ─
   const productsToAdd = orderData.products || (orderData.product ? [orderData.product] : []);
   const isPlaatstService = (orderData.probleem || '').toLowerCase().match(/plaatsen|tillen/) || (orderData.serviceTypeId === 51072);
-  console.log('[DS] STAP 1c — productsToAdd:', productsToAdd, '| isPlaatstService:', !!isPlaatstService, '| probleem:', orderData.probleem, '| serviceTypeId:', orderData.serviceTypeId);
+  const articleTypeIds = {
+    'wasmachine': 133, 'wasdroogcombinatie': 361, 'droger': 358,
+    'koelkast': 330, 'vriezer': 352, 'amerikaanse koelkast': 253782,
+    'amerikaanse koelkast met waterdispenser': 253782,
+    'side-by-side koelkast': 330, 'inbouw koelkast': 330, 'inbouw vriezer': 352,
+  };
   if (isPlaatstService && productsToAdd.length > 0) {
-    const articleTypeIds = {
-      'wasmachine': 133,
-      'wasdroogcombinatie': 361,
-      'droger': 358,
-      'koelkast': 330,
-      'vriezer': 352,
-      'amerikaanse koelkast': 253782,
-      'amerikaanse koelkast met waterdispenser': 253782,
-      'side-by-side koelkast': 330,
-      'inbouw koelkast': 330,
-      'inbouw vriezer': 352,
-    };
     for (let pidx = 0; pidx < productsToAdd.length; pidx++) {
-      const product = productsToAdd[pidx];
-      console.log(`[DS] Product ${pidx}: "${product}"`);
       const addBtn = document.querySelector('.dx-icon-add')?.closest('.dx-button');
-      console.log(`[DS]   addBtn:`, addBtn);
       if (addBtn) {
         addBtn.click();
         await new Promise(resolve => setTimeout(resolve, 500));
-
-        // Click on the article to select it (activates DX form fields for this row)
         const articles = document.querySelectorAll('[data-options*="dxTemplate"][data-options*="article"]');
-        console.log(`[DS]   articles.length:`, articles.length, '| expected pidx:', pidx);
         if (articles.length > pidx) {
           articles[pidx].click();
           await new Promise(resolve => setTimeout(resolve, 300));
-        } else {
-          console.warn(`[DS]   geen article gevonden op index ${pidx}`);
         }
-
-        // Set code = "1"
         const codeInputs = document.querySelectorAll('input[name="code"]');
         const codeInput = codeInputs[codeInputs.length - 1];
-        console.log(`[DS]   codeInputs.length:`, codeInputs.length, '| codeInput:', codeInput);
         if (codeInput) {
           codeInput.focus();
           codeInput.value = '1';
           ['input', 'change', 'blur'].forEach(t => codeInput.dispatchEvent(new Event(t, {bubbles: true})));
           await new Promise(resolve => setTimeout(resolve, 300));
         }
-
-        // Set articleTypeId based on product (first — changing it may reset services)
-        const productKey = normaliseerProduct(product);
-        const articleTypeId = productKey && articleTypeIds[productKey];
-        console.log(`[DS]   normaliseerProduct("${product}") →`, productKey, '| articleTypeId:', articleTypeId);
-        if (articleTypeId) {
-          const artInputs = document.querySelectorAll('input[id$="_articleTypeId"]');
-          const artInput = artInputs[artInputs.length - 1];
-          console.log(`[DS]   artInputs.length:`, artInputs.length, '| artInput id:', artInput?.id);
-          if (artInput) {
-            const container = artInput.closest('.dx-selectbox');
-            const instance = container && $(container).dxSelectBox('instance');
-            console.log(`[DS]   articleTypeId SelectBox instance:`, instance);
-            if (instance) {
-              instance.option('value', articleTypeId);
-              await new Promise(resolve => setTimeout(resolve, 400));
-              console.log(`[DS]   articleTypeId after set:`, instance.option('value'));
-            }
-          } else {
-            console.warn('[DS]   geen articleTypeId SelectBox input gevonden');
-          }
-        } else {
-          console.warn(`[DS]   geen articleTypeId voor productKey "${productKey}"`);
-        }
-
-        // Set services TagBox to plaatsen (51072) last — after articleTypeId settles
-        const svcInputs = document.querySelectorAll('input[id$="_services"]');
-        const svcInput = svcInputs[svcInputs.length - 1];
-        console.log(`[DS]   svcInputs.length:`, svcInputs.length, '| svcInput id:', svcInput?.id);
-        if (svcInput) {
-          const container = svcInput.closest('.dx-tagbox');
-          const instance = container && $(container).dxTagBox('instance');
-          console.log(`[DS]   services TagBox instance:`, instance);
-          if (instance) {
-            instance.option('value', [51072]);
-            await new Promise(resolve => setTimeout(resolve, 200));
-            console.log(`[DS]   services after set:`, instance.option('value'));
-          }
-        } else {
-          console.warn('[DS]   geen services TagBox input gevonden');
-        }
-      } else {
-        console.warn('[DS]   add-button niet gevonden');
       }
     }
-  } else {
-    console.log('[DS] STAP 1c overgeslagen — geen plaatsen service of geen producten');
   }
 
   // ── STAP 2: ADRES SPLITSEN ────────────────────────────────────
@@ -596,6 +533,40 @@ try {
       setDxDropdown('_networkId', 12);
       await new Promise(resolve => setTimeout(resolve, 400));
       setDxTagBox('_services', [parseInt(orderData.serviceTypeId)]);
+    }
+  }
+
+  // ── STAP 1c FASE 2: ARTICLE DX VELDEN INSTELLEN (na kanaal — zodat herrender niet wist) ─
+  if (isPlaatstService && productsToAdd.length > 0) {
+    for (let pidx = 0; pidx < productsToAdd.length; pidx++) {
+      const product = productsToAdd[pidx];
+      const productKey = normaliseerProduct(product);
+      const articleTypeId = productKey && articleTypeIds[productKey];
+      console.log(`[DS] Fase 2 product ${pidx}: "${product}" → articleTypeId:`, articleTypeId);
+
+      const artInputs = document.querySelectorAll('input[id$="_articleTypeId"]');
+      const artInput = artInputs[pidx] || artInputs[artInputs.length - 1];
+      if (artInput) {
+        const container = artInput.closest('.dx-selectbox');
+        const instance = container && $(container).dxSelectBox('instance');
+        if (instance && articleTypeId) {
+          instance.option('value', articleTypeId);
+          await new Promise(resolve => setTimeout(resolve, 400));
+          console.log(`[DS]   articleTypeId after set:`, instance.option('value'));
+        }
+      }
+
+      const svcInputs = document.querySelectorAll('input[id$="_services"]');
+      const svcInput = svcInputs[pidx + 1] || svcInputs[svcInputs.length - 1];
+      if (svcInput) {
+        const container = svcInput.closest('.dx-tagbox');
+        const instance = container && $(container).dxTagBox('instance');
+        if (instance) {
+          instance.option('value', [51072]);
+          await new Promise(resolve => setTimeout(resolve, 200));
+          console.log(`[DS]   services after set:`, instance.option('value'));
+        }
+      }
     }
   }
 
