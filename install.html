@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DS Logboek — Installatie</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #f5f6f8;
+      color: #1a1a2e;
+      min-height: 100vh;
+      padding: 40px 20px;
+    }
+
+    .page {
+      max-width: 640px;
+      margin: 0 auto;
+    }
+
+    .header {
+      margin-bottom: 32px;
+    }
+
+    .header h1 {
+      font-size: 22px;
+      font-weight: 700;
+      color: #1a1a2e;
+    }
+
+    .header .subtitle {
+      font-size: 14px;
+      color: #666;
+      margin-top: 4px;
+    }
+
+    .version-badge {
+      display: inline-block;
+      background: #e8f4fd;
+      color: #0078c8;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 4px;
+      margin-top: 8px;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 10px;
+      padding: 24px;
+      margin-bottom: 16px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    }
+
+    .card h2 {
+      font-size: 15px;
+      font-weight: 700;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .step-number {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 22px;
+      height: 22px;
+      background: #0090e3;
+      color: #fff;
+      border-radius: 50%;
+      font-size: 12px;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .steps ol {
+      list-style: none;
+      counter-reset: steps;
+    }
+
+    .steps ol li {
+      padding: 8px 0 8px 0;
+      font-size: 14px;
+      line-height: 1.5;
+      color: #333;
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      border-bottom: 1px solid #f0f0f0;
+    }
+
+    .steps ol li:last-child {
+      border-bottom: none;
+    }
+
+    .steps ol li .num {
+      flex-shrink: 0;
+      width: 20px;
+      height: 20px;
+      background: #f0f0f0;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 700;
+      color: #555;
+      margin-top: 2px;
+    }
+
+    .bookmarklet-zone {
+      background: #f0f7ff;
+      border: 2px dashed #90c8f0;
+      border-radius: 8px;
+      padding: 20px;
+      text-align: center;
+      margin: 16px 0;
+    }
+
+    .bookmarklet-zone p {
+      font-size: 13px;
+      color: #555;
+      margin-bottom: 14px;
+    }
+
+    .bookmarklet-link {
+      display: inline-block;
+      background: #0090e3;
+      color: #fff !important;
+      text-decoration: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: grab;
+      user-select: none;
+      box-shadow: 0 2px 6px rgba(0,144,227,0.35);
+      transition: background 0.15s, box-shadow 0.15s;
+    }
+
+    .bookmarklet-link:hover {
+      background: #0078c8;
+      box-shadow: 0 3px 10px rgba(0,144,227,0.4);
+    }
+
+    .bookmarklet-link:active {
+      cursor: grabbing;
+    }
+
+    .drag-hint {
+      font-size: 12px;
+      color: #888;
+      margin-top: 10px;
+    }
+
+    .note {
+      background: #fffbea;
+      border-left: 3px solid #f5c518;
+      padding: 10px 14px;
+      border-radius: 0 6px 6px 0;
+      font-size: 13px;
+      color: #555;
+      margin-top: 12px;
+      line-height: 1.5;
+    }
+
+    .note strong { color: #333; }
+
+    .cache-code {
+      display: inline-block;
+      background: #1a1a2e;
+      color: #7ec8e3;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      padding: 6px 10px;
+      border-radius: 4px;
+      margin-top: 8px;
+      user-select: all;
+      cursor: text;
+      word-break: break-all;
+    }
+
+    .divider {
+      border: none;
+      border-top: 1px solid #eee;
+      margin: 8px 0;
+    }
+
+    footer {
+      text-align: center;
+      font-size: 12px;
+      color: #aaa;
+      margin-top: 32px;
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+
+    <div class="header">
+      <h1>DS Logboek — Installatie</h1>
+      <p class="subtitle">Paste bookmarklet voor DireXtion Import formulier</p>
+      <span class="version-badge">v1.12.15</span>
+    </div>
+
+    <!-- PASTE BOOKMARKLET -->
+    <div class="card">
+      <h2><span class="step-number">1</span> Paste bookmarklet installeren</h2>
+
+      <p style="font-size:14px;color:#444;margin-bottom:16px;line-height:1.5;">
+        Sleep de knop hieronder naar je bladwijzerbalk. Daarna gebruik je hem in het DireXtion Import formulier nadat de DS Logboek widget de gegevens naar het klembord heeft gekopieerd.
+      </p>
+
+      <div class="bookmarklet-zone">
+        <p>Sleep deze knop naar je bladwijzerbalk:</p>
+        <a class="bookmarklet-link" href="javascript:%28async%20function%28%29%7B%20try%20%7B%20const%20clipboardText%20%3D%20await%20navigator.clipboard.readText%28%29%3B%20const%20orderData%20%3D%20JSON.parse%28clipboardText%29%3B%20if%20%28%21orderData.time%20%7C%7C%20%28Date.now%28%29%20-%20orderData.time%29%20%3E%20300000%29%20%7B%20await%20navigator.clipboard.writeText%28%27%27%29%3B%20return%3B%20%7D%20const%20setDxDropdown%20%3D%20%28fieldId%2C%20fieldValue%29%20%3D%3E%20%7B%20const%20input%20%3D%20document.querySelector%28%60input%5Bid%24%3D%22%24%7BfieldId%7D%22%5D%60%29%3B%20if%20%28%21input%29%20return%3B%20const%20container%20%3D%20input.closest%28%27.dx-selectbox%27%29%3B%20if%20%28%21container%29%20return%3B%20const%20instance%20%3D%20%24%28container%29.dxSelectBox%28%27instance%27%29%3B%20if%20%28instance%29%20instance.option%28%27value%27%2C%20fieldValue%29%3B%20%7D%3B%20const%20setDxTagBox%20%3D%20%28fieldId%2C%20valueArray%29%20%3D%3E%20%7B%20const%20input%20%3D%20document.querySelector%28%60input%5Bid%24%3D%22%24%7BfieldId%7D%22%5D%60%29%3B%20if%20%28%21input%29%20return%3B%20const%20container%20%3D%20input.closest%28%27.dx-tagbox%27%29%3B%20if%20%28%21container%29%20return%3B%20const%20instance%20%3D%20%24%28container%29.dxTagBox%28%27instance%27%29%3B%20if%20%28instance%29%20instance.option%28%27value%27%2C%20valueArray%29%3B%20%7D%3B%20const%20isSameDay%20%3D%20%28orderData.uitkomst%20%7C%7C%20%27%27%29.toLowerCase%28%29.includes%28%27same%20day%27%29%3B%20if%20%28orderData.dienstType%20%26%26%20%21isSameDay%29%20%7B%20const%20land%20%3D%20orderData.detectedCountry%3B%20const%20product%20%3D%20%28orderData.product%20%7C%7C%20%27%27%29.toLowerCase%28%29%3B%20const%20probleem%20%3D%20%28orderData.probleem%20%7C%7C%20%27%27%29.toLowerCase%28%29%3B%20const%20dienst%20%3D%20orderData.dienstType%3B%20const%20isNazorg%20%3D%20dienst%20%3D%3D%3D%20%27Nazorg%20%28gratis%29%27%3B%20const%20groot%20%3D%20orderData.formaatTV%20%3D%3D%3D%20%27Ja%20%28%3E%3D%2055%20inch%29%27%3B%20const%20sjablonen%20%3D%20%7B%20%27Nederland%27%3A%20%7B%20%27wasmachine%27%3A%20%7B%20%27trekschakelaar%27%3A%20%7BN%3A%271714235%27%2C%20E%3A%271714242%27%7D%2C%20%27plaatsen%27%3A%20%7BN%3A%271714165%27%2C%20E%3A%271723925%27%7D%2C%20%27aansluiting%27%3A%20%7BN%3A%271714225%27%2C%20E%3A%271723925%27%7D%2C%20%27inbouwen%27%3A%20%7BN%3A%271714279%27%2C%20E%3A%271714331%27%7D%2C%20%27stapelkit%27%3A%20%7BN%3A%271714345%27%2C%20E%3A%271714352%27%7D%2C%20%27milieuretour%27%3A%20%7BN%3A%271714166%27%2C%20E%3A%271714221%27%7D%2C%20%27deur%20omdraaien%27%3A%20%7BN%3A%271714235%27%2C%20E%3A%271714242%27%7D%2C%20%7D%2C%20%27wasdroogcombinatie%27%3A%20%7B%20%27trekschakelaar%27%3A%20%7BN%3A%271714812%27%2C%20E%3A%271714814%27%7D%2C%20%27plaatsen%27%3A%20%7BN%3A%271714802%27%2C%20E%3A%271723929%27%7D%2C%20%27aansluiting%27%3A%20%7BN%3A%271714809%27%2C%20E%3A%271723929%27%7D%2C%20%27inbouwen%27%3A%20%7BN%3A%271714816%27%2C%20E%3A%271714817%27%7D%2C%20%27stapelkit%27%3A%20%7BN%3A%271714812%27%2C%20E%3A%271714817%27%7D%2C%20%27milieuretour%27%3A%20%7BN%3A%271714805%27%2C%20E%3A%271714807%27%7D%2C%20%27deur%20omdraaien%27%3A%20%7BN%3A%271714812%27%2C%20E%3A%271714815%27%7D%2C%20%7D%2C%20%27droger%27%3A%20%7B%20%27trekschakelaar%27%3A%20%7BN%3A%271714544%27%2C%20E%3A%271714545%27%7D%2C%20%27plaatsen%27%3A%20%7BN%3A%271714537%27%2C%20E%3A%271723927%27%7D%2C%20%27aansluiting%27%3A%20%7BN%3A%271714540%27%2C%20E%3A%271723927%27%7D%2C%20%27inbouwen%27%3A%20%7BN%3A%271714547%27%2C%20E%3A%271714548%27%7D%2C%20%27stapelkit%27%3A%20%7BN%3A%271714549%27%2C%20E%3A%271714550%27%7D%2C%20%27milieuretour%27%3A%20%7BN%3A%271714538%27%2C%20E%3A%271714539%27%7D%2C%20%27deur%20omdraaien%27%3A%20%7BN%3A%271714546%27%2C%20E%3A%271714546%27%7D%2C%20%7D%2C%20%27koelkast%27%3A%20%7B%20%27plaatsen%27%3A%20%7BN%3A%271965690%27%2C%20E%3A%271965691%27%7D%2C%20%27aansluiting%27%3A%20%7BN%3A%271965690%27%2C%20E%3A%271965691%27%7D%2C%20%27deur%20omdraaien%27%3A%20%7BN%3A%271965700%27%2C%20E%3A%271965700%27%7D%2C%20%27milieuretour%27%3A%20%7BN%3A%271967581%27%2C%20E%3A%271967578%27%7D%2C%20%27inbouwen%27%3A%20%7BN%3A%271965690%27%2C%20E%3A%271965691%27%7D%2C%20%7D%2C%20%27vriezer%27%3A%20%7B%20%27plaatsen%27%3A%20%7BN%3A%271966711%27%2C%20E%3A%271966712%27%7D%2C%20%27aansluiting%27%3A%20%7BN%3A%271966711%27%2C%20E%3A%271966712%27%7D%2C%20%27deur%20omdraaien%27%3A%20%7BN%3A%271966714%27%2C%20E%3A%271966714%27%7D%2C%20%27milieuretour%27%3A%20%7BN%3A%271979141%27%2C%20E%3A%271979140%27%7D%2C%20%7D%2C%20%27amerikaanse%20koelkast%27%3A%20%7B%20%27plaatsen%27%3A%20%7BN%3A%271966730%27%2C%20E%3A%271966729%27%7D%2C%20%27aansluiting%27%3A%20%7BN%3A%271966730%27%2C%20E%3A%271966729%27%7D%2C%20%27deur%20omdraaien%27%3A%20%7BN%3A%271966730%27%2C%20E%3A%271966729%27%7D%2C%20%27milieuretour%27%3A%20%7BN%3A%271979162%27%2C%20E%3A%271979161%27%7D%2C%20%7D%2C%20%27amerikaanse%20koelkast%20met%20waterdispenser%27%3A%20%7B%20%27plaatsen%27%3A%20%7BN%3A%271966732%27%2C%20E%3A%271966733%27%7D%2C%20%27aansluiting%27%3A%20%7BN%3A%271966732%27%2C%20E%3A%271966733%27%7D%2C%20%27milieuretour%27%3A%20%7BN%3A%271979162%27%2C%20E%3A%271979161%27%7D%2C%20%7D%2C%20%27side-by-side%20koelkast%27%3A%20%7B%20%27plaatsen%27%3A%20%7BN%3A%271967550%27%2C%20E%3A%271967551%27%7D%2C%20%27aansluiting%27%3A%20%7BN%3A%271967550%27%2C%20E%3A%271967551%27%7D%2C%20%27milieuretour%27%3A%20%7BN%3A%271967581%27%2C%20E%3A%271967578%27%7D%2C%20%7D%2C%20%27inbouw%20koelkast%27%3A%20%7B%20%27inbouwen%27%3A%20%7BN%3A%271939895%27%2C%20E%3A%271939896%27%7D%2C%20%27frontpaneel%27%3A%20%7BN%3A%271965672%27%2C%20E%3A%271939896%27%7D%2C%20%27milieuretour%27%3A%20%7BN%3A%271967581%27%2C%20E%3A%271967578%27%7D%2C%20%7D%2C%20%27inbouw%20vriezer%27%3A%20%7B%20%27inbouwen%27%3A%20%7BN%3A%271939895%27%2C%20E%3A%271939896%27%7D%2C%20%27milieuretour%27%3A%20%7BN%3A%271979141%27%2C%20E%3A%271979140%27%7D%2C%20%7D%2C%20%27vrijstaande%20vaatwasser%27%3A%20%7B%20%27plaatsen%27%3A%20%7BN%3A%271965653%27%2C%20E%3A%271965654%27%7D%2C%20%27aansluiting%27%3A%20%7BN%3A%271965653%27%2C%20E%3A%271965654%27%7D%2C%20%27milieuretour%27%3A%20%7BN%3A%272180321%27%2C%20E%3A%272180324%27%7D%2C%20%27inbouwen%27%3A%20%7BN%3A%271965653%27%2C%20E%3A%271965654%27%7D%2C%20%7D%2C%20%27inbouw%20vaatwasser%27%3A%20%7B%20%27inbouwen%27%3A%20%7BN%3A%271939852%27%2C%20E%3A%271939853%27%7D%2C%20%27frontpaneel%27%3A%20%7BN%3A%271939854%27%2C%20E%3A%271939853%27%7D%2C%20%27milieuretour%27%3A%20%7BN%3A%272180316%27%2C%20E%3A%272180319%27%7D%2C%20%27aansluiting%27%3A%20%7BN%3A%271939852%27%2C%20E%3A%271939853%27%7D%2C%20%7D%2C%20%27inbouw%20oven%27%3A%20%7B%20%27inbouwen%27%3A%20%7BN%3A%271966751%27%2C%20E%3A%271966752%27%7D%2C%20%27aansluiting%27%3A%20%7BN%3A%271966751%27%2C%20E%3A%271966752%27%7D%2C%20%7D%2C%20%27inbouw%20magnetron%27%3A%20%7B%20%27inbouwen%27%3A%20%7BN%3A%271967562%27%2C%20E%3A%271967563%27%7D%2C%20%27aansluiting%27%3A%20%7BN%3A%271967562%27%2C%20E%3A%271967563%27%7D%2C%20%7D%2C%20%27magnetron%27%3A%20%7B%20%27milieuretour%27%3A%20%7BN%3A%271979158%27%2C%20E%3A%271979156%27%7D%2C%20%7D%2C%20%27televisie%27%3A%20%7B%20%27tv%20installeren%27%3A%20%7BN%3A%20groot%20%3F%20%271939669%27%20%3A%20%271939670%27%2C%20E%3A%20groot%20%3F%20%271939678%27%20%3A%20%271939676%27%7D%2C%20%27tv%20ophangen%27%3A%20%7BN%3A%20groot%20%3F%20%271939696%27%20%3A%20%271939695%27%2C%20E%3A%20groot%20%3F%20%271939698%27%20%3A%20%271939697%27%7D%2C%20%27tv%20%2B%20soundbar%27%3A%20%7BN%3A%20groot%20%3F%20%271939822%27%20%3A%20%271939817%27%2C%20E%3A%20groot%20%3F%20%271939823%27%20%3A%20%271939818%27%7D%2C%20%27tv%20%2B%20soundbar%20ophang%27%3A%7BN%3A%20groot%20%3F%20%271939824%27%20%3A%20%271939819%27%2C%20E%3A%20groot%20%3F%20%271939825%27%20%3A%20%271939821%27%7D%2C%20%27milieuretour%27%3A%20%7BN%3A%271979147%27%2C%20E%3A%271979146%27%7D%2C%20%7D%2C%20%27soundbar%27%3A%20%7B%20%27tv%20%2B%20soundbar%27%3A%20%7BN%3A%271939802%27%2C%20E%3A%271939804%27%7D%2C%20%27tv%20%2B%20soundbar%20ophang%27%3A%7BN%3A%271939802%27%2C%20E%3A%271939804%27%7D%2C%20%27milieuretour%27%3A%20%7BN%3A%271979147%27%2C%20E%3A%271979146%27%7D%2C%20%7D%2C%20%27stapelkit%27%3A%20%7B%20%27stapelkit%27%3A%20%7BN%3A%271714933%27%2C%20E%3A%271714934%27%7D%2C%20%7D%2C%20%7D%2C%20%27Belgi%C3%AB%27%3A%20%7B%20%27wasmachine%27%3A%20%7B%20%27trekschakelaar%27%3A%20%7BN%3A%271714950%27%2C%20E%3A%271714953%27%7D%2C%20%27plaatsen%27%3A%20%7BN%3A%271714939%27%2C%20E%3A%271723930%27%7D%2C%20%27aansluiting%27%3A%20%7BN%3A%271714942%27%2C%20E%3A%271723930%27%7D%2C%20%27inbouwen%27%3A%20%7BN%3A%271714959%27%2C%20E%3A%271714960%27%7D%2C%20%27stapelkit%27%3A%20%7BN%3A%271714961%27%2C%20E%3A%271714962%27%7D%2C%20%27milieuretour%27%3A%20%7BN%3A%271714940%27%2C%20E%3A%271714941%27%7D%2C%20%27deur%20omdraaien%27%3A%20%7BN%3A%271714957%27%2C%20E%3A%271714957%27%7D%2C%20%7D%2C%20%27wasdroogcombinatie%27%3A%20%7B%20%27trekschakelaar%27%3A%20%7BN%3A%271714987%27%2C%20E%3A%271714988%27%7D%2C%20%27plaatsen%27%3A%20%7BN%3A%271714979%27%2C%20E%3A%271723934%27%7D%2C%20%27aansluiting%27%3A%20%7BN%3A%271714984%27%2C%20E%3A%271723934%27%7D%2C%20%27inbouwen%27%3A%20%7BN%3A%271714990%27%2C%20E%3A%271714992%27%7D%2C%20%27milieuretour%27%3A%20%7BN%3A%271714982%27%2C%20E%3A%271714983%27%7D%2C%20%27deur%20omdraaien%27%3A%20%7BN%3A%271714987%27%2C%20E%3A%271714989%27%7D%2C%20%7D%2C%20%27droger%27%3A%20%7B%20%27trekschakelaar%27%3A%20%7BN%3A%271714971%27%2C%20E%3A%271714972%27%7D%2C%20%27plaatsen%27%3A%20%7BN%3A%271714964%27%2C%20E%3A%271723932%27%7D%2C%20%27aansluiting%27%3A%20%7BN%3A%271714967%27%2C%20E%3A%271723932%27%7D%2C%20%27inbouwen%27%3A%20%7BN%3A%271714974%27%2C%20E%3A%271714975%27%7D%2C%20%27stapelkit%27%3A%20%7BN%3A%271714976%27%2C%20E%3A%271714978%27%7D%2C%20%27milieuretour%27%3A%20%7BN%3A%271714965%27%2C%20E%3A%271714966%27%7D%2C%20%27deur%20omdraaien%27%3A%20%7BN%3A%271714973%27%2C%20E%3A%271714973%27%7D%2C%20%7D%2C%20%27koelkast%27%3A%20%7B%20%27plaatsen%27%3A%20%7BN%3A%271965694%27%2C%20E%3A%271965695%27%7D%2C%20%27aansluiting%27%3A%20%7BN%3A%271965694%27%2C%20E%3A%271965695%27%7D%2C%20%27deur%20omdraaien%27%3A%20%7BN%3A%271965701%27%2C%20E%3A%271965701%27%7D%2C%20%27milieuretour%27%3A%20%7BN%3A%271967583%27%2C%20E%3A%271967582%27%7D%2C%20%27inbouwen%27%3A%20%7BN%3A%271965694%27%2C%20E%3A%271965695%27%7D%2C%20%7D%2C%20%27vriezer%27%3A%20%7B%20%27plaatsen%27%3A%20%7BN%3A%271966718%27%2C%20E%3A%271966719%27%7D%2C%20%27aansluiting%27%3A%20%7BN%3A%271966718%27%2C%20E%3A%271966719%27%7D%2C%20%27deur%20omdraaien%27%3A%20%7BN%3A%271966720%27%2C%20E%3A%271966720%27%7D%2C%20%27milieuretour%27%3A%20%7BN%3A%271979143%27%2C%20E%3A%271979142%27%7D%2C%20%7D%2C%20%27amerikaanse%20koelkast%27%3A%20%7B%20%27plaatsen%27%3A%20%7BN%3A%271966743%27%2C%20E%3A%271966742%27%7D%2C%20%27aansluiting%27%3A%20%7BN%3A%271966743%27%2C%20E%3A%271966742%27%7D%2C%20%27deur%20omdraaien%27%3A%20%7BN%3A%271966743%27%2C%20E%3A%271966742%27%7D%2C%20%27milieuretour%27%3A%20%7BN%3A%271979164%27%2C%20E%3A%271979163%27%7D%2C%20%7D%2C%20%27amerikaanse%20koelkast%20met%20waterdispenser%27%3A%20%7B%20%27plaatsen%27%3A%20%7BN%3A%271966745%27%2C%20E%3A%271966747%27%7D%2C%20%27aansluiting%27%3A%20%7BN%3A%271966745%27%2C%20E%3A%271966747%27%7D%2C%20%27milieuretour%27%3A%20%7BN%3A%271979164%27%2C%20E%3A%271979163%27%7D%2C%20%7D%2C%20%27side-by-side%20koelkast%27%3A%20%7B%20%27plaatsen%27%3A%20%7BN%3A%271967553%27%2C%20E%3A%271967554%27%7D%2C%20%27aansluiting%27%3A%20%7BN%3A%271967553%27%2C%20E%3A%271967554%27%7D%2C%20%27milieuretour%27%3A%20%7BN%3A%271967583%27%2C%20E%3A%271967582%27%7D%2C%20%7D%2C%20%27inbouw%20koelkast%27%3A%20%7B%20%27inbouwen%27%3A%20%7BN%3A%271939897%27%2C%20E%3A%271939898%27%7D%2C%20%27frontpaneel%27%3A%20%7BN%3A%271965673%27%2C%20E%3A%271939898%27%7D%2C%20%27milieuretour%27%3A%20%7BN%3A%271967583%27%2C%20E%3A%271967582%27%7D%2C%20%7D%2C%20%27inbouw%20vriezer%27%3A%20%7B%20%27inbouwen%27%3A%20%7BN%3A%271939897%27%2C%20E%3A%271939898%27%7D%2C%20%27milieuretour%27%3A%20%7BN%3A%271979143%27%2C%20E%3A%271979142%27%7D%2C%20%7D%2C%20%27vrijstaande%20vaatwasser%27%3A%20%7B%20%27plaatsen%27%3A%20%7BN%3A%271965658%27%2C%20E%3A%271965659%27%7D%2C%20%27aansluiting%27%3A%20%7BN%3A%271965658%27%2C%20E%3A%271965659%27%7D%2C%20%27milieuretour%27%3A%20%7BN%3A%272180297%27%2C%20E%3A%272180298%27%7D%2C%20%27inbouwen%27%3A%20%7BN%3A%271965658%27%2C%20E%3A%271965659%27%7D%2C%20%7D%2C%20%27inbouw%20vaatwasser%27%3A%20%7B%20%27inbouwen%27%3A%20%7BN%3A%271939855%27%2C%20E%3A%271939856%27%7D%2C%20%27frontpaneel%27%3A%20%7BN%3A%271939857%27%2C%20E%3A%271939856%27%7D%2C%20%27milieuretour%27%3A%20%7BN%3A%272180295%27%2C%20E%3A%272180296%27%7D%2C%20%27aansluiting%27%3A%20%7BN%3A%271939855%27%2C%20E%3A%271939856%27%7D%2C%20%7D%2C%20%27inbouw%20oven%27%3A%20%7B%20%27inbouwen%27%3A%20%7BN%3A%271966753%27%2C%20E%3A%271966754%27%7D%2C%20%27aansluiting%27%3A%20%7BN%3A%271966753%27%2C%20E%3A%271966754%27%7D%2C%20%7D%2C%20%27inbouw%20magnetron%27%3A%20%7B%20%27inbouwen%27%3A%20%7BN%3A%271967564%27%2C%20E%3A%271967565%27%7D%2C%20%27aansluiting%27%3A%20%7BN%3A%271967564%27%2C%20E%3A%271967565%27%7D%2C%20%7D%2C%20%27magnetron%27%3A%20%7B%20%27milieuretour%27%3A%20%7BN%3A%271979160%27%2C%20E%3A%271979159%27%7D%2C%20%7D%2C%20%27televisie%27%3A%20%7B%20%27tv%20installeren%27%3A%20%7BN%3A%272106116%27%2C%20E%3A%272106119%27%7D%2C%20%27tv%20ophangen%27%3A%20%7BN%3A%272106120%27%2C%20E%3A%272106121%27%7D%2C%20%27tv%20%2B%20soundbar%27%3A%20%7BN%3A%272106130%27%2C%20E%3A%272106131%27%7D%2C%20%27tv%20%2B%20soundbar%20ophang%27%3A%7BN%3A%272106132%27%2C%20E%3A%272106133%27%7D%2C%20%27milieuretour%27%3A%20%7BN%3A%272106175%27%2C%20E%3A%272106174%27%7D%2C%20%7D%2C%20%27soundbar%27%3A%20%7B%20%27tv%20%2B%20soundbar%27%3A%20%7BN%3A%272106126%27%2C%20E%3A%272106127%27%7D%2C%20%27tv%20%2B%20soundbar%20ophang%27%3A%7BN%3A%272106126%27%2C%20E%3A%272106127%27%7D%2C%20%27milieuretour%27%3A%20%7BN%3A%272106175%27%2C%20E%3A%272106174%27%7D%2C%20%7D%2C%20%27stapelkit%27%3A%20%7B%20%27stapelkit%27%3A%20%7BN%3A%272106009%27%2C%20E%3A%272106011%27%7D%2C%20%7D%2C%20%7D%2C%20%7D%3B%20function%20normaliseerProbleem%28p%29%20%7B%20if%20%28p.includes%28%27trekschakelaar%27%29%29%20return%20%27trekschakelaar%27%3B%20if%20%28p.includes%28%27stapelkit%27%29%29%20return%20%27stapelkit%27%3B%20if%20%28p.includes%28%27milieuretour%27%29%20%7C%7C%20p.includes%28%27pick-up%27%29%29%20return%20%27milieuretour%27%3B%20if%20%28p.includes%28%27inbouwen%27%29%20%7C%7C%20p.includes%28%27inbouw%27%29%29%20return%20%27inbouwen%27%3B%20if%20%28p.includes%28%27frontpaneel%27%29%29%20return%20%27frontpaneel%27%3B%20if%20%28p.includes%28%27deur%20omdraaien%27%29%29%20return%20%27deur%20omdraaien%27%3B%20if%20%28p.includes%28%27plaatsen%27%29%20%7C%7C%20p.includes%28%27tillen%27%29%29%20return%20%27plaatsen%27%3B%20if%20%28p.includes%28%27aansluiting%27%29%20%7C%7C%20p.includes%28%27aansluiten%20en%20plaatsen%27%29%29%20return%20%27aansluiting%27%3B%20if%20%28p.includes%28%27tv%20%2B%20soundbar%27%29%20%26%26%20%28p.includes%28%27ophang%27%29%20%7C%7C%20p.includes%28%27hangen%27%29%29%29%20return%20%27tv%20%2B%20soundbar%20ophang%27%3B%20if%20%28p.includes%28%27tv%20%2B%20soundbar%27%29%29%20return%20%27tv%20%2B%20soundbar%27%3B%20if%20%28p.includes%28%27tv%20ophangen%27%29%20%7C%7C%20%28p.includes%28%27tv%27%29%20%26%26%20p.includes%28%27ophangen%27%29%29%29%20return%20%27tv%20ophangen%27%3B%20if%20%28p.includes%28%27tv%20installeren%27%29%20%7C%7C%20p.includes%28%27tv%20aansluiten%27%29%29%20return%20%27tv%20installeren%27%3B%20return%20null%3B%20%7D%20function%20normaliseerProduct%28p%29%20%7B%20p%20%3D%20p.toLowerCase%28%29%3B%20if%20%28p.includes%28%27was-droog%27%29%20%7C%7C%20p.includes%28%27wasdroog%27%29%29%20return%20%27wasdroogcombinatie%27%3B%20if%20%28p.includes%28%27wasmachine%27%29%29%20return%20%27wasmachine%27%3B%20if%20%28p.includes%28%27droger%27%29%20%7C%7C%20p.includes%28%27droog%27%29%29%20return%20%27droger%27%3B%20if%20%28p.includes%28%27amerikaanse%27%29%20%26%26%20p.includes%28%27water%27%29%29%20return%20%27amerikaanse%20koelkast%20met%20waterdispenser%27%3B%20if%20%28p.includes%28%27amerikaanse%27%29%29%20return%20%27amerikaanse%20koelkast%27%3B%20if%20%28p.includes%28%27side%27%29%20%7C%7C%20p.includes%28%27side-by-side%27%29%29%20return%20%27side-by-side%20koelkast%27%3B%20if%20%28p.includes%28%27inbouw%20koelkast%27%29%20%7C%7C%20p.includes%28%27inbouw%20koel%27%29%29%20return%20%27inbouw%20koelkast%27%3B%20if%20%28p.includes%28%27inbouw%20vriezer%27%29%29%20return%20%27inbouw%20vriezer%27%3B%20if%20%28p.includes%28%27koelkast%27%29%20%7C%7C%20p.includes%28%27vriezer%27%29%20%7C%7C%20p.includes%28%27koel-vries%27%29%29%20return%20%27koelkast%27%3B%20if%20%28p.includes%28%27inbouw%20vaatwasser%27%29%29%20return%20%27inbouw%20vaatwasser%27%3B%20if%20%28p.includes%28%27vrijstaande%20vaatwasser%27%29%20%7C%7C%20p.includes%28%27vaatwasser%27%29%29%20return%20%27vrijstaande%20vaatwasser%27%3B%20if%20%28p.includes%28%27inbouw%20magnetron%27%29%29%20return%20%27inbouw%20magnetron%27%3B%20if%20%28p.includes%28%27inbouw%20oven%27%29%29%20return%20%27inbouw%20oven%27%3B%20if%20%28p.includes%28%27magnetron%27%29%29%20return%20%27magnetron%27%3B%20if%20%28p.includes%28%27oven%27%29%29%20return%20%27inbouw%20oven%27%3B%20if%20%28p.includes%28%27televisie%27%29%20%7C%7C%20p.includes%28%27tv%27%29%29%20return%20%27televisie%27%3B%20if%20%28p.includes%28%27soundbar%27%29%29%20return%20%27soundbar%27%3B%20if%20%28p.includes%28%27stapelkit%27%29%29%20return%20%27stapelkit%27%3B%20return%20null%3B%20%7D%20const%20landData%20%3D%20sjablonen%5Bland%5D%3B%20const%20productKey%20%3D%20normaliseerProduct%28product%29%3B%20const%20probleemKey%20%3D%20normaliseerProbleem%28probleem%29%3B%20if%20%28landData%20%26%26%20productKey%20%26%26%20probleemKey%29%20%7B%20const%20productData%20%3D%20landData%5BproductKey%5D%3B%20const%20probleemData%20%3D%20productData%20%26%26%20productData%5BprobleemKey%5D%3B%20if%20%28probleemData%29%20%7B%20const%20sjabloonId%20%3D%20isNazorg%20%3F%20probleemData.N%20%3A%20probleemData.E%3B%20if%20%28sjabloonId%29%20%7B%20setDxDropdown%28%27_orderTemplateId%27%2C%20sjabloonId%29%3B%20await%20new%20Promise%28resolve%20%3D%3E%20setTimeout%28resolve%2C%20800%29%29%3B%20%7D%20%7D%20%7D%20%7D%20if%20%28isSameDay%29%20%7B%20const%20depotCodeIds%20%3D%20%7B%20%27NLAL%27%3A%20%272021191%27%2C%20%27NLDE%27%3A%20%27696250%27%2C%20%27NLGR%27%3A%20%274885%27%2C%20%27NLRO%27%3A%20%271721%27%2C%20%27NLTI%27%3A%20%2713%27%2C%20%27NLUT%27%3A%20%2714%27%2C%20%27NLVE%27%3A%20%27421593%27%2C%20%27NLEI%27%3A%20%2756669%27%2C%20%27NLDH%27%3A%20%2785705%27%2C%20%27NLOV%27%3A%20%2794515%27%2C%20%27DEDU%27%3A%20%27558485%27%2C%20%27DEKE%27%3A%20%271301373%27%2C%20%27DEHA%27%3A%20%271578843%27%2C%20%27DELA%27%3A%20%271819366%27%2C%20%27DEHM%27%3A%20%271858536%27%2C%20%27DESC%27%3A%20%272106913%27%2C%20%27DETA%27%3A%20%272009534%27%2C%20%27DENU%27%3A%20%272249404%27%2C%20%27DEES%27%3A%20%27815480%27%2C%20%27BEAN%27%3A%20%2718808%27%2C%20%27BEGE%27%3A%20%2735210%27%2C%20%27BENI%27%3A%20%27696230%27%2C%20%27BEZA%27%3A%20%27231149%27%2C%20%27BEWI%27%3A%20%27158831%27%2C%20%7D%3B%20setDxDropdown%28%27_shipperId%27%2C%20%271012729%27%29%3B%20await%20new%20Promise%28resolve%20%3D%3E%20setTimeout%28resolve%2C%20500%29%29%3B%20const%20routeCode%20%3D%20%28orderData.geplandeRoute%20%7C%7C%20%27%27%29.match%28/%5BA-Z%5D%7B4%7D/%29%3F.%5B0%5D%3B%20const%20depotId%20%3D%20routeCode%20%26%26%20depotCodeIds%5BrouteCode%5D%3B%20if%20%28depotId%29%20%7B%20setDxDropdown%28%27_depotId%27%2C%20depotId%29%3B%20await%20new%20Promise%28resolve%20%3D%3E%20setTimeout%28resolve%2C%20500%29%29%3B%20%7D%20%7D%20let%20streetName%20%3D%20orderData.address%2C%20houseNumber%20%3D%20%27%27%3B%20const%20addressMatch%20%3D%20orderData.address.match%28/%5E%28.%2A%3F%29%5Cs%3F%28%5Cd%2B.%2A%29%24/%29%3B%20if%20%28addressMatch%29%20%7B%20streetName%20%3D%20addressMatch%5B1%5D%3B%20houseNumber%20%3D%20addressMatch%5B2%5D%3B%20%7D%20const%20inputFields%20%3D%20%7B%20%27orderNumberWarehouse%27%3A%20orderData.orderNr%2C%20%27shipperOrderNumber%27%3A%20orderData.orderNr%2C%20%27name%27%3A%20orderData.name%2C%20%27phoneNumber%27%3A%20orderData.phone%2C%20%27emailAddress%27%3A%20orderData.email%2C%20%27zipcode%27%3A%20orderData.zip%2C%20%27street%27%3A%20streetName%2C%20%27houseNumber%27%3A%20houseNumber%2C%20%27residence%27%3A%20orderData.city%20%7D%3B%20for%20%28const%20%5BfieldName%2C%20fieldValue%5D%20of%20Object.entries%28inputFields%29%29%20%7B%20const%20inputElement%20%3D%20document.querySelector%28%60input%5Bname%3D%22%24%7BfieldName%7D%22%5D%60%29%3B%20if%20%28inputElement%29%20%7B%20inputElement.focus%28%29%3B%20inputElement.value%20%3D%20fieldValue%3B%20%5B%27input%27%2C%27change%27%2C%27blur%27%5D.forEach%28eventType%20%3D%3E%20inputElement.dispatchEvent%28new%20Event%28eventType%2C%20%7Bbubbles%3A%20true%7D%29%29%20%29%3B%20%7D%20%7D%20await%20new%20Promise%28resolve%20%3D%3E%20setTimeout%28resolve%2C%20500%29%29%3B%20const%20countryIds%20%3D%20%7B%27Nederland%27%3A%201%2C%20%27Belgi%C3%AB%27%3A%20139%2C%20%27Duitsland%27%3A%20427003%7D%3B%20setDxDropdown%28%27_countryId%27%2C%20countryIds%5BorderData.detectedCountry%5D%29%3B%20await%20new%20Promise%28resolve%20%3D%3E%20setTimeout%28resolve%2C%20500%29%29%3B%20setDxDropdown%28%27_language%27%2C%20orderData.detectedLanguage%29%3B%20if%20%28isSameDay%20%26%26%20orderData.serviceTypeId%29%20%7B%20const%20builtInServices%20%3D%20%5B277249%2C%2051068%2C%20322997%2C%20277248%2C%20254509%2C%20254508%2C%20490316%2C%20490317%5D%3B%20const%20needsBuiltIn%20%3D%20builtInServices.includes%28parseInt%28orderData.serviceTypeId%29%29%3B%20if%20%28needsBuiltIn%29%20%7B%20setDxDropdown%28%27_channelId%27%2C%20132134%29%3B%20await%20new%20Promise%28resolve%20%3D%3E%20setTimeout%28resolve%2C%20800%29%29%3B%20setDxTagBox%28%27_services%27%2C%20%5BparseInt%28orderData.serviceTypeId%29%5D%29%3B%20await%20new%20Promise%28resolve%20%3D%3E%20setTimeout%28resolve%2C%20400%29%29%3B%20setDxDropdown%28%27_networkId%27%2C%2012%29%3B%20await%20new%20Promise%28resolve%20%3D%3E%20setTimeout%28resolve%2C%20400%29%29%3B%20setDxDropdown%28%27_channelId%27%2C%2016%29%3B%20%7D%20else%20%7B%20setDxDropdown%28%27_channelId%27%2C%2016%29%3B%20await%20new%20Promise%28resolve%20%3D%3E%20setTimeout%28resolve%2C%20800%29%29%3B%20setDxDropdown%28%27_networkId%27%2C%2012%29%3B%20await%20new%20Promise%28resolve%20%3D%3E%20setTimeout%28resolve%2C%20400%29%29%3B%20setDxTagBox%28%27_services%27%2C%20%5BparseInt%28orderData.serviceTypeId%29%5D%29%3B%20%7D%20%7D%20const%20checkbox%20%3D%20document.querySelector%28%27input%5Bname%3D%22showOnDevice%22%5D%27%29%3B%20if%20%28checkbox%29%20%7B%20const%20container%20%3D%20checkbox.closest%28%27.dx-checkbox%27%29%3B%20if%20%28container%29%20%7B%20const%20instance%20%3D%20%24%28container%29.dxCheckBox%28%27instance%27%29%3B%20if%20%28instance%29%20instance.option%28%27value%27%2C%20true%29%3B%20%7D%20%7D%20if%20%28orderData.product%20%7C%7C%20orderData.probleem%29%20%7B%20const%20remarkForms%20%3D%20document.querySelectorAll%28%27.dx-form%27%29%3B%20if%20%28remarkForms.length%20%3E%201%29%20%7B%20const%20remarkText%20%3D%20%5BorderData.product%2C%20orderData.probleem%5D.filter%28Boolean%29.join%28%27%20-%20%27%29%3B%20const%20formData%20%3D%20%24%28remarkForms%5B1%5D%29.dxForm%28%27instance%27%29.option%28%27formData%27%29%3B%20if%20%28formData%20%26%26%20typeof%20formData.remark%20%3D%3D%3D%20%27function%27%29%20%7B%20formData.remark%28remarkText%29%3B%20%7D%20%7D%20%7D%20await%20navigator.clipboard.writeText%28%27%27%29%3B%20const%20toast%20%3D%20document.createElement%28%27div%27%29%3B%20toast.innerHTML%20%3D%20%27%3Cb%3EDS%20Logboek%3C/b%3E%20%E2%80%94%20Controleer%20de%20automatisch%20ingevulde%20velden%20voor%20je%20opslaat.%27%3B%20toast.style.cssText%20%3D%20%27position%3Afixed%3Btop%3A24px%3Bright%3A24px%3Bz-index%3A99999%3Bbackground%3A%231A1A2E%3Bcolor%3A%23fff%3Bpadding%3A16px%2022px%3Bborder-radius%3A8px%3Bfont-size%3A15px%3Bfont-family%3Asans-serif%3Bbox-shadow%3A0%204px%2012px%20rgba%280%2C0%2C0%2C.4%29%3Bmax-width%3A380px%3Bline-height%3A1.5%3B%27%3B%20document.body.appendChild%28toast%29%3B%20setTimeout%28%28%29%20%3D%3E%20toast.remove%28%29%2C%206000%29%3B%20%7D%20catch%28error%29%20%7B%20console.log%28%27error%3A%27%2C%20error%29%3B%20%7D%20%7D%29%28%29%3B">📋 DS Plakken</a>
+        <p class="drag-hint">Zie je geen bladwijzerbalk? Druk op <strong>Ctrl+Shift+B</strong> (Windows) of <strong>Cmd+Shift+B</strong> (Mac).</p>
+      </div>
+
+      <div class="note">
+        <strong>Al geïnstalleerd?</strong> Sleep de knop opnieuw naar je bladwijzerbalk en kies "Vervangen" — of verwijder de oude bladwijzer eerst en sleep hem opnieuw.
+      </div>
+    </div>
+
+    <!-- HOE GEBRUIK JE HET -->
+    <div class="card steps">
+      <h2><span class="step-number">2</span> Hoe gebruik je de paste bookmarklet?</h2>
+      <ol>
+        <li>
+          <span class="num">1</span>
+          <span>Verwerk een gesprek in de <strong>DS Logboek widget</strong> en klik op "Vastleggen".</span>
+        </li>
+        <li>
+          <span class="num">2</span>
+          <span>Open het <strong>DireXtion Import formulier</strong> (nieuwe order aanmaken).</span>
+        </li>
+        <li>
+          <span class="num">3</span>
+          <span>Klik op de <strong>DS Plakken</strong> bladwijzer in je bladwijzerbalk.</span>
+        </li>
+        <li>
+          <span class="num">4</span>
+          <span>Het formulier wordt automatisch ingevuld. <strong>Controleer alle velden</strong> voordat je opslaat.</span>
+        </li>
+      </ol>
+
+      <div class="note" style="margin-top:16px;">
+        De gegevens op het klembord zijn <strong>5 minuten geldig</strong>. Daarna moet je opnieuw vastleggen via de widget.
+      </div>
+    </div>
+
+    <!-- WAT WORDT INGEVULD -->
+    <div class="card">
+      <h2><span class="step-number">3</span> Wat wordt er automatisch ingevuld?</h2>
+      <div class="steps">
+        <ol>
+          <li><span class="num">✓</span><span>Naam, telefoon, e-mail, postcode, adres, woonplaats</span></li>
+          <li><span class="num">✓</span><span>Land en taal (automatisch bepaald op basis van postcode)</span></li>
+          <li><span class="num">✓</span><span>Ordersjabloon (alleen bij next-day orders, op basis van product + probleem + Nazorg/Extra dienst)</span></li>
+          <li><span class="num">✓</span><span>Shipper en depot (alleen bij same-day orders, op basis van route)</span></li>
+          <li><span class="num">✓</span><span>Kanaal, service en netwerk (alleen bij same-day orders)</span></li>
+          <li><span class="num">✓</span><span>Show on device — aangevinkt</span></li>
+          <li><span class="num">✓</span><span>Opmerking — gevuld met product en probleem</span></li>
+        </ol>
+      </div>
+    </div>
+
+    <!-- CACHE LEGEN -->
+    <div class="card">
+      <h2>Oude versie? Cache legen</h2>
+      <p style="font-size:14px;color:#444;margin-bottom:10px;line-height:1.5;">
+        Laadt de DS Logboek widget een oude versie? Plak dit in de browserconsole (F12) op een DireXtion-pagina en herlaad:
+      </p>
+      <div class="cache-code">localStorage.removeItem('ds_app_prod_cache')</div>
+    </div>
+
+    <footer>DS Logboek v1.12.15 — Coolblue Delivery Support — intern gebruik</footer>
+
+  </div>
+</body>
+</html>

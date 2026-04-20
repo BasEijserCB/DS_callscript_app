@@ -27,7 +27,7 @@ Daarna cache legen in browser op DireXtion-pagina:
 localStorage.removeItem('ds_app_prod_cache')
 ```
 
-**Versienummer** altijd ophogen bij elke wijziging — zonder te vragen. Patch voor bugfix, minor voor nieuwe feature.
+**Versienummer** alleen ophogen bij wijzigingen aan `ds-logboek.js` — zonder te vragen. Patch voor bugfix, minor voor nieuwe feature.
 
 ---
 
