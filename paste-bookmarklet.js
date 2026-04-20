@@ -476,20 +476,7 @@ try {
           await new Promise(resolve => setTimeout(resolve, 300));
         }
 
-        // Set services TagBox to plaatsen (51072)
-        const svcInputs = document.querySelectorAll('input[id$="_services"]');
-        const svcInput = svcInputs[svcInputs.length - 1];
-        console.log(`[DS]   svcInputs.length:`, svcInputs.length, '| svcInput id:', svcInput?.id);
-        if (svcInput) {
-          const container = svcInput.closest('.dx-tagbox');
-          const instance = container && $(container).dxTagBox('instance');
-          console.log(`[DS]   services TagBox instance:`, instance);
-          if (instance) instance.option('value', [51072]);
-        } else {
-          console.warn('[DS]   geen services TagBox input gevonden');
-        }
-
-        // Set articleTypeId based on product
+        // Set articleTypeId based on product (first — changing it may reset services)
         const productKey = normaliseerProduct(product);
         const articleTypeId = productKey && articleTypeIds[productKey];
         console.log(`[DS]   normaliseerProduct("${product}") →`, productKey, '| articleTypeId:', articleTypeId);
@@ -501,12 +488,33 @@ try {
             const container = artInput.closest('.dx-selectbox');
             const instance = container && $(container).dxSelectBox('instance');
             console.log(`[DS]   articleTypeId SelectBox instance:`, instance);
-            if (instance) instance.option('value', articleTypeId);
+            if (instance) {
+              instance.option('value', articleTypeId);
+              await new Promise(resolve => setTimeout(resolve, 400));
+              console.log(`[DS]   articleTypeId after set:`, instance.option('value'));
+            }
           } else {
             console.warn('[DS]   geen articleTypeId SelectBox input gevonden');
           }
         } else {
           console.warn(`[DS]   geen articleTypeId voor productKey "${productKey}"`);
+        }
+
+        // Set services TagBox to plaatsen (51072) last — after articleTypeId settles
+        const svcInputs = document.querySelectorAll('input[id$="_services"]');
+        const svcInput = svcInputs[svcInputs.length - 1];
+        console.log(`[DS]   svcInputs.length:`, svcInputs.length, '| svcInput id:', svcInput?.id);
+        if (svcInput) {
+          const container = svcInput.closest('.dx-tagbox');
+          const instance = container && $(container).dxTagBox('instance');
+          console.log(`[DS]   services TagBox instance:`, instance);
+          if (instance) {
+            instance.option('value', [51072]);
+            await new Promise(resolve => setTimeout(resolve, 200));
+            console.log(`[DS]   services after set:`, instance.option('value'));
+          }
+        } else {
+          console.warn('[DS]   geen services TagBox input gevonden');
         }
       } else {
         console.warn('[DS]   add-button niet gevonden');
