@@ -1816,7 +1816,11 @@
     else if (prob.includes('tv installeren')||prob.includes('aansluiten')) serviceTypeId=254509;
     else if (prob.includes('tv + soundbar ophang')) serviceTypeId=490317;
     else if (prob.includes('tv + soundbar')) serviceTypeId=490316;
-    navigator.clipboard.writeText(JSON.stringify({orderNr:callData.orderBron+'-DS',name:name,phone:ph,email:email,zip:cleanPC,city:city,address:address,detectedCountry:country,detectedLanguage:lang,product:effectiefProduct(),probleem:callData.probleem,dienstType:callData.dienstType,formaatTV:callData.formaatTV,uitkomst:callData.uitkomst||callData.ks_uitkomst||'',geplandeRoute:callData.geplandeRoute||'',serviceTypeId:serviceTypeId,time:Date.now()}));
+    var payload={orderNr:callData.orderBron+'-DS',name:name,phone:ph,email:email,zip:cleanPC,city:city,address:address,detectedCountry:country,detectedLanguage:lang,product:effectiefProduct(),probleem:callData.probleem,dienstType:callData.dienstType,formaatTV:callData.formaatTV,uitkomst:callData.uitkomst||callData.ks_uitkomst||'',geplandeRoute:callData.geplandeRoute||'',serviceTypeId:serviceTypeId,time:Date.now()};
+    if ((prob.includes('plaatsen')||prob.includes('tillen'))&&callData.product_keuze) {
+      payload.products=callData.product_keuze.split(', ');
+    }
+    navigator.clipboard.writeText(JSON.stringify(payload));
   }
 
   // ── VERSTUUR: GEPLAND (loggen + klembord) ────────────────────

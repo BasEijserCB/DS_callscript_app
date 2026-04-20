@@ -428,8 +428,10 @@ try {
     }
   }
 
-  // ── STAP 1c: SAME DAY PLAATSEN/TILLEN — PRODUCT RIJ TOEVOEGEN ─
-  if (isSameDay && (orderData.probleem || '').toLowerCase().match(/plaatsen|tillen/)) {
+  // ── STAP 1c: SAME DAY / NEXT DAY PLAATSEN/TILLEN — PRODUCT RIJ TOEVOEGEN ─
+  const productsToAdd = orderData.products || (orderData.product ? [orderData.product] : []);
+  const isPlaatstService = (orderData.probleem || '').toLowerCase().match(/plaatsen|tillen/) || (orderData.serviceTypeId === 51072);
+  if (isPlaatstService && productsToAdd.length > 0) {
     const articleTypeIds = {
       'wasmachine': 133,
       'wasdroogcombinatie': 361,
@@ -442,39 +444,51 @@ try {
       'inbouw koelkast': 330,
       'inbouw vriezer': 352,
     };
-    const addBtn = document.querySelector('.dx-icon-add')?.closest('.dx-button');
-    if (addBtn) {
-      addBtn.click();
-      await new Promise(resolve => setTimeout(resolve, 500));
+    for (let pidx = 0; pidx < productsToAdd.length; pidx++) {
+      const product = productsToAdd[pidx];
+      const addBtn = document.querySelector('.dx-icon-add')?.closest('.dx-button');
+      if (addBtn) {
+        addBtn.click();
+        await new Promise(resolve => setTimeout(resolve, 500));
 
-      // Set code = "1"
-      const codeInputs = document.querySelectorAll('input[name="code"]');
-      const codeInput = codeInputs[codeInputs.length - 1];
-      if (codeInput) {
-        codeInput.focus();
-        codeInput.value = '1';
-        ['input', 'change', 'blur'].forEach(t => codeInput.dispatchEvent(new Event(t, {bubbles: true})));
-      }
+        // Click on the newly added article to select it (needed for 2nd+ products)
+        if (pidx > 0) {
+          const articles = document.querySelectorAll('[data-options*="dxTemplate"][data-options*="article"]');
+          if (articles.length > pidx) {
+            articles[pidx].click();
+            await new Promise(resolve => setTimeout(resolve, 300));
+          }
+        }
 
-      // Set services TagBox to (Nazorg) plaatsen/aansluiten
-      const svcInputs = document.querySelectorAll('input[id$="_services"]');
-      const svcInput = svcInputs[svcInputs.length - 1];
-      if (svcInput) {
-        const container = svcInput.closest('.dx-tagbox');
-        const instance = container && $(container).dxTagBox('instance');
-        if (instance) instance.option('value', [51072]);
-      }
+        // Set code = "1"
+        const codeInputs = document.querySelectorAll('input[name="code"]');
+        const codeInput = codeInputs[codeInputs.length - 1];
+        if (codeInput) {
+          codeInput.focus();
+          codeInput.value = '1';
+          ['input', 'change', 'blur'].forEach(t => codeInput.dispatchEvent(new Event(t, {bubbles: true})));
+        }
 
-      // Set articleTypeId based on product
-      const productKey = normaliseerProduct(orderData.product || '');
-      const articleTypeId = productKey && articleTypeIds[productKey];
-      if (articleTypeId) {
-        const artInputs = document.querySelectorAll('input[id$="_articleTypeId"]');
-        const artInput = artInputs[artInputs.length - 1];
-        if (artInput) {
-          const container = artInput.closest('.dx-selectbox');
-          const instance = container && $(container).dxSelectBox('instance');
-          if (instance) instance.option('value', articleTypeId);
+        // Set services TagBox to plaatsen (51072)
+        const svcInputs = document.querySelectorAll('input[id$="_services"]');
+        const svcInput = svcInputs[svcInputs.length - 1];
+        if (svcInput) {
+          const container = svcInput.closest('.dx-tagbox');
+          const instance = container && $(container).dxTagBox('instance');
+          if (instance) instance.option('value', [51072]);
+        }
+
+        // Set articleTypeId based on product
+        const productKey = normaliseerProduct(product);
+        const articleTypeId = productKey && articleTypeIds[productKey];
+        if (articleTypeId) {
+          const artInputs = document.querySelectorAll('input[id$="_articleTypeId"]');
+          const artInput = artInputs[artInputs.length - 1];
+          if (artInput) {
+            const container = artInput.closest('.dx-selectbox');
+            const instance = container && $(container).dxSelectBox('instance');
+            if (instance) instance.option('value', articleTypeId);
+          }
         }
       }
     }
@@ -549,10 +563,11 @@ try {
 
 
   // ── STAP 6: OPMERKING INVULLEN ───────────────────────────────
-  if (orderData.product || orderData.probleem) {
+  if (orderData.products || orderData.product || orderData.probleem) {
     const remarkForms = document.querySelectorAll('.dx-form');
     if (remarkForms.length > 1) {
-      const remarkText = [orderData.product, orderData.probleem].filter(Boolean).join(' - ');
+      const productText = orderData.products ? orderData.products.join(', ') : orderData.product;
+      const remarkText = [productText, orderData.probleem].filter(Boolean).join(' - ');
       const formData = $(remarkForms[1]).dxForm('instance').option('formData');
       if (formData && typeof formData.remark === 'function') {
         formData.remark(remarkText);
