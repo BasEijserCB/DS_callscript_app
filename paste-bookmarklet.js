@@ -554,11 +554,29 @@ try {
 
   await new Promise(resolve => setTimeout(resolve, 500));
 
+  // ── CHECKPOINT A: na STAP 3, vóór countryId ─────────────────
+  {
+    const a = document.querySelectorAll('input[id$="_articleTypeId"]');
+    const s = document.querySelectorAll('input[id$="_services"]');
+    const ai = a.length && $(a[a.length-1].closest('.dx-selectbox')).dxSelectBox('instance');
+    const si = s.length && $(s[s.length-1].closest('.dx-tagbox')).dxTagBox('instance');
+    console.log('[DS] CHECKPOINT A — articleTypeId:', ai?.option('value'), '| services:', si?.option('value'));
+  }
+
   // ── STAP 4: LAND & TAAL ───────────────────────────────────────
   const countryIds = {'Nederland': 1, 'België': 139, 'Duitsland': 427003};
   setDxDropdown('_countryId', countryIds[orderData.detectedCountry]);
   await new Promise(resolve => setTimeout(resolve, 500));
   setDxDropdown('_language', orderData.detectedLanguage);
+
+  // ── CHECKPOINT B: na countryId/taal ──────────────────────────
+  {
+    const a = document.querySelectorAll('input[id$="_articleTypeId"]');
+    const s = document.querySelectorAll('input[id$="_services"]');
+    const ai = a.length && $(a[a.length-1].closest('.dx-selectbox')).dxSelectBox('instance');
+    const si = s.length && $(s[s.length-1].closest('.dx-tagbox')).dxTagBox('instance');
+    console.log('[DS] CHECKPOINT B — articleTypeId:', ai?.option('value'), '| services:', si?.option('value'));
+  }
 
   // ── STAP 4b: SAME DAY — KANAAL / NETWERK / SERVICE ───────────
   if (isSameDay && orderData.serviceTypeId) {
@@ -606,6 +624,15 @@ try {
   }
 
   await navigator.clipboard.writeText('');
+
+  // ── CHECKPOINT C: einde, vlak voor toast ─────────────────────
+  {
+    const a = document.querySelectorAll('input[id$="_articleTypeId"]');
+    const s = document.querySelectorAll('input[id$="_services"]');
+    const ai = a.length && $(a[a.length-1].closest('.dx-selectbox')).dxSelectBox('instance');
+    const si = s.length && $(s[s.length-1].closest('.dx-tagbox')).dxTagBox('instance');
+    console.log('[DS] CHECKPOINT C — articleTypeId:', ai?.option('value'), '| services:', si?.option('value'));
+  }
 
   // ── MELDING: CONTROLEER DE INGEVULDE VELDEN ──────────────────
   const toast = document.createElement('div');
