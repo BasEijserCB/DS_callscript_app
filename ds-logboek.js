@@ -392,6 +392,7 @@
         else if (strModel.includes('fornuis')) { callData.product='Fornuis'; answeredKeys.push('product'); autoFilledKeys.push('product'); isProductAutoGuessed=true; }
         else if (strModel.includes('afzuigkap')||strModel.includes('wasemkap')) { callData.product='Afzuigkap'; answeredKeys.push('product'); autoFilledKeys.push('product'); isProductAutoGuessed=true; }
         else if (strModel.includes('soundbar')||strModel.includes('sound bar')) { callData.product='Soundbar'; answeredKeys.push('product'); autoFilledKeys.push('product'); isProductAutoGuessed=true; }
+        else if (strModel.includes('tussenstuk')||strModel.includes('stapelplaats')) { callData.product='Wasmachine'; answeredKeys.push('product'); autoFilledKeys.push('product'); isProductAutoGuessed=true; }
       }
     }
   }
@@ -1029,7 +1030,7 @@
             '<button class="park-info-btn" id="btn-park-info">\u2139</button>' +
           '</div>' +
         '</div></div>' +
-        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.12.17</div>' +
+        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.12.18</div>' +
       '</div>';
 
     // Park tooltip
