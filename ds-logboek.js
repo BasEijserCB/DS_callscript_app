@@ -674,7 +674,7 @@
           } else if (callData.onderweg_type==='Adres niet bereikbaar (bijzonder geval)') {
             s.push({key:'onderweg_uitkomst',label:'Wat was de uitkomst?',type:'ux-select',opties:['Teamleider geïnformeerd, order doorgezet','Nee, geen oplossing door DS']});
           } else if (callData.onderweg_type==='Klant niet bereikbaar / verkeerd nummer') {
-            s.push({key:'onderweg_uitkomst',label:'Wat was de uitkomst?',type:'ux-select',opties:['Telefoonnummer gevonden voor Held','Correct nummer doorgegeven aan Held','Nee, geen oplossing door DS']});
+            s.push({key:'onderweg_uitkomst',label:'Wat was de uitkomst?',type:'ux-select',opties:['Telefoonnummer gevonden voor Held','Nee, geen oplossing door DS']});
           } else if (callData.onderweg_type==='Vraag over service') {
             s.push({key:'onderweg_uitkomst',label:'Wat was de uitkomst?',type:'ux-select',opties:['Vraag beantwoord, held kan verder','Nee, geen oplossing door DS']});
           }
@@ -794,7 +794,7 @@
         } else if (callData.onderweg_type==='Adres niet bereikbaar (bijzonder geval)') {
           s.push({key:'onderweg_uitkomst',label:'Wat was de uitkomst?',type:'ux-select',opties:['Teamleider geïnformeerd, order doorgezet','Nee, geen oplossing door DS']});
         } else if (callData.onderweg_type==='Klant niet bereikbaar / verkeerd nummer') {
-          s.push({key:'onderweg_uitkomst',label:'Wat was de uitkomst?',type:'ux-select',opties:['Telefoonnummer gevonden voor Held','Correct nummer doorgegeven aan Held','Nee, geen oplossing door DS']});
+          s.push({key:'onderweg_uitkomst',label:'Wat was de uitkomst?',type:'ux-select',opties:['Telefoonnummer gevonden voor Held','Nee, geen oplossing door DS']});
         } else if (callData.onderweg_type==='Vraag over service') {
           s.push({key:'onderweg_uitkomst',label:'Wat was de uitkomst?',type:'ux-select',opties:['Vraag beantwoord, held kan verder','Nee, geen oplossing door DS']});
         }
@@ -925,7 +925,6 @@
       // CBF onderweg: zelfde logica als CBB onderweg
       if (callData.onderweg_type==='Advies gegeven') return callData.advies_gelukt==='Ja, service uitgevoerd' ? 'Advies gegeven aan held waardoor service uitgevoerd is' : 'Nee, geen oplossing door DS';
       if (callData.onderweg_type==='Adres niet bereikbaar (bijzonder geval)') return callData.onderweg_uitkomst||'Adres niet bereikbaar (bijzonder geval)';
-      if (callData.onderweg_uitkomst==='Correct nummer doorgegeven aan Held') return 'Correct nummer doorgegeven aan Held';
       if (callData.onderweg_uitkomst==='Alternatieve route gevonden voor Held') return 'Alternatieve route gevonden voor Held';
       return callData.onderweg_uitkomst||'';
     }
@@ -991,7 +990,6 @@
       // CBB onderweg
       if (callData.onderweg_type==='Advies gegeven') return callData.advies_gelukt==='Ja, service uitgevoerd' ? 'Advies gegeven aan held waardoor service uitgevoerd is' : 'Nee, geen oplossing door DS';
       if (callData.onderweg_type==='Adres niet bereikbaar (bijzonder geval)') return callData.onderweg_uitkomst||'Adres niet bereikbaar (bijzonder geval)';
-      if (callData.onderweg_uitkomst==='Correct nummer doorgegeven aan Held') return 'Correct nummer doorgegeven aan Held';
       if (callData.onderweg_uitkomst==='Alternatieve route gevonden voor Held') return 'Alternatieve route gevonden voor Held';
       return callData.onderweg_uitkomst||'';
     }
@@ -1063,7 +1061,7 @@
             '<button class="park-info-btn" id="btn-park-info">\u2139</button>' +
           '</div>' +
         '</div></div>' +
-        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.14.1</div>' +
+        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.14.2</div>' +
       '</div>';
 
     // Park tooltip
