@@ -467,27 +467,36 @@ try {
   if (addressMatch) { streetName = addressMatch[1]; houseNumber = addressMatch[2]; }
 
   // ── STAP 3: STANDAARD VELDEN INVULLEN (na sjabloon) ──────────
-  const inputFields = {
+  const fillInputs = (fields) => {
+    for (const [fieldName, fieldValue] of Object.entries(fields)) {
+      const inputElement = document.querySelector(`input[name="${fieldName}"]`);
+      if (inputElement) {
+        inputElement.focus();
+        inputElement.value = fieldValue;
+        ['input','change','blur'].forEach(eventType =>
+          inputElement.dispatchEvent(new Event(eventType, {bubbles: true}))
+        );
+      }
+    }
+  };
+
+  // Postcode + huisnummer eerst — DireXtion probeert daarna straatnaam auto in te vullen
+  fillInputs({
     'orderNumberWarehouse': orderData.orderNr,
     'shipperOrderNumber':   orderData.orderNr,
     'name':                 orderData.name,
     'phoneNumber':          orderData.phone,
     'emailAddress':         orderData.email,
     'zipcode':              orderData.zip,
-    'street':               streetName,
     'houseNumber':          houseNumber,
-    'residence':            orderData.city
-  };
-  for (const [fieldName, fieldValue] of Object.entries(inputFields)) {
-    const inputElement = document.querySelector(`input[name="${fieldName}"]`);
-    if (inputElement) {
-      inputElement.focus();
-      inputElement.value = fieldValue;
-      ['input','change','blur'].forEach(eventType =>
-        inputElement.dispatchEvent(new Event(eventType, {bubbles: true}))
-      );
-    }
-  }
+  });
+
+  // Wacht op DireXtion autocomplete, daarna straat + woonplaats overschrijven
+  await new Promise(resolve => setTimeout(resolve, 400));
+  fillInputs({
+    'street':               streetName,
+    'residence':            orderData.city,
+  });
 
   await new Promise(resolve => setTimeout(resolve, 500));
 
