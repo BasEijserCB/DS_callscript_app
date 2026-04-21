@@ -87,13 +87,14 @@ ds-logboek.js  (scrapet DOM → gespreksflow → twee outputs)
 
 1. **Sjabloon eerst** (`_orderTemplateId`) + 800ms wacht — anders overschrijft sjabloon later ingevulde velden. Alleen bij next-day (`dienstType` aanwezig).
 2. **Same-day: shipper + depot** — shipper altijd `1012729` (Coolblue DeliverySupport); depot via 4-letter routecode uit `geplandeRoute` (bijv. `NLOV` → depot ID).
-3. **Meerdere producten (plaatsen service)** — loop voor elk product in `products` array: click add-button, click article item (voor 2e+), fill details, service = 51072.
+3. **STAP 1c FASE 1: Productrijen toevoegen** — loop voor elk product in `products` array: click add-button, click article item (ook voor 1e product), vul code="1". `articleTypeId` en `services` worden hier NIET ingesteld — dat gebeurt in Fase 2.
 4. Standaard velden: naam, telefoon, email, postcode, straat, huisnummer, woonplaats.
 5. Land (`_countryId`) + 500ms wacht.
 6. Taal (`_language`).
 7. **Same-day: kanaal / service / netwerk** (zie hieronder).
-8. Show on device checkbox.
-9. Opmerkingenveld: `product(s) - probleem` (multiple products als comma-separated).
+8. **STAP 1c FASE 2: Article DX velden instellen** — ná kanaal/service/netwerk: stel per product `articleTypeId` (via `normaliseerProduct()`) en `services` TagBox (51072) in. Volgorde is kritisch: als dit vóór kanaalwissel gebeurt, wist DireXtion herrender de waarden.
+9. Show on device checkbox.
+10. Opmerkingenveld: `product(s) - probleem` (multiple products als comma-separated).
 
 ---
 
@@ -148,6 +149,8 @@ const setDxTagBox = (fieldId, valueArray) => {
 | Sjabloon overschrijft velden | Sjabloon altijd eerst, daarna pas andere velden, 800ms wachttijd |
 | Service TagBox leeg na setValue | Items laden async na kanaalwissel — wacht minstens 800ms na `_channelId` zetten |
 | TagBox instance zoeken | `input.closest('.dx-tagbox')` → `dxTagBox('instance')` (widget root heeft `.dx-tagbox` class) |
+| articleTypeId/services gewist na kanaalwissel | Kanaal triggert herrender van article-sectie — stel DX velden altijd in NADAT kanaal is gezet (STAP 1c Fase 2) |
+| Article rij activeren | Altijd article rij klikken na add-button (ook voor 1e product) — anders zijn DX velden niet actief |
 
 ---
 
@@ -226,6 +229,8 @@ Prefixen worden gestript naar lokaal formaat: NL (+31/0031), BE (+32/0032), DE (
 
 | Versie | Wijziging |
 |---|---|
+| v1.12.18 | Fix: articleTypeId+services ingesteld ná channelId (STAP 1c Fase 2) — voorkomt dat herrender velden wist |
+| v1.12.17 | Fix: article rij klikken ook voor 1e product (niet alleen 2e+) om DX velden te activeren |
 | v1.12.16 | Add: meerdere producten ondersteuning voor plaatsen service (product_keuze → products array) |
 | v1.12.15 | Fix: plaatsen Extra dienst mapping teruggedraaid naar Nazorg default (51072) |
 | v1.12.14 | Add: dienstType vraag in same-day flow; serviceTypeId stapelkit N/E onderscheid |
