@@ -1618,7 +1618,7 @@
       ['Technische Dienst belt','Yeply belt','G4S belt'].forEach(function(o){
         var b=idoc.createElement('button'); b.className='ux-btn'; b.style.marginBottom='4px'; b.innerText=o;
         b.onclick=function(){
-          callData.bellerType='Externe partner';
+          callData.bellerType='Andere beller';
           answeredKeys.push('bellerType');
           callData.locatie = o.replace(' belt','');
           answeredKeys.push('locatie');
