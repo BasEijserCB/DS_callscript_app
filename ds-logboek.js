@@ -1613,7 +1613,7 @@
         };
         container.appendChild(b);
       });
-      var extToggle=idoc.createElement('button'); extToggle.className='ux-btn advies-btn'; extToggle.innerText='Externe partner belt ▾';
+      var extToggle=idoc.createElement('button'); extToggle.className='ux-btn advies-btn'; extToggle.innerText='Andere bellers ▾';
       var extExpand=idoc.createElement('div'); extExpand.style.cssText='display:none;margin-top:5px;';
       ['Technische Dienst belt','Yeply belt','G4S belt'].forEach(function(o){
         var b=idoc.createElement('button'); b.className='ux-btn'; b.style.marginBottom='4px'; b.innerText=o;
