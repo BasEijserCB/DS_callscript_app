@@ -203,11 +203,47 @@ skipDienstType()                // true bij deur omdraaien + koelkast/vriezer �
 isNextDay()                     // true bij Next day uitkomst
 getProductVerfijningOpties(p)   // verfijningsopties voor ambigue producten (Koelkast/Vriezer, Vaatwasser, Oven/Magnetron)
 productNeedsVerfijning()        // true als product ambigu en nog niet verfijnd
+parseToTourAlias(input)         // parseert routetekst → 'netwerk-depot-nr' (bijv. '2M-NLOV-07'). Netwerken: 1X, 1M, 2M, BI (keys: 'bi','inbouw','built in','built-in'), BK (fiets)
+parkeerSessie() / herstelSessie(staat) // sessie pauzeren/hervatten via localStorage (PARK_KEY per order)
 ```
+
+**`isAlgemeen`** (module-scope, gezet na scrape): `true` wanneer geen ordernummer gescrapet kon worden → activeert de Algemeen-gesprek modus (zie beneden).
 
 **serviceTypeId mapping** (in `kopieerNaarKlembord()`): bepaalt welke DireXtion service geselecteerd wordt voor same-day. Meeste services hebben één ID voor zowel Nazorg als Extra dienst (geen aparte Extra dienst variant beschikbaar). Uitzonderingen:
 - `stapelkit`: Nazorg=727124, Extra dienst=727123
 - Alle anderen: Nazorg-ID ook gebruikt als Extra dienst default
+
+---
+
+## Gespreksflow — bellerType
+
+Eerste keuze in de flow (`bellerType` in `callData`). Bepaalt de rest van de vragen:
+
+| Waarde | Betekenis | Knop-ingang |
+|---|---|---|
+| `CBB` | Coolblue Bezorgt (eigen bezorger) | hoofdknop "CBB belt" |
+| `CBF` | Coolblue Fiets | hoofdknop "CBF belt" |
+| `Anders` | Externe bezorgpartner (Technische Dienst / Yeply / G4S) — valt in "Andere bellers ▾" dropdown, eigen locatie-keuze | "Andere bellers ▾" → locatie-keuze |
+| `Andere beller` | Beller gaat niet over een bezorging (bv. klantenservice, winkel) — submit screen toont info-box dat probleem-log niet nodig is | "Andere bellers ▾" → "Andere beller" |
+| `Algemeen` | **Auto-gezet** als geen orderdata gescrapet kon worden (`isAlgemeen`) | n.v.t. — activeert aparte flow |
+
+De "Andere bellers ▾" dropdown heette vóór v1.13.0 "Externe partner ▾".
+
+---
+
+## Algemeen gesprek (geen orderdata)
+
+Wanneer `ds-logboek.js` wordt geladen op een pagina zonder ordernummer (`!scrapedOrder`), schakelt de widget over op een kortere flow:
+
+1. Voornaam / achternaam
+2. `algemeen-blocks` stap met twee blokken:
+   - **Advies gegeven** → `Ja, service uitgevoerd` / `Nee, geen oplossing door DS` (zet `advies_gelukt` + `locatie='Bij de klant'`)
+   - **Afhandeling buiten DS** (afwijkend_reden) → keuzes + optioneel `afwijkend_toelichting` bij `Overig`
+3. Submit
+
+Bovenin het blok staat een oranje waarschuwing: *"Geen orderdata gevonden — log bij voorkeur altijd op een order, gebruik deze modus alleen zonder ordernummer/referentie."*
+
+De flow slaat `bellerType` / `probleem` / `uitkomst` / adres-velden over. Logging gebeurt via `bouwLogParams()` zoals normaal, maar met beperkte data.
 
 ---
 
@@ -231,6 +267,13 @@ Prefixen worden gestript naar lokaal formaat: NL (+31/0031), BE (+32/0032), DE (
 
 | Versie | Wijziging |
 |---|---|
+| v1.14.2 | Update: duplicate uitkomst-optie "Correct nummer doorgegeven aan Held" verwijderd uit onderweg flow (Klant niet bereikbaar / verkeerd nummer) |
+| v1.14.1 | Fix: `parseToTourAlias` herkent nu ook `built in` / `built-in` als netwerk BI |
+| v1.14.0 | Add: "Algemeen gesprek" modus — flow zonder orderdata (alleen fname/lname + advies/afhandeling-blokken), bellerType='Algemeen' |
+| v1.13.2 | Add: info box op submit screen voor andere bellers |
+| v1.13.1 | Update: footer versie-bump (geen functionele wijziging) |
+| v1.13.0 | Update: bellerType knop "Externe partner" hernoemd naar "Andere bellers"; structuurrefactor |
+| v1.12.19 | Fix: straat/woonplaats invullen 400ms uitstellen na postcode om DireXtion autocomplete-overwrite te voorkomen |
 | v1.12.18 | Fix: articleTypeId+services ingesteld ná channelId (STAP 1c Fase 2) — voorkomt dat herrender velden wist |
 | v1.12.17 | Fix: article rij klikken ook voor 1e product (niet alleen 2e+) om DX velden te activeren |
 | v1.12.16 | Add: meerdere producten ondersteuning voor plaatsen service (product_keuze → products array) |
