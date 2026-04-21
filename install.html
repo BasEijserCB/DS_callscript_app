@@ -204,13 +204,32 @@
 
     <div class="header">
       <h1>DS Logboek — Installatie</h1>
-      <p class="subtitle">Paste bookmarklet voor DireXtion Import formulier</p>
-      <span class="version-badge">v1.14.0</span>
+      <p class="subtitle">Bookmarklets voor DireXtion</p>
+      <span class="version-badge">v1.14.1</span>
+    </div>
+
+    <!-- LOADER BOOKMARKLET -->
+    <div class="card">
+      <h2><span class="step-number">1</span> DS Logboek widget installeren</h2>
+
+      <p style="font-size:14px;color:#444;margin-bottom:16px;line-height:1.5;">
+        Sleep de knop hieronder naar je bladwijzerbalk. Daarna kun je hem op elke DireXtion-pagina klikken om de DS Logboek widget te openen. De widget werkt zichzelf automatisch bij in de achtergrond — nieuwe versies verschijnen bij de volgende klik.
+      </p>
+
+      <div class="bookmarklet-zone">
+        <p>Sleep deze knop naar je bladwijzerbalk:</p>
+        <a class="bookmarklet-link" href="javascript:%28function%28%29%7B%20var%20CACHE%3D%27ds_app_prod_cache%27%3B%20var%20SRC%3D%27https%3A//raw.githubusercontent.com/BasEijserCB/DS_callscript_app/main/ds-logboek.js%27%3B%20var%20cached%3DlocalStorage.getItem%28CACHE%29%3B%20if%28cached%29eval%28cached%29%3B%20fetch%28SRC%2B%27%3Ft%3D%27%2BDate.now%28%29%2C%7Bcache%3A%27no-store%27%7D%29%20.then%28function%28r%29%7Breturn%20r.ok%3Fr.text%28%29%3Anull%3B%7D%29%20.then%28function%28code%29%7B%20if%28%21code%7C%7Ccode%3D%3D%3Dcached%29return%3B%20localStorage.setItem%28CACHE%2Ccode%29%3B%20if%28%21cached%29%7Beval%28code%29%3Breturn%3B%7D%20var%20t%3Ddocument.createElement%28%27div%27%29%3B%20t.textContent%3D%27DS%20Logboek%3A%20nieuwe%20versie%20gedownload%20%E2%80%94%20sluit%20en%20heropen%20om%20te%20laden%27%3B%20t.style.cssText%3D%27position%3Afixed%3Bbottom%3A16px%3Bright%3A16px%3Bz-index%3A99999%3Bbackground%3A%231A1A2E%3Bcolor%3A%23fff%3Bpadding%3A10px%2014px%3Bborder-radius%3A6px%3Bfont%3A13px%20sans-serif%3Bbox-shadow%3A0%204px%2012px%20rgba%280%2C0%2C0%2C.4%29%3Bmax-width%3A320px%3B%27%3B%20document.body.appendChild%28t%29%3B%20setTimeout%28function%28%29%7Bt.remove%28%29%3B%7D%2C6000%29%3B%20%7D%29%20.catch%28function%28%29%7B%7D%29%3B%20%7D%29%28%29%3B">🚀 DS Logboek</a>
+        <p class="drag-hint">Zie je geen bladwijzerbalk? Druk op <strong>Ctrl+Shift+B</strong> (Windows) of <strong>Cmd+Shift+B</strong> (Mac).</p>
+      </div>
+
+      <div class="note">
+        <strong>Al geïnstalleerd?</strong> Sleep de knop opnieuw naar je bladwijzerbalk en kies "Vervangen" — of verwijder de oude bladwijzer eerst en sleep hem opnieuw.
+      </div>
     </div>
 
     <!-- PASTE BOOKMARKLET -->
     <div class="card">
-      <h2><span class="step-number">1</span> Paste bookmarklet installeren</h2>
+      <h2><span class="step-number">2</span> Paste bookmarklet installeren</h2>
 
       <p style="font-size:14px;color:#444;margin-bottom:16px;line-height:1.5;">
         Sleep de knop hieronder naar je bladwijzerbalk. Daarna gebruik je hem in het DireXtion Import formulier nadat de DS Logboek widget de gegevens naar het klembord heeft gekopieerd.
@@ -229,7 +248,7 @@
 
     <!-- HOE GEBRUIK JE HET -->
     <div class="card steps">
-      <h2><span class="step-number">2</span> Hoe gebruik je de paste bookmarklet?</h2>
+      <h2><span class="step-number">3</span> Hoe gebruik je de paste bookmarklet?</h2>
       <ol>
         <li>
           <span class="num">1</span>
@@ -256,7 +275,7 @@
 
     <!-- WAT WORDT INGEVULD -->
     <div class="card">
-      <h2><span class="step-number">3</span> Wat wordt er automatisch ingevuld?</h2>
+      <h2><span class="step-number">4</span> Wat wordt er automatisch ingevuld?</h2>
       <div class="steps">
         <ol>
           <li><span class="num">✓</span><span>Naam, telefoon, e-mail, postcode, adres, woonplaats</span></li>
@@ -270,16 +289,16 @@
       </div>
     </div>
 
-    <!-- CACHE LEGEN -->
+    <!-- CACHE LEGEN (fallback) -->
     <div class="card">
-      <h2>Oude versie? Cache legen</h2>
+      <h2>Oude versie blijft hangen? Cache handmatig legen</h2>
       <p style="font-size:14px;color:#444;margin-bottom:10px;line-height:1.5;">
-        Laadt de DS Logboek widget een oude versie? Plak dit in de browserconsole (F12) op een DireXtion-pagina en herlaad:
+        De loader bookmarklet werkt zichzelf normaal automatisch bij. Als het toch niet lukt, plak dit in de browserconsole (F12) op een DireXtion-pagina en herlaad:
       </p>
       <div class="cache-code">localStorage.removeItem('ds_app_prod_cache')</div>
     </div>
 
-    <footer>DS Logboek v1.14.0 — Coolblue Delivery Support — intern gebruik</footer>
+    <footer>DS Logboek v1.14.1 — Coolblue Delivery Support — intern gebruik</footer>
 
   </div>
 </body>

@@ -9,9 +9,12 @@ Browsergebaseerde widget voor het Coolblue Delivery Support team. Draait bovenop
 | Bestand | Rol |
 |---|---|
 | `ds-logboek.js` | Volledige widget: UI, gespreksflow, DOM-scraping, clipboard output. Gehost op GitHub, geladen via raw URL met cache-busting. |
+| `loader-bookmarklet.js` | Leesbare broncode van de loader bookmarklet. Haalt `ds-logboek.js` op, cached in localStorage (`ds_app_prod_cache`), stale-while-revalidate met `{cache:'no-store'}` om CDN-cache te omzeilen. |
+| `loader-bookmarklet-min.txt` | Gegenereerde URL-geëncodeerde loader bookmarklet URL (regel 2). Output van `build.py`. |
 | `paste-bookmarklet.js` | Leesbare broncode van de paste bookmarklet. Leest clipboard JSON en vult DireXtion Import formulier in. |
-| `paste-bookmarklet-min.txt` | Gegenereerde URL-geëncodeerde bookmarklet URL (regel 2). Output van `build.py`. |
-| `build.py` | Minificeert `paste-bookmarklet.js` → `paste-bookmarklet-min.txt`. Detecteert versienummer automatisch. |
+| `paste-bookmarklet-min.txt` | Gegenereerde URL-geëncodeerde paste bookmarklet URL (regel 2). Output van `build.py`. |
+| `install.html` | Installatiepagina. Bevat **beide** bookmarklets als sleepbare knoppen — moet altijd in sync zijn met `loader-bookmarklet-min.txt` en `paste-bookmarklet-min.txt`. |
+| `build.py` | Minificeert beide bookmarklets → `*-min.txt`. Detecteert versienummer automatisch. |
 
 ---
 
@@ -22,22 +25,19 @@ python3 build.py
 git add . && git commit -m "beschrijving, bump to vX.X.X" && git push
 ```
 
-Daarna cache legen in browser op DireXtion-pagina:
+De loader bookmarklet haalt de nieuwe `ds-logboek.js` automatisch op in de achtergrond (stale-while-revalidate + `{cache:'no-store'}`). Bij de volgende klik op de bookmarklet krijg je de nieuwe versie. Cache handmatig legen is alleen nodig als fallback:
 ```javascript
 localStorage.removeItem('ds_app_prod_cache')
 ```
 
 **Versienummer** alleen ophogen bij wijzigingen aan `ds-logboek.js` — zonder te vragen. Patch voor bugfix, minor voor nieuwe feature.
 
-**BELANGRIJK:** `install.html` en `paste-bookmarklet-min.txt` moeten altijd in sync zijn. Na `python3 build.py` moet je `install.html` updaten:
-- Versie in badge en footer → paste-bookmarklet-min.txt regel 1
-- `href` in de bookmarklet-link → paste-bookmarklet-min.txt regel 2 (volledige URL)
+**BELANGRIJK:** `install.html` moet altijd **beide** bookmarklets up-to-date bevatten. Na `python3 build.py` moet je `install.html` updaten:
+- Versie in badge en footer → hoogste versie uit de min.txt bestanden (regel 1)
+- Loader-bookmarklet `href` → `loader-bookmarklet-min.txt` regel 2 (volledige URL)
+- Paste-bookmarklet `href` → `paste-bookmarklet-min.txt` regel 2 (volledige URL)
 
-Controleer met:
-```python
-# Extract paste-bookmarklet-min.txt regel 2
-# en vergelijk met href in install.html
-```
+Controleer dat beide `href`-waarden in `install.html` exact overeenkomen met regel 2 van de bijbehorende `*-min.txt`.
 
 ---
 
@@ -45,11 +45,13 @@ Controleer met:
 
 ```
 DireXtion pagina
-    ↓ bookmarklet 1
+    ↓ loader-bookmarklet (bookmarklet 1)
+  - eval(localStorage['ds_app_prod_cache'])  → widget direct zichtbaar
+  - fetch(ds-logboek.js, {cache:'no-store'}) → achtergrond, update cache bij diff
 ds-logboek.js  (scrapet DOM → gespreksflow → twee outputs)
     ├── Google Sheets  (via GAS backend, logging)
     └── Clipboard JSON (voor paste bookmarklet)
-            ↓ bookmarklet 2
+            ↓ paste-bookmarklet (bookmarklet 2)
         paste-bookmarklet.js
             ↓ vult DireXtion Import formulier in
 ```
