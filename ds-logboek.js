@@ -412,7 +412,7 @@
   function parseToTourAlias(input) {
     if (!input) return '';
     var str=input.toLowerCase(), netwerk='', depotInfo=null, nummer='';
-    var nw=[{code:'1X',keys:['1x','installatie','install','1mans','1 mans']},{code:'1M',keys:['1m']},{code:'2M',keys:['2m']},{code:'BI',keys:['bi','inbouw']},{code:'BK',keys:['bk','fiets','bike']}];
+    var nw=[{code:'1X',keys:['1x','installatie','install','1mans','1 mans']},{code:'1M',keys:['1m']},{code:'2M',keys:['2m']},{code:'BI',keys:['built in','built-in','bi','inbouw']},{code:'BK',keys:['bk','fiets','bike']}];
     for (var ni=0;ni<nw.length;ni++) { for (var nj=0;nj<nw[ni].keys.length;nj++) { if (str.includes(nw[ni].keys[nj])) { netwerk=nw[ni].code; str=str.replace(nw[ni].keys[nj],''); break; } } if (netwerk) break; }
     var dl=[
       {code:'NLOV',name:'Overamstel',keys:['overamstel','amsterdam','ams','ova','adam']},{code:'NLAL',name:'Almere',keys:['almere','alm']},
@@ -1063,7 +1063,7 @@
             '<button class="park-info-btn" id="btn-park-info">\u2139</button>' +
           '</div>' +
         '</div></div>' +
-        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.14.0</div>' +
+        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.14.1</div>' +
       '</div>';
 
     // Park tooltip
