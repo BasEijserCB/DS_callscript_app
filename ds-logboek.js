@@ -1045,7 +1045,7 @@
             '<button class="park-info-btn" id="btn-park-info">\u2139</button>' +
           '</div>' +
         '</div></div>' +
-        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.13.1</div>' +
+        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.13.2</div>' +
       '</div>';
 
     // Park tooltip
@@ -1282,6 +1282,10 @@
       // Blauw info paneeltje voor winkel informatievraag
       if (callData.locatie==='Winkel' && callData.ks_reden==='Informatie over vracht') {
         submitHtml += '<div class="info-box">ℹ️ <b>Advies aan de winkel:</b><br>Voor informatie over de vracht kunnen zij het best contact opnemen met het depot dat de levering verzorgt' + (callData.depot && callData.depot !== 'Onbekend' ? ': <b>' + callData.depot + '</b>' : '') + '.</div>';
+      }
+      // Info blokje voor andere bellers (niet over bezorging)
+      if (callData.bellerType==='Andere beller') {
+        submitHtml += '<div class="info-box">ℹ️ <b>Andere beller</b><br>Dit gesprek gaat niet over een bezorging. Je hoeft niet aan te geven wat het probleem was — gewoon loggen is voldoende.</div>';
       }
       // Rode warning voor fornuis
       if (callData.product==='Fornuis') {
