@@ -210,7 +210,8 @@
   var idoc = iframe.contentDocument || iframe.contentWindow.document;
 
   idoc.head.innerHTML = '<style>' +
-    'html,body{height:100%;margin:0;padding:0;overflow:hidden;font-family:"Segoe UI",Arial,sans-serif;color:#333333;display:flex;flex-direction:column;}' +
+    'html,body{height:100%;margin:0;padding:0;overflow:hidden;font-family:"Segoe UI",Arial,sans-serif;color:#333333;}' +
+    'body{display:flex;flex-direction:column;}' +
     '.app{display:flex;flex-direction:column;flex:1;min-height:0;}' +
     '.header{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-bottom:1px solid #DDDDDD;flex-shrink:0;background:#fff;}' +
     '.header-title{color:#285dab;font-size:17px;font-weight:700;}' +
@@ -267,6 +268,7 @@
     '</style>';
 
   var appContainer = idoc.createElement('div');
+  appContainer.style.cssText = 'flex:1;min-height:0;overflow:hidden;display:flex;flex-direction:column;';
   idoc.body.appendChild(appContainer);
 
   // ── UPDATE BANNER ─────────────────────────────────────────────
@@ -1101,7 +1103,7 @@
             '<button class="park-info-btn" id="btn-park-info">\u2139</button>' +
           '</div>' +
         '</div></div>' +
-        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.16.7</div>' +
+        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.16.8</div>' +
       '</div>';
 
     // Park tooltip
