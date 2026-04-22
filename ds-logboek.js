@@ -42,7 +42,7 @@
   // Het ordernummer is het anker: als dat er is, is de DOM klaar.
   // We pollen max 3 seconden voordat we verdergaan (ook als het leeg blijft).
   function doScrapeAndInit() {
-  var scrapedOrder, scrapedRoute, scrapedAdres, scrapedPC, scrapedAdresQuery, driver1, driver2, alleGescrapteProducten, scrapedTijdvak, scrapedAankomsttijd;
+  var scrapedOrder, scrapedRoute, scrapedAdres, scrapedPC, scrapedAdresQuery, driver1, driver2, alleGescrapteProducten, scrapedArtikelsoortenMap, scrapedTijdvak, scrapedAankomsttijd;
 
   if (!isBasicPage) {
     // ── CONSUMER PORTAL ────────────────────────────────────────
@@ -90,6 +90,7 @@
     // Producten uit de DevExpress artikelentabel (Articles_XXXXXXX).
     // Rijen hebben klasse dxgvDataRow_Office2010Silver. Celindices per rij:
     //   0 = uitklap-knop, 1 = Nummer, 2 = Omschrijving, 3 = Code, 4 = Artikelsoort
+    scrapedArtikelsoortenMap = {};
     alleGescrapteProducten = (function() {
       var dataRows = document.querySelectorAll('table[id^="Articles_"] tr.dxgvDataRow_Office2010Silver');
       var results = [];
@@ -108,7 +109,10 @@
         if (artikelsoort === 'barcodes') return;
         // Filter losse barcodestrings (puur hoofdletters + cijfers, geen spaties, ≥6 tekens)
         if (/^[A-Z0-9]{6,}$/.test(omschrijving)) return;
-        if (results.indexOf(omschrijving) === -1) results.push(omschrijving);
+        if (results.indexOf(omschrijving) === -1) {
+          results.push(omschrijving);
+          scrapedArtikelsoortenMap[omschrijving] = artikelsoort;
+        }
       });
       return results;
     })();
@@ -176,6 +180,21 @@
       }
     }
     return { merk:merk, typeGuess:lT||null };
+  }
+
+  function artikelsoortNaarProduct(soort) {
+    var map = {
+      'wasmachine':'Wasmachine','wasdroogcombinatie':'Wasdroogcombinatie','droger':'Droger',
+      'koelkast':'Koelkast / Vriezer','inbouw koelkast':'Koelkast / Vriezer',
+      'vriezer':'Koelkast / Vriezer','inbouw vriezer':'Koelkast / Vriezer','koel-vries combo':'Koelkast / Vriezer',
+      'vaatwasser':'Vaatwasser','inbouw vaatwasser':'Vaatwasser',
+      'televisie':'Televisie','soundbar':'Soundbar',
+      'oven':'Oven / Magnetron','magnetron':'Oven / Magnetron',
+      'inbouw oven':'Oven / Magnetron','inbouw magnetron':'Oven / Magnetron','combi-oven':'Combi-oven',
+      'kookplaat':'Kookplaat','inductiekookplaat':'Kookplaat','gaskookplaat':'Kookplaat',
+      'fornuis':'Fornuis','afzuigkap':'Afzuigkap','wasemkap':'Afzuigkap'
+    };
+    return map[(soort || '').trim()] || null;
   }
 
   // ── UI SETUP ─────────────────────────────────────────────────
@@ -364,8 +383,16 @@
 
   // Bij één product: auto-fill zoals voorheen
   if (!meerdereProducten && scrapedModel) {
+    // Op Basic: artikelsoort uit de tabel is een directe bron — gebruik die eerst
+    if (isBasicPage && scrapedArtikelsoortenMap && scrapedArtikelsoortenMap[scrapedModel]) {
+      var soortProduct = artikelsoortNaarProduct(scrapedArtikelsoortenMap[scrapedModel]);
+      if (soortProduct) {
+        callData.product = soortProduct;
+        answeredKeys.push('product'); autoFilledKeys.push('product'); isProductAutoGuessed=true;
+      }
+    }
     var det = detecteerType(scrapedModel);
-    if (det && det.typeGuess) {
+    if (!answeredKeys.includes('product') && det && det.typeGuess) {
       callData.product = det.typeGuess.charAt(0).toUpperCase()+det.typeGuess.slice(1);
       answeredKeys.push('product'); autoFilledKeys.push('product'); isProductAutoGuessed=true;
     }
@@ -1065,7 +1092,7 @@
             '<button class="park-info-btn" id="btn-park-info">\u2139</button>' +
           '</div>' +
         '</div></div>' +
-        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.16.2</div>' +
+        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.16.3</div>' +
       '</div>';
 
     // Park tooltip
