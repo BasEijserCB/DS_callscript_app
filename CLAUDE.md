@@ -267,6 +267,7 @@ Prefixen worden gestript naar lokaal formaat: NL (+31/0031), BE (+32/0032), DE (
 
 | Versie | Wijziging |
 |---|---|
+| v1.15.4 | Fix: leading postcode uit city-scrape strippen (BE/DE geven soms `"1000 Brussel"` als Woonplaats terug → belandde als `residence` in DireXtion) |
 | v1.15.3 | Fix: DireXtion email-filter gebruikt juiste key `EmailAddress` + `StartDate`/`EndDate` op vandaag, URL pad `/Basic/Orders` (hoofdletter) |
 | v1.15.2 | Update: DireXtion link op submit-scherm filtert nu op email i.p.v. ordernummer — betrouwbaarder |
 | v1.15.1 | Add: derde uitkomst "Helden stellen stop uit en gaan later terug" bij onderweg_type "Klant niet thuis" |

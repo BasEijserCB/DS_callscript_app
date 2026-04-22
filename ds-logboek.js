@@ -1065,7 +1065,7 @@
             '<button class="park-info-btn" id="btn-park-info">\u2139</button>' +
           '</div>' +
         '</div></div>' +
-        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.15.3</div>' +
+        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.15.4</div>' +
       '</div>';
 
     // Park tooltip
@@ -1890,7 +1890,7 @@
       // Basic: alle velden staan als losse .details-field entries
       rawPC   = basicField('Postcode');
       cleanPC = rawPC.replace(/\s+/g,'').toUpperCase();
-      city    = basicField('Woonplaats');
+      city    = basicField('Woonplaats').replace(/^\s*\d{4,5}\s*[A-Z]{0,2}\s+/i, '').trim();
       name    = basicField('Naam');
       ph      = (basicFieldInSection('Geadresseerde', 'Telefoonnummer') || basicFieldInSection('Geadresseerde', 'Mobiel nummer') || '').replace(/[^\d+]/g,'');
       email   = basicFieldInSection('Geadresseerde', 'E-mailadres');
@@ -1900,7 +1900,7 @@
       rawPC=gs('Static.Visit.PostalCode');
       var dm=rawPC.match(/^(\d{4}\s?[A-Z]{2})(\s|$)/i), bm=rawPC.match(/^(\d{4,5})(\s|$)/);
       if (dm) cleanPC=dm[1].trim(); else if (bm) cleanPC=bm[1].trim(); else cleanPC=(rawPC.match(/^\d{4}/)||[''])[0];
-      city = gs('Static.Visit.City')||gs('City')||'';
+      city = (gs('Static.Visit.City')||gs('City')||'').replace(/^\s*\d{4,5}\s*[A-Z]{0,2}\s+/i, '').trim();
       name = gs('Static.Visit.ContactName')||gs('ConsigneeName')||'';
       ph = (gs('Static.Visit.Phone')||gs('Static.Visit.PhoneNumber')||gs('PhoneNumber')||'').replace(/[^\d+]/g,'');
       email = gs('Static.Visit.Email')||gs('Email')||'';
