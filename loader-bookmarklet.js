@@ -9,7 +9,10 @@ javascript:(function(){
       if(!code||code===cached)return;
       localStorage.setItem(CACHE,code);
       if(!cached){eval(code);return;}
-      localStorage.setItem('ds_update_pending','1');
+      var t=document.createElement('div');
+      t.innerHTML='↻ <b>DS Logboek: nieuwe versie gedownload</b><br><span style="font-weight:400;">Sluit en heropen de widget om te laden</span><button onclick="this.parentNode.remove()" style="position:absolute;top:8px;right:10px;background:none;border:none;color:#fff;font-size:18px;cursor:pointer;line-height:1;opacity:0.8;">×</button>';
+      t.style.cssText='position:fixed;bottom:20px;right:20px;z-index:99999;background:#285dab;color:#fff;padding:12px 36px 12px 14px;border-radius:8px;font:13px "Segoe UI",sans-serif;box-shadow:0 4px 16px rgba(0,0,0,.35);max-width:300px;line-height:1.5;';
+      document.body.appendChild(t);
     })
     .catch(function(){});
 })();
