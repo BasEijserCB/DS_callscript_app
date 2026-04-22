@@ -1065,7 +1065,7 @@
             '<button class="park-info-btn" id="btn-park-info">\u2139</button>' +
           '</div>' +
         '</div></div>' +
-        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.15.4</div>' +
+        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.16.0</div>' +
       '</div>';
 
     // Park tooltip
@@ -1321,8 +1321,9 @@
         submitHtml += '<div class="info-box" style="background:#FFE6E6;border-color:#E63946;color:#C1121F;">⚠️ <b>DS serveert geen fornuizen!</b><br>Deze bestelling kan niet via DS geplaatst worden. Kies "Niet uitvoerbaar" of "Afhandeling buiten DS" voor verdere afhandeling.</div>';
       }
 
+      var direxUrl = '';
       if (callData.uitkomst === 'Same day gepland' || callData.uitkomst === 'Next day gepland') {
-        // Controle vragen + DireXtion link in één blauw paneeltje
+        // Controle vragen + DireXtion auto-open in één blauw paneeltje
         var controleItems = '<div class="controle-item">📦 Kan het product bij de klant blijven?</div>';
         if (callData.uitkomst === 'Same day gepland') controleItems += '<div class="controle-item">🏠 Is de klant later vandaag nog thuis?</div>';
         var direxEmail = '';
@@ -1330,12 +1331,11 @@
         else { var emEl = document.querySelector("[data-bind*='Static.Visit.Email']") || document.querySelector("[data-bind*='Email']"); direxEmail = emEl ? emEl.innerText.trim() : ''; }
         var direxToday = (function(){ var d=new Date(), y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,'0'), da=String(d.getDate()).padStart(2,'0'); return {slash:y+'/'+m+'/'+da, dash:y+'-'+m+'-'+da}; })();
         var direxFilter = encodeURIComponent(JSON.stringify({StartDate:direxToday.slash,EndDate:direxToday.dash,EmailAddress:direxEmail,CountryIds:[],ChannelIds:[],NetworkIds:[],ServiceTypeIds:[],ShipmentStatusIds:[],VisitStatusIds:[],ParcelStatusIds:[],ShipperIds:[],DepotIds:[],CharacteristicIds:[]}));
-        var direxUrl = 'https://coolblue.dirextion.nl/Basic/Orders?filter=' + direxFilter;
+        direxUrl = 'https://coolblue.dirextion.nl/Basic/Orders?filter=' + direxFilter;
         submitHtml += '<div class="controle-box">' +
           '<div class="controle-title">✓ Check voor het plannen</div>' +
           controleItems +
-          '<div class="controle-item" style="margin-top:8px;padding-top:8px;border-top:1px solid #DDDDDD;">📝 Vergeet niet een opmerking te plaatsen op de originele order in DireXtion.<br>' +
-          '<a href="' + direxUrl + '" target="_blank" style="color:#0090e3;font-weight:600;">→ Open order ' + callData.orderBron + ' in DireXtion</a></div>' +
+          '<div class="controle-item" style="margin-top:8px;padding-top:8px;border-top:1px solid #DDDDDD;">📝 Vergeet niet een opmerking te plaatsen op de originele order in DireXtion — deze wordt automatisch in een nieuw tabblad geopend na loggen.</div>' +
           '</div>';
       }
       if (isGepland) {
@@ -1344,12 +1344,13 @@
         submitHtml += '<button id="btn-loggen" class="action-btn submit-btn">✓ Loggen</button>';
       }
       container.innerHTML = submitHtml;
+      var openDirex = function() { if (direxUrl) window.open(direxUrl, '_blank'); };
       if (isGepland) {
         idoc.getElementById('btn-clipboard').onclick = function() { kopieerNaarKlembord(); };
-        idoc.getElementById('btn-loggen').onclick = function() { verstuurAlleen(); };
-        idoc.getElementById('btn-both').onclick = function() { verstuurEnKopieer(); };
+        idoc.getElementById('btn-loggen').onclick = function() { openDirex(); verstuurAlleen(); };
+        idoc.getElementById('btn-both').onclick = function() { openDirex(); verstuurEnKopieer(); };
       } else {
-        idoc.getElementById('btn-loggen').onclick = function() { verstuurAlleen(); };
+        idoc.getElementById('btn-loggen').onclick = function() { openDirex(); verstuurAlleen(); };
       }
       renderAndersSection(null, null);
       return;
