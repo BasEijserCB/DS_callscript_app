@@ -272,13 +272,19 @@
   idoc.body.appendChild(appContainer);
 
   // ── UPDATE BANNER ─────────────────────────────────────────────
-  if (localStorage.getItem('ds_update_pending') === '1') {
-    var updateBanner = idoc.createElement('div');
-    updateBanner.style.cssText = 'flex-shrink:0;background:#fff8e1;border-bottom:2px solid #ffc107;color:#856404;font:600 12px "Segoe UI",Arial,sans-serif;padding:6px 12px;display:flex;align-items:center;justify-content:space-between;gap:8px;';
-    updateBanner.innerHTML = '<span>↻ Nieuwe versie beschikbaar — sluit en heropen de widget om te laden</span><button style="background:none;border:none;color:#856404;font-size:18px;cursor:pointer;line-height:1;padding:0 2px;font-weight:300;opacity:0.7;" title="Sluiten">×</button>';
-    updateBanner.querySelector('button').onclick = function() { updateBanner.remove(); localStorage.removeItem('ds_update_pending'); };
-    idoc.body.insertBefore(updateBanner, appContainer);
-  }
+  // Clear stale flag: this session IS the latest cached version.
+  // Poll while open — if the flag appears mid-session, a newer version just arrived.
+  localStorage.removeItem('ds_update_pending');
+  var updateCheckInterval = setInterval(function() {
+    if (localStorage.getItem('ds_update_pending') === '1' && !idoc.getElementById('ds-update-banner')) {
+      var updateBanner = idoc.createElement('div');
+      updateBanner.id = 'ds-update-banner';
+      updateBanner.style.cssText = 'flex-shrink:0;background:#fff8e1;border-bottom:2px solid #ffc107;color:#856404;font:600 12px "Segoe UI",Arial,sans-serif;padding:6px 12px;display:flex;align-items:center;justify-content:space-between;gap:8px;';
+      updateBanner.innerHTML = '<span>↻ Nieuwe versie beschikbaar — sluit en heropen de widget om te laden</span><button style="background:none;border:none;color:#856404;font-size:18px;cursor:pointer;line-height:1;padding:0 2px;font-weight:300;opacity:0.7;" title="Sluiten">×</button>';
+      updateBanner.querySelector('button').onclick = function() { updateBanner.remove(); localStorage.removeItem('ds_update_pending'); };
+      idoc.body.insertBefore(updateBanner, appContainer);
+    }
+  }, 5000);
 
   // ── STATE ─────────────────────────────────────────────────────
   var bFname = localStorage.getItem('ds_fname'), bLname = localStorage.getItem('ds_lname');
@@ -301,7 +307,7 @@
   function parkeerSessie() {
     var staat = { callData: callData, answeredKeys: answeredKeys, autoFilledKeys: autoFilledKeys, isProductAutoGuessed: isProductAutoGuessed, timestamp: Date.now() };
     localStorage.setItem(PARK_KEY, JSON.stringify(staat));
-    wrapper.remove();
+    clearInterval(updateCheckInterval); wrapper.remove();
   }
 
   function herstelSessie(staat) {
@@ -1103,7 +1109,7 @@
             '<button class="park-info-btn" id="btn-park-info">\u2139</button>' +
           '</div>' +
         '</div></div>' +
-        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.16.8</div>' +
+        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.16.9</div>' +
       '</div>';
 
     // Park tooltip
@@ -1112,7 +1118,7 @@
     parkTooltip.innerText = parkInfoTekst;
     idoc.body.appendChild(parkTooltip);
 
-    idoc.getElementById('btn-close').onclick = function(){ wrapper.remove(); };
+    idoc.getElementById('btn-close').onclick = function(){ clearInterval(updateCheckInterval); wrapper.remove(); };
     idoc.getElementById('btn-height').onclick = function() {
       var stappen = [620, 760, 900].filter(function(h){ return h <= maxViewportHeight(); });
       if (stappen.length === 0) stappen = [clampHeight(620)];
@@ -1986,14 +1992,14 @@
   function verstuurEnKopieer() {
     kopieerNaarKlembord();
     verwijderGeparkeerd();
-    wrapper.remove();
+    clearInterval(updateCheckInterval); wrapper.remove();
     fetch('https://script.google.com/a/macros/coolblue.nl/s/AKfycbxb-OwLCFGlDQ48qz3KnGnmsgnVLWxuOjvEr7UG3M3z0WzO0kVsTKGd_8mZjtvHvPHnEg/exec'+bouwLogParams()).catch(function(){});
   }
 
   // ── VERSTUUR: ALLEEN LOGGEN ───────────────────────────────────
   function verstuurAlleen() {
     verwijderGeparkeerd();
-    wrapper.remove();
+    clearInterval(updateCheckInterval); wrapper.remove();
     fetch('https://script.google.com/a/macros/coolblue.nl/s/AKfycbxb-OwLCFGlDQ48qz3KnGnmsgnVLWxuOjvEr7UG3M3z0WzO0kVsTKGd_8mZjtvHvPHnEg/exec'+bouwLogParams()).catch(function(){});
   }
 
