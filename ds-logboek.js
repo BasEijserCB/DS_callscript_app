@@ -61,7 +61,7 @@
       .map(function(el){ return el.innerText.trim(); })
       .filter(function(naam){
         var n = naam.toLowerCase();
-        return naam && !n.includes('coolblue-doos') && !n.includes('coolblue box') && !n.includes('rest van je bestelling') && !n.includes('rest of your order');
+        return naam && !n.includes('coolblue-doos') && !n.includes('coolblue box') && !n.includes('rest van je bestelling') && !n.includes('rest of your order') && !n.includes('verzameldoos');
       })
       .filter(function(naam, idx, arr){ return arr.indexOf(naam) === idx; });
     var tvStart = getTxt('Static.Visit.EarliestArrivalTimeStamp');
@@ -1065,7 +1065,7 @@
             '<button class="park-info-btn" id="btn-park-info">\u2139</button>' +
           '</div>' +
         '</div></div>' +
-        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.16.0</div>' +
+        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.16.2</div>' +
       '</div>';
 
     // Park tooltip
