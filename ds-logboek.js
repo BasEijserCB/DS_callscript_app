@@ -269,6 +269,16 @@
   var appContainer = idoc.createElement('div');
   idoc.body.appendChild(appContainer);
 
+  // ── UPDATE BANNER ─────────────────────────────────────────────
+  if (localStorage.getItem('ds_update_pending') === '1') {
+    var updateBanner = idoc.createElement('div');
+    updateBanner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;background:#ff6600;color:#fff;font:700 12px "Segoe UI",Arial,sans-serif;padding:7px 12px;display:flex;align-items:center;justify-content:space-between;gap:8px;';
+    updateBanner.innerHTML = '<span>🔄 Nieuwe versie beschikbaar — sluit en heropen de widget om te laden</span><button style="background:none;border:none;color:#fff;font-size:16px;cursor:pointer;line-height:1;padding:0 2px;font-weight:300;" title="Sluiten">×</button>';
+    updateBanner.querySelector('button').onclick = function() { updateBanner.remove(); appContainer.style.paddingTop = ''; localStorage.removeItem('ds_update_pending'); };
+    idoc.body.appendChild(updateBanner);
+    appContainer.style.paddingTop = '34px';
+  }
+
   // ── STATE ─────────────────────────────────────────────────────
   var bFname = localStorage.getItem('ds_fname'), bLname = localStorage.getItem('ds_lname');
   var dsHeight = parseInt(localStorage.getItem('ds_height') || '620');
@@ -1092,7 +1102,7 @@
             '<button class="park-info-btn" id="btn-park-info">\u2139</button>' +
           '</div>' +
         '</div></div>' +
-        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.16.6</div>' +
+        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.16.7</div>' +
       '</div>';
 
     // Park tooltip

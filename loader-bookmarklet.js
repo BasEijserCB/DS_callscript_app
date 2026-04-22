@@ -9,11 +9,7 @@ javascript:(function(){
       if(!code||code===cached)return;
       localStorage.setItem(CACHE,code);
       if(!cached){eval(code);return;}
-      var t=document.createElement('div');
-      t.textContent='DS Logboek: nieuwe versie gedownload — sluit en heropen om te laden';
-      t.style.cssText='position:fixed;bottom:16px;right:16px;z-index:99999;background:#1A1A2E;color:#fff;padding:10px 14px;border-radius:6px;font:13px sans-serif;box-shadow:0 4px 12px rgba(0,0,0,.4);max-width:320px;';
-      document.body.appendChild(t);
-      setTimeout(function(){t.remove();},6000);
+      localStorage.setItem('ds_update_pending','1');
     })
     .catch(function(){});
 })();
