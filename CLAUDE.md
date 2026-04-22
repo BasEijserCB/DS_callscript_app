@@ -25,7 +25,7 @@ python3 build.py
 git add . && git commit -m "beschrijving, bump to vX.X.X" && git push
 ```
 
-De loader bookmarklet haalt de nieuwe `ds-logboek.js` automatisch op in de achtergrond (stale-while-revalidate + `{cache:'no-store'}`). Bij de volgende klik op de bookmarklet krijg je de nieuwe versie. Cache handmatig legen is alleen nodig als fallback:
+De loader bookmarklet haalt de nieuwe `ds-logboek.js` automatisch op in de achtergrond (stale-while-revalidate + `{cache:'no-store'}`). Als de code gewijzigd is, toont de loader een blauwe toast rechtsonder ("↻ DS Logboek: nieuwe versie gedownload"). Bij de volgende klik op de bookmarklet krijg je de nieuwe versie. Cache handmatig legen is alleen nodig als fallback:
 ```javascript
 localStorage.removeItem('ds_app_prod_cache')
 ```
@@ -57,8 +57,8 @@ ds-logboek.js  (scrapet DOM → gespreksflow → twee outputs)
 ```
 
 **DireXtion heeft twee varianten:**
-- `coolbluebezorgt.dirextion.nl` — Knockout.js `data-bind` selectors
-- `coolblue.dirextion.nl/Basic` — `.details-field` CSS klassen
+- `coolbluebezorgt.dirextion.nl` — Knockout.js `data-bind` selectors; producttype via prefix-detectie (`detecteerType`)
+- `coolblue.dirextion.nl/Basic` — `.details-field` CSS klassen; producttype via `artikelsoort`-kolom in tabel (gebruikt `artikelsoortNaarProduct`), prefix-detectie als fallback
 
 **GAS backend** moet deployment staan op toegang "Iedereen" (niet "Iedereen binnen Coolblue") anders blokkeert CORS.
 
@@ -153,6 +153,9 @@ const setDxTagBox = (fieldId, valueArray) => {
 | TagBox instance zoeken | `input.closest('.dx-tagbox')` → `dxTagBox('instance')` (widget root heeft `.dx-tagbox` class) |
 | articleTypeId/services gewist na kanaalwissel | Kanaal triggert herrender van article-sectie — stel DX velden altijd in NADAT kanaal is gezet (STAP 1c Fase 2) |
 | Article rij activeren | Altijd article rij klikken na add-button (ook voor 1e product) — anders zijn DX velden niet actief |
+| Product rijen toevoegen | Alleen bij same-day — bij next-day worden producten via sjablonen ingevuld, handmatig toevoegen overschrijft het sjabloon |
+| Verzameldoos filteren | Filteren op zowel naam (`verzameldoos`) als artikelsoort (`barcodes`) — beide varianten (coolbluebezorgt en Basic) leveren verzameldozen op |
+| Woonplaats met voorlooppostcode | BE/DE scrapen soms `"1000 Brussel"` — strip leading postcode uit city vóór invullen in DireXtion |
 
 ---
 
@@ -205,6 +208,8 @@ getProductVerfijningOpties(p)   // verfijningsopties voor ambigue producten (Koe
 productNeedsVerfijning()        // true als product ambigu en nog niet verfijnd
 parseToTourAlias(input)         // parseert routetekst → 'netwerk-depot-nr' (bijv. '2M-NLOV-07'). Netwerken: 1X, 1M, 2M, BI (keys: 'bi','inbouw','built in','built-in'), BK (fiets)
 parkeerSessie() / herstelSessie(staat) // sessie pauzeren/hervatten via localStorage (PARK_KEY per order)
+detecteerType(naam)             // detecteert merk + producttype via prefixTabel (voor coolbluebezorgt variant)
+artikelsoortNaarProduct(soort)  // converteert artikelsoort-tekst (uit Basic tabel) naar widget-productnaam
 ```
 
 **`isAlgemeen`** (module-scope, gezet na scrape): `true` wanneer geen ordernummer gescrapet kon worden → activeert de Algemeen-gesprek modus (zie beneden).
@@ -267,6 +272,17 @@ Prefixen worden gestript naar lokaal formaat: NL (+31/0031), BE (+32/0032), DE (
 
 | Versie | Wijziging |
 |---|---|
+| v1.16.12 | Fix: updatemelding z-index verhoogd naar 1000001 in loader-bookmarklet.js (was 99999, widget zat er overheen) |
+| v1.16.11 | Revert: updatemelding terug naar toast rechtsonder op hoofdpagina (blauw met sluitknop), eerdere widget-snap varianten teruggedraaid |
+| v1.16.9 | Fix: updatebanner alleen tonen als nieuwe versie binnenkomt tijdens lopende sessie (niet bij opstarten); appContainer flexbox layout hersteld na body flex-kolom wijziging |
+| v1.16.8 | Fix: updatebanner in widgetstijl (amber), geen overlap meer met widget header |
+| v1.16.7 | Update: persistente oranje updatebanner bovenin widget vervangt subtiele toast |
+| v1.16.6 | Fix: Wisberg prefixlijst volledig herschreven met correcte product-types (o.a. WBTT/WBTM=koelkast, WBMKK/WBMVR correct) |
+| v1.16.5 | Fix: Wisberg WBTTKK prefix als koelkast i.p.v. droger |
+| v1.16.4 | Add: info paneel bij route-invoer toont vereiste netwerk / depot / routenummer formaat |
+| v1.16.3 | Fix: gebruik artikelsoort-veld op Basic pagina vóór prefix-detectie voor betrouwbaarder productherkenning |
+| v1.16.2 | Fix: verzameldoos ook filteren op coolbluebezorgt variant (via naam én artikelsoort) |
+| v1.16.1 | Fix: productrijen alleen toevoegen bij same-day, niet bij next-day met sjablonen |
 | v1.16.0 | Add: loggen opent automatisch DireXtion-order in nieuw tabblad (Same/Next day gepland). Aparte link uit controle-box verwijderd |
 | v1.15.4 | Fix: leading postcode uit city-scrape strippen (BE/DE geven soms `"1000 Brussel"` als Woonplaats terug → belandde als `residence` in DireXtion) |
 | v1.15.3 | Fix: DireXtion email-filter gebruikt juiste key `EmailAddress` + `StartDate`/`EndDate` op vandaag, URL pad `/Basic/Orders` (hoofdletter) |
