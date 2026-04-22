@@ -1092,7 +1092,7 @@
             '<button class="park-info-btn" id="btn-park-info">\u2139</button>' +
           '</div>' +
         '</div></div>' +
-        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.16.3</div>' +
+        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.16.4</div>' +
       '</div>';
 
     // Park tooltip
@@ -1808,6 +1808,12 @@
 
     // TEKST INPUT
     } else if (stap.type==='text'||stap.type==='route-input') {
+      if (stap.type==='route-input') {
+        var infoDiv=idoc.createElement('div');
+        infoDiv.style.cssText='background:#FFF8E1;border:1px solid #FFD54F;border-radius:6px;padding:8px 12px;margin-bottom:8px;font-size:12px;color:#5D4037;line-height:1.6;';
+        infoDiv.innerHTML='<strong>Vermeld altijd:</strong><br>netwerk &nbsp;&middot;&nbsp; depot &nbsp;&middot;&nbsp; routenummer<br><span style="color:#888;font-size:11px;">Bijv. <em>2M Rotterdam 3</em></span>';
+        container.appendChild(infoDiv);
+      }
       var iH='<input type="text" id="i" placeholder="Typ hier..."><button id="n" class="action-btn">Volgende</button>';
       if (stap.type==='route-input') iH+='<button id="nd" class="action-btn" style="background:#F2F7FC;color:#0090e3;border:1px solid #0090e3;margin-top:6px;">Next Day</button>';
       container.innerHTML+=iH;
