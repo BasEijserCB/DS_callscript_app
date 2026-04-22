@@ -676,7 +676,7 @@
           } else if (callData.onderweg_type==='Klant niet bereikbaar / verkeerd nummer') {
             s.push({key:'onderweg_uitkomst',label:'Wat was de uitkomst?',type:'ux-select',opties:['Telefoonnummer gevonden voor Held','Nee, geen oplossing door DS']});
           } else if (callData.onderweg_type==='Klant niet thuis') {
-            s.push({key:'onderweg_uitkomst',label:'Wat was de uitkomst?',type:'ux-select',opties:['Advies gegeven, held meldt af in Jerney','Nee, geen oplossing door DS']});
+            s.push({key:'onderweg_uitkomst',label:'Wat was de uitkomst?',type:'ux-select',opties:['Advies gegeven, held meldt af in Jerney','Helden stellen stop uit en gaan later terug','Nee, geen oplossing door DS']});
           } else if (callData.onderweg_type==='Vraag over service') {
             s.push({key:'onderweg_uitkomst',label:'Wat was de uitkomst?',type:'ux-select',opties:['Vraag beantwoord, held kan verder','Nee, geen oplossing door DS']});
           }
@@ -798,7 +798,7 @@
         } else if (callData.onderweg_type==='Klant niet bereikbaar / verkeerd nummer') {
           s.push({key:'onderweg_uitkomst',label:'Wat was de uitkomst?',type:'ux-select',opties:['Telefoonnummer gevonden voor Held','Nee, geen oplossing door DS']});
         } else if (callData.onderweg_type==='Klant niet thuis') {
-          s.push({key:'onderweg_uitkomst',label:'Wat was de uitkomst?',type:'ux-select',opties:['Advies gegeven, held meldt af in Jerney','Nee, geen oplossing door DS']});
+          s.push({key:'onderweg_uitkomst',label:'Wat was de uitkomst?',type:'ux-select',opties:['Advies gegeven, held meldt af in Jerney','Helden stellen stop uit en gaan later terug','Nee, geen oplossing door DS']});
         } else if (callData.onderweg_type==='Vraag over service') {
           s.push({key:'onderweg_uitkomst',label:'Wat was de uitkomst?',type:'ux-select',opties:['Vraag beantwoord, held kan verder','Nee, geen oplossing door DS']});
         }
@@ -1065,7 +1065,7 @@
             '<button class="park-info-btn" id="btn-park-info">\u2139</button>' +
           '</div>' +
         '</div></div>' +
-        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.15.0</div>' +
+        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.15.1</div>' +
       '</div>';
 
     // Park tooltip
