@@ -267,6 +267,7 @@ Prefixen worden gestript naar lokaal formaat: NL (+31/0031), BE (+32/0032), DE (
 
 | Versie | Wijziging |
 |---|---|
+| v1.15.2 | Update: DireXtion link op submit-scherm filtert nu op email (`Email`) i.p.v. ordernummer — betrouwbaarder |
 | v1.15.1 | Add: derde uitkomst "Helden stellen stop uit en gaan later terug" bij onderweg_type "Klant niet thuis" |
 | v1.15.0 | Add: onderweg_type "Klant niet thuis" (CBB + CBF) — uitkomsten Advies gegeven/Geen oplossing, info-box met checklist (aangebeld, klant gebeld, binnen tijdvak) + Jerney afmeldinstructie |
 | v1.14.2 | Update: duplicate uitkomst-optie "Correct nummer doorgegeven aan Held" verwijderd uit onderweg flow (Klant niet bereikbaar / verkeerd nummer) |

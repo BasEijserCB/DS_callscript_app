@@ -1065,7 +1065,7 @@
             '<button class="park-info-btn" id="btn-park-info">\u2139</button>' +
           '</div>' +
         '</div></div>' +
-        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.15.1</div>' +
+        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.15.2</div>' +
       '</div>';
 
     // Park tooltip
@@ -1325,7 +1325,10 @@
         // Controle vragen + DireXtion link in één blauw paneeltje
         var controleItems = '<div class="controle-item">📦 Kan het product bij de klant blijven?</div>';
         if (callData.uitkomst === 'Same day gepland') controleItems += '<div class="controle-item">🏠 Is de klant later vandaag nog thuis?</div>';
-        var direxFilter = encodeURIComponent(JSON.stringify({ShipperOrderNumber:callData.orderBron,CountryIds:[],ChannelIds:[],NetworkIds:[],ServiceTypeIds:[],ShipmentStatusIds:[],VisitStatusIds:[],ParcelStatusIds:[],ShipperIds:[],DepotIds:[],CharacteristicIds:[]}));
+        var direxEmail = '';
+        if (isBasicPage) direxEmail = basicFieldInSection('Geadresseerde', 'E-mailadres') || '';
+        else { var emEl = document.querySelector("[data-bind*='Static.Visit.Email']") || document.querySelector("[data-bind*='Email']"); direxEmail = emEl ? emEl.innerText.trim() : ''; }
+        var direxFilter = encodeURIComponent(JSON.stringify({Email:direxEmail,CountryIds:[],ChannelIds:[],NetworkIds:[],ServiceTypeIds:[],ShipmentStatusIds:[],VisitStatusIds:[],ParcelStatusIds:[],ShipperIds:[],DepotIds:[],CharacteristicIds:[]}));
         var direxUrl = 'https://coolblue.dirextion.nl/Basic/orders?filter=' + direxFilter;
         submitHtml += '<div class="controle-box">' +
           '<div class="controle-title">✓ Check voor het plannen</div>' +
