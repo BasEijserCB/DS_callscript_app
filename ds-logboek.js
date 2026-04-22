@@ -210,8 +210,8 @@
   var idoc = iframe.contentDocument || iframe.contentWindow.document;
 
   idoc.head.innerHTML = '<style>' +
-    'html,body{height:100%;margin:0;padding:0;overflow:hidden;font-family:"Segoe UI",Arial,sans-serif;color:#333333;}' +
-    '.app{display:flex;flex-direction:column;height:100%;}' +
+    'html,body{height:100%;margin:0;padding:0;overflow:hidden;font-family:"Segoe UI",Arial,sans-serif;color:#333333;display:flex;flex-direction:column;}' +
+    '.app{display:flex;flex-direction:column;flex:1;min-height:0;}' +
     '.header{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-bottom:1px solid #DDDDDD;flex-shrink:0;background:#fff;}' +
     '.header-title{color:#285dab;font-size:17px;font-weight:700;}' +
     '.header-actions{display:flex;gap:6px;align-items:center;}' +
@@ -272,11 +272,10 @@
   // ── UPDATE BANNER ─────────────────────────────────────────────
   if (localStorage.getItem('ds_update_pending') === '1') {
     var updateBanner = idoc.createElement('div');
-    updateBanner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;background:#ff6600;color:#fff;font:700 12px "Segoe UI",Arial,sans-serif;padding:7px 12px;display:flex;align-items:center;justify-content:space-between;gap:8px;';
-    updateBanner.innerHTML = '<span>🔄 Nieuwe versie beschikbaar — sluit en heropen de widget om te laden</span><button style="background:none;border:none;color:#fff;font-size:16px;cursor:pointer;line-height:1;padding:0 2px;font-weight:300;" title="Sluiten">×</button>';
-    updateBanner.querySelector('button').onclick = function() { updateBanner.remove(); appContainer.style.paddingTop = ''; localStorage.removeItem('ds_update_pending'); };
-    idoc.body.appendChild(updateBanner);
-    appContainer.style.paddingTop = '34px';
+    updateBanner.style.cssText = 'flex-shrink:0;background:#fff8e1;border-bottom:2px solid #ffc107;color:#856404;font:600 12px "Segoe UI",Arial,sans-serif;padding:6px 12px;display:flex;align-items:center;justify-content:space-between;gap:8px;';
+    updateBanner.innerHTML = '<span>↻ Nieuwe versie beschikbaar — sluit en heropen de widget om te laden</span><button style="background:none;border:none;color:#856404;font-size:18px;cursor:pointer;line-height:1;padding:0 2px;font-weight:300;opacity:0.7;" title="Sluiten">×</button>';
+    updateBanner.querySelector('button').onclick = function() { updateBanner.remove(); localStorage.removeItem('ds_update_pending'); };
+    idoc.body.insertBefore(updateBanner, appContainer);
   }
 
   // ── STATE ─────────────────────────────────────────────────────
