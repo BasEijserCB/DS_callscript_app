@@ -267,6 +267,7 @@ Prefixen worden gestript naar lokaal formaat: NL (+31/0031), BE (+32/0032), DE (
 
 | Versie | Wijziging |
 |---|---|
+| v1.15.0 | Add: onderweg_type "Klant niet thuis" (CBB + CBF) — uitkomsten Advies gegeven/Geen oplossing, info-box met checklist (aangebeld, klant gebeld, binnen tijdvak) + Jerney afmeldinstructie |
 | v1.14.2 | Update: duplicate uitkomst-optie "Correct nummer doorgegeven aan Held" verwijderd uit onderweg flow (Klant niet bereikbaar / verkeerd nummer) |
 | v1.14.1 | Fix: `parseToTourAlias` herkent nu ook `built in` / `built-in` als netwerk BI |
 | v1.14.0 | Add: "Algemeen gesprek" modus — flow zonder orderdata (alleen fname/lname + advies/afhandeling-blokken), bellerType='Algemeen' |

@@ -663,7 +663,7 @@
 
       if (callData.locatie === 'Onderweg') {
         // Zelfde onderweg flow als CBB
-        s.push({key:'onderweg_type',label:'Wat is het probleem?',type:'onderweg-select',opties:['Adres niet gevonden','Adres niet bereikbaar','Adres niet bereikbaar (bijzonder geval)','Klant niet bereikbaar / verkeerd nummer','Vraag over service']});
+        s.push({key:'onderweg_type',label:'Wat is het probleem?',type:'onderweg-select',opties:['Adres niet gevonden','Adres niet bereikbaar','Adres niet bereikbaar (bijzonder geval)','Klant niet bereikbaar / verkeerd nummer','Klant niet thuis','Vraag over service']});
         if (answeredKeys.includes('onderweg_type')) {
           if (callData.onderweg_type==='Advies gegeven') {
             s.push({key:'advies_gelukt',label:'Is de service na het advies uitgevoerd?',type:'info-select',opties:['Ja, service uitgevoerd','Nee, geen oplossing door DS']});
@@ -675,6 +675,8 @@
             s.push({key:'onderweg_uitkomst',label:'Wat was de uitkomst?',type:'ux-select',opties:['Teamleider geïnformeerd, order doorgezet','Nee, geen oplossing door DS']});
           } else if (callData.onderweg_type==='Klant niet bereikbaar / verkeerd nummer') {
             s.push({key:'onderweg_uitkomst',label:'Wat was de uitkomst?',type:'ux-select',opties:['Telefoonnummer gevonden voor Held','Nee, geen oplossing door DS']});
+          } else if (callData.onderweg_type==='Klant niet thuis') {
+            s.push({key:'onderweg_uitkomst',label:'Wat was de uitkomst?',type:'ux-select',opties:['Advies gegeven, held meldt af in Jerney','Nee, geen oplossing door DS']});
           } else if (callData.onderweg_type==='Vraag over service') {
             s.push({key:'onderweg_uitkomst',label:'Wat was de uitkomst?',type:'ux-select',opties:['Vraag beantwoord, held kan verder','Nee, geen oplossing door DS']});
           }
@@ -783,7 +785,7 @@
       }
 
     } else if (callData.locatie==='Onderweg') {
-      s.push({key:'onderweg_type',label:'Wat is het probleem?',type:'onderweg-select',opties:['Adres niet gevonden','Adres niet bereikbaar','Adres niet bereikbaar (bijzonder geval)','Klant niet bereikbaar / verkeerd nummer','Vraag over service']});
+      s.push({key:'onderweg_type',label:'Wat is het probleem?',type:'onderweg-select',opties:['Adres niet gevonden','Adres niet bereikbaar','Adres niet bereikbaar (bijzonder geval)','Klant niet bereikbaar / verkeerd nummer','Klant niet thuis','Vraag over service']});
       if (answeredKeys.includes('onderweg_type')) {
         if (callData.onderweg_type==='Advies gegeven') {
           s.push({key:'advies_gelukt',label:'Is de service na het advies uitgevoerd?',type:'info-select',opties:['Ja, service uitgevoerd','Nee, geen oplossing door DS']});
@@ -795,6 +797,8 @@
           s.push({key:'onderweg_uitkomst',label:'Wat was de uitkomst?',type:'ux-select',opties:['Teamleider geïnformeerd, order doorgezet','Nee, geen oplossing door DS']});
         } else if (callData.onderweg_type==='Klant niet bereikbaar / verkeerd nummer') {
           s.push({key:'onderweg_uitkomst',label:'Wat was de uitkomst?',type:'ux-select',opties:['Telefoonnummer gevonden voor Held','Nee, geen oplossing door DS']});
+        } else if (callData.onderweg_type==='Klant niet thuis') {
+          s.push({key:'onderweg_uitkomst',label:'Wat was de uitkomst?',type:'ux-select',opties:['Advies gegeven, held meldt af in Jerney','Nee, geen oplossing door DS']});
         } else if (callData.onderweg_type==='Vraag over service') {
           s.push({key:'onderweg_uitkomst',label:'Wat was de uitkomst?',type:'ux-select',opties:['Vraag beantwoord, held kan verder','Nee, geen oplossing door DS']});
         }
@@ -1061,7 +1065,7 @@
             '<button class="park-info-btn" id="btn-park-info">\u2139</button>' +
           '</div>' +
         '</div></div>' +
-        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.14.2</div>' +
+        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.15.0</div>' +
       '</div>';
 
     // Park tooltip
@@ -1298,6 +1302,15 @@
       // Blauw info paneeltje voor winkel informatievraag
       if (callData.locatie==='Winkel' && callData.ks_reden==='Informatie over vracht') {
         submitHtml += '<div class="info-box">ℹ️ <b>Advies aan de winkel:</b><br>Voor informatie over de vracht kunnen zij het best contact opnemen met het depot dat de levering verzorgt' + (callData.depot && callData.depot !== 'Onbekend' ? ': <b>' + callData.depot + '</b>' : '') + '.</div>';
+      }
+      // Info blokje voor "Klant niet thuis" — checklist + Jerney instructie
+      if (callData.onderweg_type==='Klant niet thuis') {
+        submitHtml += '<div class="info-box">ℹ️ <b>Check of de held deze stappen heeft doorlopen:</b>' +
+          '<div class="controle-item">🔔 Aangebeld en gewacht</div>' +
+          '<div class="controle-item">📞 Klant gebeld</div>' +
+          '<div class="controle-item">🕒 Binnen het gecommuniceerde tijdvak aangekomen</div>' +
+          '<div style="margin-top:8px;padding-top:8px;border-top:1px solid #cce9f9;"><b>Afmelden in Jerney:</b><br>Kies "Klant niet thuis" en maak een foto van de voordeur als bewijs.</div>' +
+          '</div>';
       }
       // Info blokje voor andere bellers (niet over bezorging)
       if (callData.bellerType==='Andere beller') {
