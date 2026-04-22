@@ -438,7 +438,7 @@ try {
     'amerikaanse koelkast met waterdispenser': 253782,
     'side-by-side koelkast': 330, 'inbouw koelkast': 330, 'inbouw vriezer': 352,
   };
-  if (isPlaatstService && productsToAdd.length > 0) {
+  if (isSameDay && isPlaatstService && productsToAdd.length > 0) {
     for (let pidx = 0; pidx < productsToAdd.length; pidx++) {
       const addBtn = document.querySelector('.dx-icon-add')?.closest('.dx-button');
       if (addBtn) {
@@ -546,7 +546,7 @@ try {
   }
 
   // ── STAP 1c FASE 2: ARTICLE DX VELDEN INSTELLEN (na kanaal — zodat herrender niet wist) ─
-  if (isPlaatstService && productsToAdd.length > 0) {
+  if (isSameDay && isPlaatstService && productsToAdd.length > 0) {
     for (let pidx = 0; pidx < productsToAdd.length; pidx++) {
       const product = productsToAdd[pidx];
       const productKey = normaliseerProduct(product);
