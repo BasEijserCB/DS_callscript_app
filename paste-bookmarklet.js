@@ -493,14 +493,13 @@ try {
     'houseNumber':          houseNumber,
   });
 
-  // Wacht op DireXtion autocomplete, daarna straat + woonplaats overschrijven
+  // Wacht op DireXtion autocomplete, daarna straat + woonplaats overschrijven (2x — autocomplete kan traag zijn)
   await new Promise(resolve => setTimeout(resolve, 750));
-  fillInputs({
-    'street':               streetName,
-    'residence':            orderData.city,
-  });
+  fillInputs({ 'street': streetName, 'residence': orderData.city });
+  await new Promise(resolve => setTimeout(resolve, 600));
+  fillInputs({ 'street': streetName, 'residence': orderData.city });
 
-  await new Promise(resolve => setTimeout(resolve, 500));
+  await new Promise(resolve => setTimeout(resolve, 400));
 
   // ── CHECKPOINT A: na STAP 3, vóór countryId ─────────────────
   {
