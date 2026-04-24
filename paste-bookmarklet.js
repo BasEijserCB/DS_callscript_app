@@ -27,6 +27,7 @@ try {
   };
 
   const isSameDay = (orderData.uitkomst || '').toLowerCase().includes('same day');
+  const isPickup  = (orderData.probleem || '').includes('Pick-up');
 
   function normaliseerProbleem(p) {
     if (p.includes('trekschakelaar'))              return 'trekschakelaar';
@@ -67,7 +68,7 @@ try {
   }
 
   // ── STAP 1: SJABLOON EERST (zodat het geen velden overschrijft) ──
-  if (orderData.dienstType && !isSameDay) {
+  if (orderData.dienstType && !isSameDay && !isPickup) {
     const land    = orderData.detectedCountry;
     const product = (orderData.product || '').toLowerCase();
     const probleem = (orderData.probleem || '').toLowerCase();
@@ -410,7 +411,7 @@ try {
   }
 
   // ── STAP 1b: SAME DAY — AFZENDER + DEPOT ─────────────────────
-  if (isSameDay) {
+  if (isSameDay || isPickup) {
     const depotCodeIds = {
       'NLAL': '2021191', 'NLDE': '696250',  'NLGR': '4885',
       'NLRO': '1721',    'NLTI': '13',       'NLUT': '14',
@@ -421,7 +422,9 @@ try {
       'DEES': '815480',  'BEAN': '18808',    'BEGE': '35210',
       'BENI': '696230',  'BEZA': '231149',   'BEWI': '158831',
     };
-    setDxDropdown('_shipperId', '1012729');
+    const pickupShippers = {'Nederland': '246477', 'België': '246481', 'Duitsland': '419436'};
+    const shipperId = isPickup ? (pickupShippers[orderData.detectedCountry] || '246477') : '1012729';
+    setDxDropdown('_shipperId', shipperId);
     await new Promise(resolve => setTimeout(resolve, 500));
     const routeCode = (orderData.geplandeRoute || '').match(/[A-Z]{4}/)?.[0];
     const depotId = routeCode && depotCodeIds[routeCode];
@@ -529,7 +532,7 @@ try {
   }
 
   // ── STAP 4b: SAME DAY — KANAAL / NETWERK / SERVICE ───────────
-  if (isSameDay && orderData.serviceTypeId) {
+  if ((isSameDay || isPickup) && orderData.serviceTypeId) {
     const builtInServices = [277249, 51068, 322997, 277248, 254509, 254508, 490316, 490317];
     const needsBuiltIn = builtInServices.includes(parseInt(orderData.serviceTypeId));
     if (needsBuiltIn) {
