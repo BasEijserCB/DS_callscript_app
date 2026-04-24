@@ -77,6 +77,7 @@ ds-logboek.js  (scrapet DOM → gespreksflow → twee outputs)
   probleem,           // geselecteerde taak
   dienstType,         // 'Nazorg (gratis)' | 'Extra dienst (betaald)' | ''
   formaatTV,          // 'Ja (>= 55 inch)' | 'Nee (< 55 inch)'
+  tvNetwerk,          // 'Built in (BI)' | '1X' — alleen bij TV-installatie next-day, kleine TV
   uitkomst,           // bijv. 'Same day gepland'
   geplandeRoute,      // bijv. '2M-NLOV-07'
   serviceTypeId,      // numerieke service ID voor same-day TagBox (51072 voor plaatsen)
@@ -88,8 +89,8 @@ ds-logboek.js  (scrapet DOM → gespreksflow → twee outputs)
 
 ## Paste bookmarklet — volgorde van uitvoering
 
-1. **Sjabloon eerst** (`_orderTemplateId`) + 800ms wacht — anders overschrijft sjabloon later ingevulde velden. Alleen bij next-day (`dienstType` aanwezig).
-2. **Same-day: shipper + depot** — shipper altijd `1012729` (Coolblue DeliverySupport); depot via 4-letter routecode uit `geplandeRoute` (bijv. `NLOV` → depot ID).
+1. **Sjabloon eerst** (`_orderTemplateId`) + 800ms wacht — anders overschrijft sjabloon later ingevulde velden. Alleen bij next-day (`dienstType` aanwezig) én niet bij Pick-up (`isPickup`).
+2. **Same-day + Pick-up: shipper + depot** — bij same-day is shipper altijd `1012729` (Coolblue DeliverySupport); bij Pick-up is shipper landafhankelijk (NL=`246477`, BE=`246481`, DE=`419436`). Depot via 4-letter routecode uit `geplandeRoute` (bijv. `NLOV` → depot ID).
 3. **STAP 1c FASE 1: Productrijen toevoegen** — loop voor elk product in `products` array: click add-button, click article item (ook voor 1e product), vul code="1". `articleTypeId` en `services` worden hier NIET ingesteld — dat gebeurt in Fase 2.
 4. Standaard velden: naam, telefoon, email, postcode, straat, huisnummer, woonplaats.
 5. Land (`_countryId`) + 500ms wacht.
@@ -103,7 +104,7 @@ ds-logboek.js  (scrapet DOM → gespreksflow → twee outputs)
 
 ## Same-day kanaal / service / netwerk flow
 
-Twee varianten op basis van `serviceTypeId`:
+Geldt voor zowel `isSameDay` als `isPickup` (Pick-up handmatig gepland). Twee varianten op basis van `serviceTypeId`:
 
 **Normale services** (niet in `builtInServices` lijst):
 ```
@@ -157,6 +158,7 @@ const setDxTagBox = (fieldId, valueArray) => {
 | Product rijen toevoegen | Alleen bij same-day — bij next-day worden producten via sjablonen ingevuld, handmatig toevoegen overschrijft het sjabloon |
 | Verzameldoos filteren | Filteren op zowel naam (`verzameldoos`) als artikelsoort (`barcodes`) — beide varianten (coolbluebezorgt en Basic) leveren verzameldozen op |
 | Woonplaats met voorlooppostcode | BE/DE scrapen soms `"1000 Brussel"` — strip leading postcode uit city vóór invullen in DireXtion |
+| DireXtion auto-open onderdrukt op Basic | Na loggen opent de widget automatisch DireXtion in nieuw tabblad — maar NIET op de Basic variant (`isBasicPage`). Op Basic staat in plaats daarvan een handmatige herinnering in de controle-box. |
 
 ---
 
@@ -215,8 +217,9 @@ artikelsoortNaarProduct(soort)  // converteert artikelsoort-tekst (uit Basic tab
 
 **`isAlgemeen`** (module-scope, gezet na scrape): `true` wanneer geen ordernummer gescrapet kon worden → activeert de Algemeen-gesprek modus (zie beneden).
 
-**serviceTypeId mapping** (in `kopieerNaarKlembord()`): bepaalt welke DireXtion service geselecteerd wordt voor same-day. Meeste services hebben één ID voor zowel Nazorg als Extra dienst (geen aparte Extra dienst variant beschikbaar). Uitzonderingen:
+**serviceTypeId mapping** (in `kopieerNaarKlembord()`): bepaalt welke DireXtion service geselecteerd wordt voor same-day/pick-up. Meeste services hebben één ID voor zowel Nazorg als Extra dienst (geen aparte Extra dienst variant beschikbaar). Uitzonderingen:
 - `stapelkit`: Nazorg=727124, Extra dienst=727123
+- `Pick-up` (milieuretour_type=Pick-up): 427807
 - Alle anderen: Nazorg-ID ook gebruikt als Extra dienst default
 
 ---
@@ -229,11 +232,37 @@ Eerste keuze in de flow (`bellerType` in `callData`). Bepaalt de rest van de vra
 |---|---|---|
 | `CBB` | Coolblue Bezorgt (eigen bezorger) | hoofdknop "CBB belt" |
 | `CBF` | Coolblue Fiets | hoofdknop "CBF belt" |
+| `Teamleider` | Teamleider van een depot belt — eigen korte flow (reden + uitkomst) | hoofdknop "Teamleider belt" |
 | `Anders` | Externe bezorgpartner (Technische Dienst / Yeply / G4S) — valt in "Andere bellers ▾" dropdown, eigen locatie-keuze | "Andere bellers ▾" → locatie-keuze |
 | `Andere beller` | Beller gaat niet over een bezorging (bv. klantenservice, winkel) — submit screen toont info-box dat probleem-log niet nodig is | "Andere bellers ▾" → "Andere beller" |
 | `Algemeen` | **Auto-gezet** als geen orderdata gescrapet kon worden (`isAlgemeen`) | n.v.t. — activeert aparte flow |
 
 De "Andere bellers ▾" dropdown heette vóór v1.13.0 "Externe partner ▾".
+
+---
+
+## CBF flow — locatie-keuzes
+
+Drie locaties: `'Onderweg'` (zelfde flow als CBB), `'Bij de klant'`, `'Vraag voor het depot'`.
+
+**Bij de klant** → `cbf_pakket_reden`:
+- `'Pakket niet meegenomen (manco)'` / `'Pakket verkeerd / beschadigd'` / `'Overige vraag over pakket'` → uitkomsten: `'Klant geïnformeerd, manco geregistreerd'` / `'Klant geïnformeerd, held regelt verder'` / `'Nee, geen oplossing door DS'`
+- `'Pakje niet ingeladen'` → uitkomsten: `'Pakje wordt later afgeleverd (afleverbewijs)'` / `'Niet opgelost — instructie gegeven in Jerney'`. Bij "Niet opgelost" toont het submit-scherm een info-blokje met Jerney-instructie.
+
+**Vraag voor het depot** → `cbf_depot_reden`: `'Ziekmelding'` / `'Fiets kapot / incident'` / `'Informeren waar de vracht is'` / `'Anders'`. Bij `'Anders'` vrij tekstveld `cbf_depot_toelichting`.
+
+---
+
+## Teamleider flow (bellerType = 'Teamleider')
+
+Korte flow, toegevoegd v1.18.0. Twee vragen:
+
+1. `tl_reden` — "Waar gaat de vraag over?": `'Vraag om aanpassingen in rit'` of `'Andere vraag'`
+2. `tl_uitkomst` — afhankelijk van reden:
+   - Aanpassingen in rit → `'Aanpassing doorgegeven / bevestigd'` of `'Niet mogelijk'`
+   - Andere vraag → `'Vraag beantwoord'` of `'Geen oplossing'`
+
+Categorie: `Advies gegeven` bij positieve uitkomst, `Geen oplossing` bij `'Niet mogelijk'` of `'Geen oplossing'`. Uitkomst-string in log: `tl_uitkomst || tl_reden || 'Teamleider belt'`.
 
 ---
 
@@ -253,13 +282,18 @@ De flow slaat `bellerType` / `probleem` / `uitkomst` / adres-velden over. Loggin
 
 ---
 
-## Gespreksflow — dienstType vraag
+## Gespreksflow — dienstType en tvNetwerk vragen
 
-Wordt gevraagd na:
+**dienstType** wordt gevraagd na:
 - "Next day gepland" (alle flow-paden)
 - "Same day gepland" → na `geplandeRoute` (toegevoegd v1.12.14)
 
 Wordt **overgeslagen** (`skipDienstType()`) bij: deur omdraaien + koelkast/vriezer-types (alleen Extra dienst sjabloon beschikbaar voor die combinatie).
+
+**tvNetwerk** wordt gevraagd na dienstType (of na skipDienstType) bij next-day + TV-installatie-probleem + `formaatTV !== 'Ja (>= 55 inch)'`:
+- Opties: `'Built in (BI)'` of `'1X'`
+- Auto-selectie: als routenetwerk al `1X` is (uit `geplandeRoute`), wordt `tvNetwerk='Built in (BI)'` automatisch ingevuld (geen vraag)
+- Bepaalt het sjabloon-ID voor TV-installatie in de paste bookmarklet (`groot`-vlag)
 
 ---
 
@@ -290,6 +324,11 @@ Prefixen worden gestript naar lokaal formaat: NL (+31/0031), BE (+32/0032), DE (
 
 | Versie | Wijziging |
 |---|---|
+| v1.18.1 | Fix: Pick-up handmatig gepland gebruikt same-day flow; shipper landafhankelijk (NL=246477, BE=246481, DE=419436) i.p.v. vaste Coolblue DS shipper; sjabloon-stap overgeslagen voor Pick-up |
+| v1.18.0 | Add: bellerType 'Teamleider' (korte flow: reden + uitkomst); CBF suboptie 'Pakje niet ingeladen' met eigen uitkomsten en Jerney-info; Basic pagina opent DireXtion niet automatisch na loggen; multi-product scraper op Basic (ArticleDescription tabel) |
+| v1.17.2 | Fix: straat nogmaals invullen na country-load op Basic module |
+| v1.17.1 | Fix: straatnaam dubbel invullen na DireXtion autocomplete voorkomen (timeout verhoogd) |
+| v1.17.0 | Add: tvNetwerk keuze voor TV-installatie next-day bij kleine TV (< 55 inch) — 'Built in (BI)' of '1X'; auto-selectie BI wanneer routenetwerk al 1X is |
 | v1.16.16 | Fix: uitkomst 'Teamleider geïnformeerd, order doorgezet' hernoemd naar 'Straat afgesloten of onvoldoende EV-rijkwijdte' — concreter en zonder TL-vermelding |
 | v1.16.15 | Update: onderweg adresflow samengevoegd — `'Adres niet gevonden'`, `'Adres niet bereikbaar'` en `'Adres niet bereikbaar (bijzonder geval)'` → één optie `'Adres niet gevonden / niet bereikbaar'` met gecombineerde uitkomsten. Nieuw: `'Adres klopt niet'` → info-paneel met Jerney-instructie, geen verdere keuze. |
 | v1.16.14 | Fix: categorie `Advies gegeven` (was `Advies / Info gegeven` — slash in URL-encoded waarde `%2F` zorgde voor lege kolom in GAS) |
