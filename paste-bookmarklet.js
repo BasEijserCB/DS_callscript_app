@@ -515,6 +515,9 @@ try {
   setDxDropdown('_countryId', countryIds[orderData.detectedCountry]);
   await new Promise(resolve => setTimeout(resolve, 500));
   setDxDropdown('_language', orderData.detectedLanguage);
+  // Basic-module laadt country-dropdown traag en triggert daarna nog een autocomplete
+  await new Promise(resolve => setTimeout(resolve, 600));
+  fillInputs({ 'street': streetName, 'residence': orderData.city });
 
   // ── CHECKPOINT B: na countryId/taal ──────────────────────────
   {
