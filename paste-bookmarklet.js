@@ -492,7 +492,7 @@ try {
   });
 
   // Wacht op DireXtion autocomplete, daarna straat + woonplaats overschrijven
-  await new Promise(resolve => setTimeout(resolve, 400));
+  await new Promise(resolve => setTimeout(resolve, 750));
   fillInputs({
     'street':               streetName,
     'residence':            orderData.city,
