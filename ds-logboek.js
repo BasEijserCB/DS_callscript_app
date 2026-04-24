@@ -799,7 +799,7 @@
               if (answeredKeys.includes('geplandeRoute')&&!skipDienstType()) s.push({key:'dienstType',label:'Is dit Nazorg of een Extra dienst?',type:'dienst-select'});
             } else if (callData.uitkomst==='Next day gepland') {
               if (!skipDienstType()) s.push({key:'dienstType',label:'Is dit Nazorg of een Extra dienst?',type:'dienst-select'});
-              if ((answeredKeys.includes('dienstType')||skipDienstType())&&isTVInstallatie) {
+              if ((answeredKeys.includes('dienstType')||skipDienstType())&&isTVInstallatie&&callData.formaatTV!=='Ja (>= 55 inch)') {
                 if (!answeredKeys.includes('tvNetwerk')) {
                   var routeNet=parseToTourAlias(callData.geplandeRoute||'').split('-')[0];
                   if (routeNet==='1X') { callData.tvNetwerk='Built in (BI)'; autoFilledKeys.push('tvNetwerk'); }
