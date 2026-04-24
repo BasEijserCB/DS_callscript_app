@@ -15,6 +15,7 @@ Browsergebaseerde widget voor het Coolblue Delivery Support team. Draait bovenop
 | `paste-bookmarklet-min.txt` | Gegenereerde URL-geëncodeerde paste bookmarklet URL (regel 2). Output van `build.py`. |
 | `install.html` | Installatiepagina. Bevat **beide** bookmarklets als sleepbare knoppen — moet altijd in sync zijn met `loader-bookmarklet-min.txt` en `paste-bookmarklet-min.txt`. |
 | `build.py` | Minificeert beide bookmarklets → `*-min.txt`. Detecteert versienummer automatisch. |
+| `gas-backend.js` | Broncode van het Google Apps Script backend (`doGet`). Schrijft elke log-entry als rij naar de actieve Google Sheet. Moet handmatig gekopieerd worden naar de GAS editor bij wijzigingen. |
 
 ---
 
@@ -262,6 +263,23 @@ Wordt **overgeslagen** (`skipDienstType()`) bij: deur omdraaien + koelkast/vriez
 
 ---
 
+## Uitkomst-categorieën (Google Sheets `categorie` kolom)
+
+Elke uitkomst wordt automatisch ingedeeld in één van zes vaste categorieën via `berekenCategorie()` in `ds-logboek.js`. De waarde wordt als `&categorie=` meegestuurd naar het GAS-backend. **Elke nieuwe uitkomst die in de toekomst wordt toegevoegd, MOET in een van deze zes categorieën passen.**
+
+| Categorie | Wanneer |
+|---|---|
+| `Same day gepland` | Bezoek/oplossing voor vandaag ingepland |
+| `Next day gepland` | Bezoek/oplossing voor een andere dag ingepland |
+| `Onderweg opgelost` | Held geholpen terwijl onderweg (`locatie='Onderweg'`): adres gevonden, route, tel.nr., stop uitgesteld, etc. |
+| `Advies / Info gegeven` | Advies of info verstrekt zonder bezoek in te plannen: KS/Winkel geholpen, externe partners (TD/Yeply/G4S), CBF depot/pakket, geen actie nodig, visit verwijderd, algemeen gesprek afgerond |
+| `Geen oplossing` | DS kon geen oplossing bieden, of klant ziet af van service |
+| `Buiten DS scope` | `locatie='Afhandeling buiten DS'` of `bellerType='Andere beller'` (beller buiten DS-context) |
+
+Bij het toevoegen van een nieuwe uitkomst: controleer of `berekenCategorie()` de nieuwe waarde correct afvangt op basis van de bestaande logica, of voeg een expliciete check toe.
+
+---
+
 ## Telefoonnummer normalisatie
 
 Prefixen worden gestript naar lokaal formaat: NL (+31/0031), BE (+32/0032), DE (+49/0049), PL (+48/0048).
@@ -272,6 +290,7 @@ Prefixen worden gestript naar lokaal formaat: NL (+31/0031), BE (+32/0032), DE (
 
 | Versie | Wijziging |
 |---|---|
+| v1.16.13 | Add: `berekenCategorie()` — elke log-entry krijgt een `categorie` kolom in Google Sheets (Same day gepland / Next day gepland / Onderweg opgelost / Advies · Info gegeven / Geen oplossing / Buiten DS scope) |
 | v1.16.12 | Fix: updatemelding z-index verhoogd naar 1000001 in loader-bookmarklet.js (was 99999, widget zat er overheen) |
 | v1.16.11 | Revert: updatemelding terug naar toast rechtsonder op hoofdpagina (blauw met sluitknop), eerdere widget-snap varianten teruggedraaid |
 | v1.16.9 | Fix: updatebanner alleen tonen als nieuwe versie binnenkomt tijdens lopende sessie (niet bij opstarten); appContainer flexbox layout hersteld na body flex-kolom wijziging |

@@ -1092,7 +1092,7 @@
             '<button class="park-info-btn" id="btn-park-info">\u2139</button>' +
           '</div>' +
         '</div></div>' +
-        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.16.12</div>' +
+        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.16.13</div>' +
       '</div>';
 
     // Park tooltip
@@ -1858,6 +1858,26 @@
   }
 
   // ── VERSTUUR HELPERS ─────────────────────────────────────────
+  function berekenCategorie() {
+    var u    = callData.uitkomst              || '';
+    var l    = callData.locatie               || '';
+    var ksU  = callData.ks_uitkomst           || '';
+    var ondU = callData.onderweg_uitkomst     || '';
+    var advG = callData.advies_gelukt         || '';
+    var cbfP = callData.cbf_pakket_uitkomst   || '';
+    if (u==='Same day gepland'||u==='Same day visit gepland'||u==='Helden teruggebeld, rijden terug zonder visit'||ksU==='Teamleider stuurt helden terug')
+      return 'Same day gepland';
+    if (u==='Next day gepland'||u==='Next day visit gepland'||ksU==='Next day gepland')
+      return 'Next day gepland';
+    if (u==='Geen oplossing gepland'||u==='Klant ziet af van service (meerkosten)'||ksU==='Teamleider stuurt helden niet terug'||ksU==='DS vindt terugsturen niet de juiste oplossing'||ondU==='Nee, geen oplossing door DS'||advG==='Nee, geen oplossing door DS'||cbfP==='Nee, geen oplossing door DS')
+      return 'Geen oplossing';
+    if (l==='Afhandeling buiten DS'||callData.bellerType==='Andere beller')
+      return 'Buiten DS scope';
+    if (l==='Onderweg')
+      return 'Onderweg opgelost';
+    return 'Advies / Info gegeven';
+  }
+
   function bouwLogParams() {
     callData.dsWaarde = berekenDsWaarde();
     var probLog, redenGeenOplossing, redenNextDay, routeLog, orderOplLog;
@@ -1914,7 +1934,8 @@
     var bellerLog = callData.locatie==='Klantenservice' ? 'Klantenservice' : callData.locatie==='Winkel' ? 'Winkel' : ['Technische Dienst','Yeply','G4S'].includes(callData.locatie) ? callData.locatie : callData.bellerType||'';
     var extraInfo = callData.locatie==='Afhandeling buiten DS' && callData.afwijkend_reden==='Overig' ? callData.afwijkend_toelichting : '';
     var extraDienst = (callData.locatie==='Klantenservice'||callData.locatie==='Winkel') && callData.ks_reden==='Nazorg nodig' ? 'Ja' : '';
-    return '?id='+Date.now()+'&user='+encodeURIComponent(callData.user)+'&route='+encodeURIComponent(callData.route)+'&depot='+encodeURIComponent(callData.depot)+'&driver1='+encodeURIComponent(logDriver1)+'&driver2='+encodeURIComponent(logDriver2)+'&orderBron='+encodeURIComponent(logOrderBron)+'&product='+encodeURIComponent(prodLog)+'&probleem='+encodeURIComponent(probLog)+'&redenGeenOplossing='+encodeURIComponent(redenGeenOplossing)+'&redenNextDay='+encodeURIComponent(redenNextDay)+'&orderOplossing='+encodeURIComponent(orderOplLog)+'&geplandeRoute='+encodeURIComponent(routeLog)+'&dsWaarde='+encodeURIComponent(callData.dsWaarde)+'&bellerType='+encodeURIComponent(bellerLog)+'&tijdvak='+encodeURIComponent(callData.tijdvak)+'&aankomsttijd='+encodeURIComponent(callData.aankomsttijd)+'&extra_info='+encodeURIComponent(extraInfo)+'&extra_dienst='+encodeURIComponent(extraDienst);
+    var categorie = berekenCategorie();
+    return '?id='+Date.now()+'&user='+encodeURIComponent(callData.user)+'&route='+encodeURIComponent(callData.route)+'&depot='+encodeURIComponent(callData.depot)+'&driver1='+encodeURIComponent(logDriver1)+'&driver2='+encodeURIComponent(logDriver2)+'&orderBron='+encodeURIComponent(logOrderBron)+'&product='+encodeURIComponent(prodLog)+'&probleem='+encodeURIComponent(probLog)+'&redenGeenOplossing='+encodeURIComponent(redenGeenOplossing)+'&redenNextDay='+encodeURIComponent(redenNextDay)+'&orderOplossing='+encodeURIComponent(orderOplLog)+'&geplandeRoute='+encodeURIComponent(routeLog)+'&dsWaarde='+encodeURIComponent(callData.dsWaarde)+'&bellerType='+encodeURIComponent(bellerLog)+'&tijdvak='+encodeURIComponent(callData.tijdvak)+'&aankomsttijd='+encodeURIComponent(callData.aankomsttijd)+'&extra_info='+encodeURIComponent(extraInfo)+'&extra_dienst='+encodeURIComponent(extraDienst)+'&categorie='+encodeURIComponent(categorie);
   }
 
   // ── KLEMBORD ALLEEN ─────────────────────────────────────────
