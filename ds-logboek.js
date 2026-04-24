@@ -1114,7 +1114,7 @@
             '<button class="park-info-btn" id="btn-park-info">\u2139</button>' +
           '</div>' +
         '</div></div>' +
-        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.18.0</div>' +
+        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.18.1</div>' +
       '</div>';
 
     // Park tooltip
@@ -2012,7 +2012,7 @@
     else if (prob.includes('aansluiting')) serviceTypeId=51060;
     else if (prob.includes('slang')) serviceTypeId=51064;
     else if (prob.includes('trekschakelaar')) serviceTypeId=277249;
-    else if (prob.includes('milieuretour') && callData.milieuretour_type==='Pick-up') serviceTypeId=null; // TODO: vul PICKUP_SERVICE_ID in na DireXtion console lookup
+    else if (prob.includes('milieuretour') && callData.milieuretour_type==='Pick-up') serviceTypeId=427807;
     else if (prob.includes('milieuretour')) serviceTypeId=20;
     else if (prob.includes('deur omdraaien')) serviceTypeId=51068;
     else if (prob.includes('inbouwen')) serviceTypeId=322997;
