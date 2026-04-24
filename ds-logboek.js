@@ -695,7 +695,7 @@
           if (callData.onderweg_type==='Advies gegeven') {
             s.push({key:'advies_gelukt',label:'Is de service na het advies uitgevoerd?',type:'info-select',opties:['Ja, service uitgevoerd','Nee, geen oplossing door DS']});
           } else if (callData.onderweg_type==='Adres niet gevonden / niet bereikbaar') {
-            s.push({key:'onderweg_uitkomst',label:'Wat was de uitkomst?',type:'adres-uitkomst-select',opties:['Adres gevonden samen met Held','Alternatieve route gevonden voor Held','Teamleider geïnformeerd, order doorgezet','Nee, geen oplossing door DS']});
+            s.push({key:'onderweg_uitkomst',label:'Wat was de uitkomst?',type:'adres-uitkomst-select',opties:['Adres gevonden samen met Held','Alternatieve route gevonden voor Held','Straat afgesloten of onvoldoende EV-rijkwijdte','Nee, geen oplossing door DS']});
           } else if (callData.onderweg_type==='Adres klopt niet') {
             // Geen verdere keuze — info paneeltje getoond op submit, direct loggen
           } else if (callData.onderweg_type==='Klant niet bereikbaar / verkeerd nummer') {
@@ -815,7 +815,7 @@
         if (callData.onderweg_type==='Advies gegeven') {
           s.push({key:'advies_gelukt',label:'Is de service na het advies uitgevoerd?',type:'info-select',opties:['Ja, service uitgevoerd','Nee, geen oplossing door DS']});
         } else if (callData.onderweg_type==='Adres niet gevonden / niet bereikbaar') {
-          s.push({key:'onderweg_uitkomst',label:'Wat was de uitkomst?',type:'adres-uitkomst-select',opties:['Adres gevonden samen met Held','Alternatieve route gevonden voor Held','Teamleider geïnformeerd, order doorgezet','Nee, geen oplossing door DS']});
+          s.push({key:'onderweg_uitkomst',label:'Wat was de uitkomst?',type:'adres-uitkomst-select',opties:['Adres gevonden samen met Held','Alternatieve route gevonden voor Held','Straat afgesloten of onvoldoende EV-rijkwijdte','Nee, geen oplossing door DS']});
         } else if (callData.onderweg_type==='Adres klopt niet') {
           // Geen verdere keuze — info paneeltje getoond op submit, direct loggen
         } else if (callData.onderweg_type==='Klant niet bereikbaar / verkeerd nummer') {
@@ -1086,7 +1086,7 @@
             '<button class="park-info-btn" id="btn-park-info">\u2139</button>' +
           '</div>' +
         '</div></div>' +
-        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.16.15</div>' +
+        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.16.16</div>' +
       '</div>';
 
     // Park tooltip

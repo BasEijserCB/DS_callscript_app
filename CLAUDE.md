@@ -290,6 +290,7 @@ Prefixen worden gestript naar lokaal formaat: NL (+31/0031), BE (+32/0032), DE (
 
 | Versie | Wijziging |
 |---|---|
+| v1.16.16 | Fix: uitkomst 'Teamleider geïnformeerd, order doorgezet' hernoemd naar 'Straat afgesloten of onvoldoende EV-rijkwijdte' — concreter en zonder TL-vermelding |
 | v1.16.15 | Update: onderweg adresflow samengevoegd — `'Adres niet gevonden'`, `'Adres niet bereikbaar'` en `'Adres niet bereikbaar (bijzonder geval)'` → één optie `'Adres niet gevonden / niet bereikbaar'` met gecombineerde uitkomsten. Nieuw: `'Adres klopt niet'` → info-paneel met Jerney-instructie, geen verdere keuze. |
 | v1.16.14 | Fix: categorie `Advies gegeven` (was `Advies / Info gegeven` — slash in URL-encoded waarde `%2F` zorgde voor lege kolom in GAS) |
 | v1.16.13 | Add: `berekenCategorie()` — elke log-entry krijgt een `categorie` kolom in Google Sheets (Same day gepland / Next day gepland / Onderweg opgelost / Advies gegeven / Geen oplossing / Buiten DS scope) |
