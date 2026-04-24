@@ -88,11 +88,11 @@
     scrapedAankomsttijd = basicField('Geplande aankomsttijd');
 
     // Producten uit de DevExpress artikelentabel (Articles_XXXXXXX).
-    // Rijen hebben klasse dxgvDataRow_Office2010Silver. Celindices per rij:
-    //   0 = uitklap-knop, 1 = Nummer, 2 = Omschrijving, 3 = Code, 4 = Artikelsoort
+    // Celindices per rij: 0 = uitklap-knop, 1 = Nummer, 2 = Omschrijving, 3 = Code, 4 = Artikelsoort
+    // Selector gebruikt class*="dxgvDataRow" (thema-onafhankelijk, vangt ook Office2010Blue e.d.)
     scrapedArtikelsoortenMap = {};
     alleGescrapteProducten = (function() {
-      var dataRows = document.querySelectorAll('table[id^="Articles_"] tr.dxgvDataRow_Office2010Silver');
+      var dataRows = document.querySelectorAll('table[id^="Articles_"] tr[class*="dxgvDataRow"]');
       var results = [];
       dataRows.forEach(function(row) {
         var cells = row.children;
@@ -351,6 +351,7 @@
     afwijkend_reden:'', afwijkend_toelichting:'',
     cbf_depot_reden:'', cbf_depot_toelichting:'',
     cbf_pakket_reden:'', cbf_pakket_uitkomst:'',
+    tl_reden:'', tl_uitkomst:'',
     winkel_reden:'', ks_advies_uitkomst:'',
     orderOplossing:'', dsWaarde:'',
     tijdvak: scrapedTijdvak||'', aankomsttijd: scrapedAankomsttijd||'',
@@ -683,6 +684,19 @@
     s.push({key:'bellerType',label:'Wie belt er?',type:'beller-select'});
     if (!answeredKeys.includes('bellerType')) return s;
 
+    // ── TEAMLEIDER FLOW ──────────────────────────────────────────
+    if (callData.bellerType === 'Teamleider') {
+      s.push({key:'tl_reden',label:'Waar gaat de vraag over?',type:'ux-select',opties:['Vraag om aanpassingen in rit','Andere vraag']});
+      if (answeredKeys.includes('tl_reden')) {
+        if (callData.tl_reden==='Vraag om aanpassingen in rit') {
+          s.push({key:'tl_uitkomst',label:'Wat was de uitkomst?',type:'ux-select',opties:['Aanpassing doorgegeven / bevestigd','Niet mogelijk']});
+        } else {
+          s.push({key:'tl_uitkomst',label:'Wat was de uitkomst?',type:'ux-select',opties:['Vraag beantwoord','Geen oplossing']});
+        }
+      }
+      return s;
+    }
+
     // ── CBF FLOW ─────────────────────────────────────────────────
     if (callData.bellerType === 'CBF') {
       s.push({key:'locatie',label:'Wat is de situatie?',type:'cbf-locatie-select',opties:['Onderweg','Bij de klant','Vraag voor het depot']});
@@ -707,9 +721,13 @@
           }
         }
       } else if (callData.locatie === 'Bij de klant') {
-        s.push({key:'cbf_pakket_reden',label:'Wat is de vraag?',type:'ux-select',opties:['Pakket niet meegenomen (manco)','Pakket verkeerd / beschadigd','Overige vraag over pakket']});
+        s.push({key:'cbf_pakket_reden',label:'Wat is de vraag?',type:'ux-select',opties:['Pakket niet meegenomen (manco)','Pakket verkeerd / beschadigd','Pakje niet ingeladen','Overige vraag over pakket']});
         if (answeredKeys.includes('cbf_pakket_reden')) {
-          s.push({key:'cbf_pakket_uitkomst',label:'Wat was de uitkomst?',type:'ux-select',opties:['Klant geïnformeerd, manco geregistreerd','Klant geïnformeerd, held regelt verder','Nee, geen oplossing door DS']});
+          if (callData.cbf_pakket_reden==='Pakje niet ingeladen') {
+            s.push({key:'cbf_pakket_uitkomst',label:'Wat was de uitkomst?',type:'ux-select',opties:['Pakje wordt later afgeleverd (afleverbewijs)','Niet opgelost — instructie gegeven in Jerney']});
+          } else {
+            s.push({key:'cbf_pakket_uitkomst',label:'Wat was de uitkomst?',type:'ux-select',opties:['Klant geïnformeerd, manco geregistreerd','Klant geïnformeerd, held regelt verder','Nee, geen oplossing door DS']});
+          }
         }
       } else if (callData.locatie === 'Vraag voor het depot') {
         s.push({key:'cbf_depot_reden',label:'Waar gaat de vraag over?',type:'ux-select',opties:['Ziekmelding','Fiets kapot / incident','Informeren waar de vracht is','Anders']});
@@ -949,6 +967,9 @@
 
   // ── DS WAARDE ─────────────────────────────────────────────────
   function berekenDsWaarde() {
+    if (callData.bellerType === 'Teamleider') {
+      return callData.tl_uitkomst || callData.tl_reden || 'Teamleider belt';
+    }
     if (callData.bellerType === 'CBF') {
       if (callData.locatie === 'Vraag voor het depot') {
         return 'Advies gegeven (CBF doorverwezen naar depot) — ' + (callData.cbf_depot_reden||'reden onbekend') + (callData.cbf_depot_toelichting ? ': ' + callData.cbf_depot_toelichting : '');
@@ -1033,7 +1054,7 @@
     if (callData.user)  h+='<span class="status-line">DS medewerker: <b>'+callData.user+'</b></span>';
     if (callData.route) h+='<span class="status-line">Route: <b>'+callData.route+'</b></span>';
     if (callData.bellerType) h+='<span class="status-line">Beller: <b>'+callData.bellerType+'</b></span>';
-    var lbl={product_keuze:'Model',locatie:'Locatie',probleem:'Taak',ks_reden:'Reden',ks_uitkomst:'KS uitkomst',afwijkend_reden:'Reden',afwijkend_toelichting:'Toelichting',milieuretour_type:'Type ophaling',formaatTV:'TV formaat',uitkomst:'Uitkomst',geplandeRoute:'Route gepland',next_day_reden:'Reden next day',geen_oplossing_reden:'Reden geen oplossing',advies_gelukt:'Advies uitkomst',onderweg_type:'Probleem',onderweg_uitkomst:'Uitkomst',cbf_depot_reden:'Vraag',cbf_depot_toelichting:'Toelichting'};
+    var lbl={product_keuze:'Model',locatie:'Locatie',probleem:'Taak',ks_reden:'Reden',ks_uitkomst:'KS uitkomst',afwijkend_reden:'Reden',afwijkend_toelichting:'Toelichting',milieuretour_type:'Type ophaling',formaatTV:'TV formaat',uitkomst:'Uitkomst',geplandeRoute:'Route gepland',next_day_reden:'Reden next day',geen_oplossing_reden:'Reden geen oplossing',advies_gelukt:'Advies uitkomst',onderweg_type:'Probleem',onderweg_uitkomst:'Uitkomst',cbf_depot_reden:'Vraag',cbf_depot_toelichting:'Toelichting',tl_reden:'Vraag TL',tl_uitkomst:'Uitkomst TL'};
     // Apparaat + model tonen
     if (callData.model) {
       if (meerdereProducten && !answeredKeys.includes('product_keuze')) {
@@ -1047,7 +1068,7 @@
         }
       }
     }
-    ['locatie','ks_reden','ks_uitkomst','afwijkend_reden','afwijkend_toelichting','probleem','milieuretour_type','formaatTV','uitkomst','geplandeRoute','next_day_reden','geen_oplossing_reden','advies_gelukt','onderweg_type','onderweg_uitkomst','cbf_depot_reden','cbf_depot_toelichting'].forEach(function(k){
+    ['locatie','ks_reden','ks_uitkomst','afwijkend_reden','afwijkend_toelichting','probleem','milieuretour_type','formaatTV','uitkomst','geplandeRoute','next_day_reden','geen_oplossing_reden','advies_gelukt','onderweg_type','onderweg_uitkomst','cbf_depot_reden','cbf_depot_toelichting','tl_reden','tl_uitkomst'].forEach(function(k){
       if (answeredKeys.includes(k)&&callData[k]&&k!=='fname'&&k!=='lname')
         h+='<span class="status-line">'+lbl[k]+': <b>'+callData[k]+'</b></span>';
     });
@@ -1093,7 +1114,7 @@
             '<button class="park-info-btn" id="btn-park-info">\u2139</button>' +
           '</div>' +
         '</div></div>' +
-        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.17.2</div>' +
+        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.18.0</div>' +
       '</div>';
 
     // Park tooltip
@@ -1344,6 +1365,10 @@
           '<div style="margin-top:8px;padding-top:8px;border-top:1px solid #cce9f9;"><b>Afmelden in Jerney:</b><br>Kies "Klant niet thuis" en maak een foto van de voordeur als bewijs.</div>' +
           '</div>';
       }
+      // Info blokje voor CBF pakje niet ingeladen + niet opgelost — Jerney instructie
+      if (callData.cbf_pakket_reden==='Pakje niet ingeladen' && callData.cbf_pakket_uitkomst==='Niet opgelost — instructie gegeven in Jerney') {
+        submitHtml += '<div class="info-box">ℹ️ <b>Instructie voor de fietser:</b><br>Verwerk het missende pakje in Jerney — kies de optie "Pakket ontbreekt" of vergelijkbaar voor dit soort situaties.</div>';
+      }
       // Info blokje voor andere bellers (niet over bezorging)
       if (callData.bellerType==='Andere beller') {
         submitHtml += '<div class="info-box">ℹ️ <b>Andere beller</b><br>Dit gesprek gaat niet over een bezorging. Je hoeft niet aan te geven wat het probleem was — gewoon loggen is voldoende.</div>';
@@ -1367,7 +1392,7 @@
         submitHtml += '<div class="controle-box">' +
           '<div class="controle-title">✓ Check voor het plannen</div>' +
           controleItems +
-          '<div class="controle-item" style="margin-top:8px;padding-top:8px;border-top:1px solid #DDDDDD;">📝 Vergeet niet een opmerking te plaatsen op de originele order in DireXtion — deze wordt automatisch in een nieuw tabblad geopend na loggen.</div>' +
+          '<div class="controle-item" style="margin-top:8px;padding-top:8px;border-top:1px solid #DDDDDD;">📝 Vergeet niet een opmerking te plaatsen op de originele order in DireXtion' + (isBasicPage ? '.' : ' — deze wordt automatisch in een nieuw tabblad geopend na loggen.') + '</div>' +
           '</div>';
       }
       if (isGepland) {
@@ -1379,10 +1404,10 @@
       var openDirex = function() { if (direxUrl) window.open(direxUrl, '_blank'); };
       if (isGepland) {
         idoc.getElementById('btn-clipboard').onclick = function() { kopieerNaarKlembord(); };
-        idoc.getElementById('btn-loggen').onclick = function() { openDirex(); verstuurAlleen(); };
-        idoc.getElementById('btn-both').onclick = function() { openDirex(); verstuurEnKopieer(); };
+        idoc.getElementById('btn-loggen').onclick = function() { if (!isBasicPage) openDirex(); verstuurAlleen(); };
+        idoc.getElementById('btn-both').onclick = function() { if (!isBasicPage) openDirex(); verstuurEnKopieer(); };
       } else {
-        idoc.getElementById('btn-loggen').onclick = function() { openDirex(); verstuurAlleen(); };
+        idoc.getElementById('btn-loggen').onclick = function() { if (!isBasicPage) openDirex(); verstuurAlleen(); };
       }
       renderAndersSection(null, null);
       return;
@@ -1723,6 +1748,9 @@
         };
         container.appendChild(b);
       });
+      var tlBtn=idoc.createElement('button'); tlBtn.className='ux-btn advies-btn'; tlBtn.innerText='Teamleider belt';
+      tlBtn.onclick=function(){ callData.bellerType='Teamleider'; answeredKeys.push('bellerType'); renderApp(); };
+      container.appendChild(tlBtn);
       var extToggle=idoc.createElement('button'); extToggle.className='ux-btn advies-btn'; extToggle.innerText='Andere bellers ▾';
       var extExpand=idoc.createElement('div'); extExpand.style.cssText='display:none;margin-top:5px;';
       ['Technische Dienst belt','Yeply belt','G4S belt'].forEach(function(o){
@@ -1874,7 +1902,7 @@
       return 'Same day gepland';
     if (u==='Next day gepland'||u==='Next day visit gepland'||ksU==='Next day gepland')
       return 'Next day gepland';
-    if (u==='Geen oplossing gepland'||u==='Klant ziet af van service (meerkosten)'||ksU==='Teamleider stuurt helden niet terug'||ksU==='DS vindt terugsturen niet de juiste oplossing'||ondU==='Nee, geen oplossing door DS'||advG==='Nee, geen oplossing door DS'||cbfP==='Nee, geen oplossing door DS')
+    if (u==='Geen oplossing gepland'||u==='Klant ziet af van service (meerkosten)'||ksU==='Teamleider stuurt helden niet terug'||ksU==='DS vindt terugsturen niet de juiste oplossing'||ondU==='Nee, geen oplossing door DS'||advG==='Nee, geen oplossing door DS'||cbfP==='Nee, geen oplossing door DS'||cbfP==='Niet opgelost — instructie gegeven in Jerney'||callData.tl_uitkomst==='Niet mogelijk'||callData.tl_uitkomst==='Geen oplossing')
       return 'Geen oplossing';
     if (l==='Afhandeling buiten DS'||callData.bellerType==='Andere beller')
       return 'Buiten DS scope';
@@ -1888,7 +1916,11 @@
     var probLog, redenGeenOplossing, redenNextDay, routeLog, orderOplLog;
     var logDriver1 = callData.driver1, logDriver2 = callData.driver2, logOrderBron = callData.orderBron;
     var skipRouteFields = false;
-    if (callData.bellerType === 'CBF') {
+    if (callData.bellerType === 'Teamleider') {
+      probLog            = callData.tl_reden + (callData.tl_uitkomst ? ' — ' + callData.tl_uitkomst : '');
+      redenGeenOplossing = ''; redenNextDay = ''; routeLog = ''; orderOplLog = '';
+      logDriver1 = ''; logDriver2 = '';
+    } else if (callData.bellerType === 'CBF') {
       if (callData.locatie === 'Vraag voor het depot') {
         probLog = 'Vraag voor het depot: ' + (callData.cbf_depot_reden||'') + (callData.cbf_depot_toelichting ? ' — ' + callData.cbf_depot_toelichting : '');
         logDriver1 = ''; logDriver2 = ''; logOrderBron = '';
@@ -1923,7 +1955,7 @@
       routeLog           = (ksOpl==='Next day gepland') ? 'Next Day' : callData.geplandeRoute;
       orderOplLog        = (ksOpl==='Same day gepland'||ksOpl==='Next day gepland') ? callData.orderBron+'-DS' : '';
     } else if (callData.locatie==='Bij de klant') {
-      probLog            = callData.probleem+(callData.milieuretour_type?' ('+callData.milieuretour_type+')':'');
+      probLog            = callData.milieuretour_type ? (callData.milieuretour_type==='Pick-up' ? 'Pick-up (handmatig gepland)' : 'Milieuretour ophalen') : callData.probleem;
       redenGeenOplossing = callData.geen_oplossing_reden||'';
       redenNextDay       = callData.next_day_reden||'';
       routeLog           = (callData.uitkomst==='Next day gepland'||callData.uitkomst==='Next day visit gepland') ? 'Next Day' : callData.geplandeRoute;
@@ -1980,6 +2012,7 @@
     else if (prob.includes('aansluiting')) serviceTypeId=51060;
     else if (prob.includes('slang')) serviceTypeId=51064;
     else if (prob.includes('trekschakelaar')) serviceTypeId=277249;
+    else if (prob.includes('milieuretour') && callData.milieuretour_type==='Pick-up') serviceTypeId=null; // TODO: vul PICKUP_SERVICE_ID in na DireXtion console lookup
     else if (prob.includes('milieuretour')) serviceTypeId=20;
     else if (prob.includes('deur omdraaien')) serviceTypeId=51068;
     else if (prob.includes('inbouwen')) serviceTypeId=322997;
@@ -1990,7 +2023,8 @@
     else if (prob.includes('tv installeren')||prob.includes('aansluiten')) serviceTypeId=254509;
     else if (prob.includes('tv + soundbar ophang')) serviceTypeId=490317;
     else if (prob.includes('tv + soundbar')) serviceTypeId=490316;
-    var payload={orderNr:callData.orderBron+'-DS',name:name,phone:ph,email:email,zip:cleanPC,city:city,address:address,detectedCountry:country,detectedLanguage:lang,product:effectiefProduct(),probleem:callData.probleem,dienstType:callData.dienstType,formaatTV:callData.formaatTV,tvNetwerk:callData.tvNetwerk,uitkomst:callData.uitkomst||callData.ks_uitkomst||'',geplandeRoute:callData.geplandeRoute||'',serviceTypeId:serviceTypeId,time:Date.now()};
+    var pickupProbleem = callData.milieuretour_type ? (callData.milieuretour_type==='Pick-up' ? 'Pick-up (handmatig gepland)' : 'Milieuretour ophalen') : callData.probleem;
+    var payload={orderNr:callData.orderBron+'-DS',name:name,phone:ph,email:email,zip:cleanPC,city:city,address:address,detectedCountry:country,detectedLanguage:lang,product:effectiefProduct(),probleem:pickupProbleem,dienstType:callData.dienstType,formaatTV:callData.formaatTV,tvNetwerk:callData.tvNetwerk,uitkomst:callData.uitkomst||callData.ks_uitkomst||'',geplandeRoute:callData.geplandeRoute||'',serviceTypeId:serviceTypeId,time:Date.now()};
     if ((prob.includes('plaatsen')||prob.includes('tillen'))&&callData.product_keuze) {
       payload.products=callData.product_keuze.split(', ');
     }
