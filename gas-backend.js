@@ -28,7 +28,7 @@ function doGet(e) {
       p.aankomsttijd,               // Kolom R: Aankomsttijd
       p.extra_info,                 // Kolom S: Extra info (toelichting afwijkend)
       p.extra_dienst,               // Kolom T: Extra dienst nodig? (Ja / leeg)
-      p.categorie                   // Kolom U: Categorie (Same day gepland / Next day gepland / Onderweg opgelost / Advies · Info gegeven / Geen oplossing / Buiten DS scope)
+      p.categorie                   // Kolom U: Categorie (Same day gepland / Next day gepland / Onderweg opgelost / Advies gegeven / Geen oplossing / Buiten DS scope)
     ]);
 
     return ContentService

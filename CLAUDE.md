@@ -272,7 +272,7 @@ Elke uitkomst wordt automatisch ingedeeld in één van zes vaste categorieën vi
 | `Same day gepland` | Bezoek/oplossing voor vandaag ingepland |
 | `Next day gepland` | Bezoek/oplossing voor een andere dag ingepland |
 | `Onderweg opgelost` | Held geholpen terwijl onderweg (`locatie='Onderweg'`): adres gevonden, route, tel.nr., stop uitgesteld, etc. |
-| `Advies / Info gegeven` | Advies of info verstrekt zonder bezoek in te plannen: KS/Winkel geholpen, externe partners (TD/Yeply/G4S), CBF depot/pakket, geen actie nodig, visit verwijderd, algemeen gesprek afgerond |
+| `Advies gegeven` | Advies of info verstrekt zonder bezoek in te plannen: KS/Winkel geholpen, externe partners (TD/Yeply/G4S), CBF depot/pakket, geen actie nodig, visit verwijderd, algemeen gesprek afgerond |
 | `Geen oplossing` | DS kon geen oplossing bieden, of klant ziet af van service |
 | `Buiten DS scope` | `locatie='Afhandeling buiten DS'` of `bellerType='Andere beller'` (beller buiten DS-context) |
 
@@ -290,7 +290,8 @@ Prefixen worden gestript naar lokaal formaat: NL (+31/0031), BE (+32/0032), DE (
 
 | Versie | Wijziging |
 |---|---|
-| v1.16.13 | Add: `berekenCategorie()` — elke log-entry krijgt een `categorie` kolom in Google Sheets (Same day gepland / Next day gepland / Onderweg opgelost / Advies · Info gegeven / Geen oplossing / Buiten DS scope) |
+| v1.16.14 | Fix: categorie `Advies gegeven` (was `Advies / Info gegeven` — slash in URL-encoded waarde `%2F` zorgde voor lege kolom in GAS) |
+| v1.16.13 | Add: `berekenCategorie()` — elke log-entry krijgt een `categorie` kolom in Google Sheets (Same day gepland / Next day gepland / Onderweg opgelost / Advies gegeven / Geen oplossing / Buiten DS scope) |
 | v1.16.12 | Fix: updatemelding z-index verhoogd naar 1000001 in loader-bookmarklet.js (was 99999, widget zat er overheen) |
 | v1.16.11 | Revert: updatemelding terug naar toast rechtsonder op hoofdpagina (blauw met sluitknop), eerdere widget-snap varianten teruggedraaid |
 | v1.16.9 | Fix: updatebanner alleen tonen als nieuwe versie binnenkomt tijdens lopende sessie (niet bij opstarten); appContainer flexbox layout hersteld na body flex-kolom wijziging |
