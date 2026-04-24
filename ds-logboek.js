@@ -354,7 +354,7 @@
     winkel_reden:'', ks_advies_uitkomst:'',
     orderOplossing:'', dsWaarde:'',
     tijdvak: scrapedTijdvak||'', aankomsttijd: scrapedAankomsttijd||'',
-    dienstType:'', productVerfijnd:''
+    dienstType:'', productVerfijnd:'', tvNetwerk:''
   };
 
   if (bFname) { callData.fname=bFname; answeredKeys.push('fname'); autoFilledKeys.push('fname'); }
@@ -799,6 +799,13 @@
               if (answeredKeys.includes('geplandeRoute')&&!skipDienstType()) s.push({key:'dienstType',label:'Is dit Nazorg of een Extra dienst?',type:'dienst-select'});
             } else if (callData.uitkomst==='Next day gepland') {
               if (!skipDienstType()) s.push({key:'dienstType',label:'Is dit Nazorg of een Extra dienst?',type:'dienst-select'});
+              if ((answeredKeys.includes('dienstType')||skipDienstType())&&isTVInstallatie) {
+                if (!answeredKeys.includes('tvNetwerk')) {
+                  var routeNet=parseToTourAlias(callData.geplandeRoute||'').split('-')[0];
+                  if (routeNet==='1X') { callData.tvNetwerk='Built in (BI)'; autoFilledKeys.push('tvNetwerk'); }
+                  else s.push({key:'tvNetwerk',label:'Welk netwerk voor de nieuwe afspraak?',type:'ux-select',opties:['Built in (BI)','1X']});
+                }
+              }
               if (answeredKeys.includes('dienstType')||skipDienstType()) s.push({key:'next_day_reden',label:'Waarom niet same day?',type:'ux-select',opties:nextDayRedenen});
             } else if (callData.uitkomst==='Geen oplossing gepland') {
               s.push({key:'geen_oplossing_reden',label:'Waarom is er geen oplossing gepland?',type:'text-warning'});
@@ -1086,7 +1093,7 @@
             '<button class="park-info-btn" id="btn-park-info">\u2139</button>' +
           '</div>' +
         '</div></div>' +
-        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.16.16</div>' +
+        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.17.0</div>' +
       '</div>';
 
     // Park tooltip
@@ -1983,7 +1990,7 @@
     else if (prob.includes('tv installeren')||prob.includes('aansluiten')) serviceTypeId=254509;
     else if (prob.includes('tv + soundbar ophang')) serviceTypeId=490317;
     else if (prob.includes('tv + soundbar')) serviceTypeId=490316;
-    var payload={orderNr:callData.orderBron+'-DS',name:name,phone:ph,email:email,zip:cleanPC,city:city,address:address,detectedCountry:country,detectedLanguage:lang,product:effectiefProduct(),probleem:callData.probleem,dienstType:callData.dienstType,formaatTV:callData.formaatTV,uitkomst:callData.uitkomst||callData.ks_uitkomst||'',geplandeRoute:callData.geplandeRoute||'',serviceTypeId:serviceTypeId,time:Date.now()};
+    var payload={orderNr:callData.orderBron+'-DS',name:name,phone:ph,email:email,zip:cleanPC,city:city,address:address,detectedCountry:country,detectedLanguage:lang,product:effectiefProduct(),probleem:callData.probleem,dienstType:callData.dienstType,formaatTV:callData.formaatTV,tvNetwerk:callData.tvNetwerk,uitkomst:callData.uitkomst||callData.ks_uitkomst||'',geplandeRoute:callData.geplandeRoute||'',serviceTypeId:serviceTypeId,time:Date.now()};
     if ((prob.includes('plaatsen')||prob.includes('tillen'))&&callData.product_keuze) {
       payload.products=callData.product_keuze.split(', ');
     }

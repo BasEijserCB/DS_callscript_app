@@ -73,7 +73,9 @@ try {
     const probleem = (orderData.probleem || '').toLowerCase();
     const dienst  = orderData.dienstType;
     const isNazorg = dienst === 'Nazorg (gratis)';
-    const groot   = orderData.formaatTV === 'Ja (>= 55 inch)';
+    const groot   = orderData.tvNetwerk === 'Built in (BI)' ? true
+                  : orderData.tvNetwerk === '1X'            ? false
+                  : orderData.formaatTV === 'Ja (>= 55 inch)';
     const sjablonen = {
       'Nederland': {
         'wasmachine': {
