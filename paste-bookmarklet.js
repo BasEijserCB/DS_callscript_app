@@ -540,9 +540,9 @@ try {
       await new Promise(resolve => setTimeout(resolve, 800));
       setDxTagBox('_services', [parseInt(orderData.serviceTypeId)]);
       await new Promise(resolve => setTimeout(resolve, 400));
-      setDxDropdown('_networkId', 12);
-      await new Promise(resolve => setTimeout(resolve, 400));
       setDxDropdown('_channelId', 16);
+      await new Promise(resolve => setTimeout(resolve, 400));
+      setDxDropdown('_networkId', 12);
     } else {
       setDxDropdown('_channelId', 16);
       await new Promise(resolve => setTimeout(resolve, 800));
