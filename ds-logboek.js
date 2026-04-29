@@ -247,9 +247,6 @@
     '.section-label{font-size:10px;color:#999999;text-transform:uppercase;letter-spacing:0.6px;margin-bottom:6px;}' +
     '.toggle-link{font-size:12px;color:#0090e3;text-align:center;margin:6px 0;cursor:pointer;}' +
     '.toggle-link:hover{text-decoration:underline;}' +
-    '.park-btn{flex:0 0 auto;padding:9px 12px;background:#fff8e1;border:1px solid #ffc107;border-radius:8px;color:#856404;font-size:12px;font-weight:600;cursor:pointer;}' +
-    '.park-btn:hover{background:#fff3cd;}' +
-    '.park-info-btn{background:none;border:none;color:#ffc107;font-size:14px;cursor:default;padding:0 4px;position:relative;}' +
     '.park-melding{background:#fff8e1;border:1px solid #ffc107;border-left:4px solid #ffc107;border-radius:6px;padding:10px 12px;font-size:12px;color:#856404;margin-bottom:12px;line-height:1.5;}' +
     '.park-melding b{color:#533f03;}' +
     '.main-row{display:flex;flex:1;min-height:0;overflow:hidden;}' +
@@ -1117,19 +1114,15 @@
         mainContent +
         '<div class="footer"><div class="footer-inner" style="display:flex;flex-direction:row;justify-content:space-between;align-items:center;gap:8px;">' +
           '<button class="' + backClass + '" id="btn-terug" style="flex:1;">\u2190 Terug</button>' +
-          '<div style="display:flex;gap:4px;align-items:center;flex-shrink:0;">' +
-            '<button class="park-btn" id="btn-park">\u23f8 Parkeer</button>' +
-            '<button class="park-info-btn" id="btn-park-info">\u2139</button>' +
-          '</div>' +
+          (!isAlgemeen ? '<div id="geen-order-toggle" style="display:flex;align-items:center;gap:6px;cursor:pointer;user-select:none;flex-shrink:0;">' +
+            '<div style="position:relative;width:30px;height:17px;border-radius:9px;background:'+(geenOrderMode?'#ff6600':'#ccc')+';transition:background 0.18s;">' +
+              '<div style="position:absolute;top:2px;left:'+(geenOrderMode?'13px':'2px')+';width:13px;height:13px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,0.25);transition:left 0.18s;"></div>' +
+            '</div>' +
+            '<span style="font-size:11px;color:'+(geenOrderMode?'#ff6600':'#aaa')+';">'+(geenOrderMode?'Gegevens gewist':'Geen order')+'</span>' +
+          '</div>' : '') +
         '</div></div>' +
-        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.20.2</div>' +
+        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.20.3</div>' +
       '</div>';
-
-    // Park tooltip
-    var parkTooltip = idoc.createElement('div');
-    parkTooltip.style.cssText = 'display:none;position:fixed;right:14px;bottom:60px;width:240px;font-size:11px;color:#285dab;background:#F2F7FC;border:1px solid #cce9f9;border-radius:6px;padding:8px 10px;line-height:1.5;z-index:10;box-shadow:0 2px 8px rgba(0,0,0,0.1);';
-    parkTooltip.innerText = parkInfoTekst;
-    idoc.body.appendChild(parkTooltip);
 
     idoc.getElementById('btn-close').onclick = function(){ wrapper.remove(); };
     idoc.getElementById('btn-height').onclick = function() {
@@ -1148,9 +1141,20 @@
       renderApp();
     };
     if (canGoBack()) idoc.getElementById('btn-terug').onclick = goBack;
-    idoc.getElementById('btn-park').onclick = parkeerSessie;
-    idoc.getElementById('btn-park-info').onmouseenter = function(){ parkTooltip.style.display = 'block'; };
-    idoc.getElementById('btn-park-info').onmouseleave = function(){ parkTooltip.style.display = 'none'; };
+    if (!isAlgemeen) idoc.getElementById('geen-order-toggle').onclick = function() {
+      geenOrderMode = !geenOrderMode;
+      if (geenOrderMode) {
+        callData.route=''; callData.orderBron=''; callData.driver1=''; callData.driver2='';
+        callData.model=''; callData.tijdvak=''; callData.aankomsttijd='';
+        callData.product=''; callData.formaatTV=''; callData.productVerfijnd='';
+        isProductAutoGuessed=false;
+        var kf=['fname','lname'].filter(function(k){return answeredKeys.includes(k);});
+        answeredKeys.length=0; kf.forEach(function(k){answeredKeys.push(k);});
+        var ka=['fname','lname'].filter(function(k){return autoFilledKeys.includes(k);});
+        autoFilledKeys.length=0; ka.forEach(function(k){autoFilledKeys.push(k);});
+      }
+      renderApp();
+    };
 
     renderHuidigeStap();
   }
@@ -1736,32 +1740,6 @@
       });
       extToggle.onclick=function(){ extExpand.style.display=extExpand.style.display==='none'?'block':'none'; };
       container.appendChild(extToggle); container.appendChild(extExpand);
-      var goWrap=idoc.createElement('div');
-      goWrap.style.cssText='display:flex;align-items:center;gap:7px;margin-top:12px;cursor:pointer;user-select:none;';
-      var goTrack=idoc.createElement('div');
-      goTrack.style.cssText='position:relative;width:30px;height:17px;border-radius:9px;background:'+(geenOrderMode?'#ff6600':'#ccc')+';transition:background 0.18s;flex-shrink:0;';
-      var goKnob=idoc.createElement('div');
-      goKnob.style.cssText='position:absolute;top:2px;left:'+(geenOrderMode?'13px':'2px')+';width:13px;height:13px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,0.25);transition:left 0.18s;';
-      goTrack.appendChild(goKnob);
-      var goLbl=idoc.createElement('span');
-      goLbl.style.cssText='font-size:11px;color:'+(geenOrderMode?'#ff6600':'#aaa')+';';
-      goLbl.innerText=geenOrderMode?'Gegevens gewist':'Geen order';
-      goWrap.appendChild(goTrack); goWrap.appendChild(goLbl);
-      goWrap.onclick=function(){
-        geenOrderMode=!geenOrderMode;
-        if(geenOrderMode){
-          callData.route=''; callData.orderBron=''; callData.driver1=''; callData.driver2='';
-          callData.model=''; callData.tijdvak=''; callData.aankomsttijd='';
-          callData.product=''; callData.formaatTV=''; callData.productVerfijnd='';
-          isProductAutoGuessed=false;
-          var kf=['fname','lname'].filter(function(k){return answeredKeys.includes(k);});
-          answeredKeys.length=0; kf.forEach(function(k){answeredKeys.push(k);});
-          var ka=['fname','lname'].filter(function(k){return autoFilledKeys.includes(k);});
-          autoFilledKeys.length=0; ka.forEach(function(k){autoFilledKeys.push(k);});
-        }
-        renderApp();
-      };
-      container.appendChild(goWrap);
 
     // CBF LOCATIE SELECT — Onderweg / Vraag voor het depot
     } else if (stap.type==='cbf-locatie-select') {
