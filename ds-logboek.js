@@ -1122,7 +1122,7 @@
             '<button class="park-info-btn" id="btn-park-info">\u2139</button>' +
           '</div>' +
         '</div></div>' +
-        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.20.1</div>' +
+        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.20.2</div>' +
       '</div>';
 
     // Park tooltip
@@ -1736,12 +1736,20 @@
       });
       extToggle.onclick=function(){ extExpand.style.display=extExpand.style.display==='none'?'block':'none'; };
       container.appendChild(extToggle); container.appendChild(extExpand);
-      if (!geenOrderMode) {
-        var geenOrderLink=idoc.createElement('button');
-        geenOrderLink.style.cssText='display:block;margin-top:10px;background:none;border:none;padding:0;font-size:11px;color:#aaa;cursor:pointer;text-decoration:underline;text-align:left;';
-        geenOrderLink.innerText='Geen order — wis gegevens';
-        geenOrderLink.onclick=function(){
-          geenOrderMode=true;
+      var goWrap=idoc.createElement('div');
+      goWrap.style.cssText='display:flex;align-items:center;gap:7px;margin-top:12px;cursor:pointer;user-select:none;';
+      var goTrack=idoc.createElement('div');
+      goTrack.style.cssText='position:relative;width:30px;height:17px;border-radius:9px;background:'+(geenOrderMode?'#ff6600':'#ccc')+';transition:background 0.18s;flex-shrink:0;';
+      var goKnob=idoc.createElement('div');
+      goKnob.style.cssText='position:absolute;top:2px;left:'+(geenOrderMode?'13px':'2px')+';width:13px;height:13px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,0.25);transition:left 0.18s;';
+      goTrack.appendChild(goKnob);
+      var goLbl=idoc.createElement('span');
+      goLbl.style.cssText='font-size:11px;color:'+(geenOrderMode?'#ff6600':'#aaa')+';';
+      goLbl.innerText=geenOrderMode?'Gegevens gewist':'Geen order';
+      goWrap.appendChild(goTrack); goWrap.appendChild(goLbl);
+      goWrap.onclick=function(){
+        geenOrderMode=!geenOrderMode;
+        if(geenOrderMode){
           callData.route=''; callData.orderBron=''; callData.driver1=''; callData.driver2='';
           callData.model=''; callData.tijdvak=''; callData.aankomsttijd='';
           callData.product=''; callData.formaatTV=''; callData.productVerfijnd='';
@@ -1750,15 +1758,10 @@
           answeredKeys.length=0; kf.forEach(function(k){answeredKeys.push(k);});
           var ka=['fname','lname'].filter(function(k){return autoFilledKeys.includes(k);});
           autoFilledKeys.length=0; ka.forEach(function(k){autoFilledKeys.push(k);});
-          renderApp();
-        };
-        container.appendChild(geenOrderLink);
-      } else {
-        var geenOrderLbl=idoc.createElement('div');
-        geenOrderLbl.style.cssText='font-size:11px;color:#888;margin-top:10px;';
-        geenOrderLbl.innerText='Gegevens gewist — kies bellertype';
-        container.appendChild(geenOrderLbl);
-      }
+        }
+        renderApp();
+      };
+      container.appendChild(goWrap);
 
     // CBF LOCATIE SELECT — Onderweg / Vraag voor het depot
     } else if (stap.type==='cbf-locatie-select') {
