@@ -82,7 +82,7 @@ def build_bookmarklet(source, output, label):
     print(f'Geschreven: {output} ({len(encoded)} tekens)')
     return True
 
-paste_built = build_bookmarklet('paste-bookmarklet.js', 'paste-bookmarklet-min.txt', 'paste-bookmarklet')
+paste_built = build_bookmarklet('paste-loader-bookmarklet.js', 'paste-bookmarklet-min.txt', 'paste-bookmarklet')
 loader_built = build_bookmarklet('loader-bookmarklet.js', 'loader-bookmarklet-min.txt', 'loader-bookmarklet')
 
 # ── KLAAR ─────────────────────────────────────────────────────────────────────
