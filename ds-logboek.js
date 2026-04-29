@@ -1114,14 +1114,14 @@
         mainContent +
         '<div class="footer"><div class="footer-inner" style="display:flex;flex-direction:row;justify-content:space-between;align-items:center;gap:8px;">' +
           '<button class="' + backClass + '" id="btn-terug" style="flex:1;">\u2190 Terug</button>' +
-          (!isAlgemeen ? '<div id="geen-order-toggle" style="display:flex;align-items:center;gap:6px;cursor:pointer;user-select:none;flex-shrink:0;">' +
+          (scrapedOrder ? '<div id="geen-order-toggle" style="display:flex;align-items:center;gap:6px;cursor:pointer;user-select:none;flex-shrink:0;">' +
             '<div style="position:relative;width:30px;height:17px;border-radius:9px;background:'+(geenOrderMode?'#ff6600':'#ccc')+';transition:background 0.18s;">' +
               '<div style="position:absolute;top:2px;left:'+(geenOrderMode?'13px':'2px')+';width:13px;height:13px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,0.25);transition:left 0.18s;"></div>' +
             '</div>' +
             '<span style="font-size:11px;color:'+(geenOrderMode?'#ff6600':'#aaa')+';">'+(geenOrderMode?'Gegevens gewist':'Geen order')+'</span>' +
           '</div>' : '') +
         '</div></div>' +
-        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.20.3</div>' +
+        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.20.4</div>' +
       '</div>';
 
     idoc.getElementById('btn-close').onclick = function(){ wrapper.remove(); };
@@ -1141,7 +1141,7 @@
       renderApp();
     };
     if (canGoBack()) idoc.getElementById('btn-terug').onclick = goBack;
-    if (!isAlgemeen) idoc.getElementById('geen-order-toggle').onclick = function() {
+    if (scrapedOrder) idoc.getElementById('geen-order-toggle').onclick = function() {
       geenOrderMode = !geenOrderMode;
       if (geenOrderMode) {
         callData.route=''; callData.orderBron=''; callData.driver1=''; callData.driver2='';
