@@ -1122,7 +1122,7 @@
             '<button class="park-info-btn" id="btn-park-info">\u2139</button>' +
           '</div>' +
         '</div></div>' +
-        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.20.0</div>' +
+        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.20.1</div>' +
       '</div>';
 
     // Park tooltip
@@ -1697,27 +1697,6 @@
     // ALGEMEEN BLOCKS — advies gegeven + afhandeling buiten DS, zonder orderkoppeling
     // BELLER SELECT — CBB / CBF / Anders
     } else if (stap.type==='beller-select') {
-      if (!geenOrderMode) {
-        var geenOrderBtn=idoc.createElement('button'); geenOrderBtn.className='ux-btn advies-btn'; geenOrderBtn.innerText='Geen order — wis gegevens';
-        geenOrderBtn.onclick=function(){
-          geenOrderMode=true;
-          callData.route=''; callData.orderBron=''; callData.driver1=''; callData.driver2='';
-          callData.model=''; callData.tijdvak=''; callData.aankomsttijd='';
-          callData.product=''; callData.formaatTV=''; callData.productVerfijnd='';
-          isProductAutoGuessed=false;
-          var kf=['fname','lname'].filter(function(k){return answeredKeys.includes(k);});
-          answeredKeys.length=0; kf.forEach(function(k){answeredKeys.push(k);});
-          var ka=['fname','lname'].filter(function(k){return autoFilledKeys.includes(k);});
-          autoFilledKeys.length=0; ka.forEach(function(k){autoFilledKeys.push(k);});
-          renderApp();
-        };
-        container.appendChild(geenOrderBtn);
-      } else {
-        var geenOrderLbl=idoc.createElement('div');
-        geenOrderLbl.style.cssText='font-size:11px;color:#888;margin-bottom:6px;';
-        geenOrderLbl.innerText='Gegevens gewist — kies bellertype';
-        container.appendChild(geenOrderLbl);
-      }
       var sep0=idoc.createElement('hr'); sep0.className='section-divider'; container.appendChild(sep0);
       var cbbBtn=idoc.createElement('button'); cbbBtn.className='ux-btn'; cbbBtn.innerText='CBB — Bezorger belt';
       cbbBtn.onclick=function(){ callData.bellerType='CBB'; answeredKeys.push('bellerType'); renderApp(); };
@@ -1757,6 +1736,29 @@
       });
       extToggle.onclick=function(){ extExpand.style.display=extExpand.style.display==='none'?'block':'none'; };
       container.appendChild(extToggle); container.appendChild(extExpand);
+      if (!geenOrderMode) {
+        var geenOrderLink=idoc.createElement('button');
+        geenOrderLink.style.cssText='display:block;margin-top:10px;background:none;border:none;padding:0;font-size:11px;color:#aaa;cursor:pointer;text-decoration:underline;text-align:left;';
+        geenOrderLink.innerText='Geen order — wis gegevens';
+        geenOrderLink.onclick=function(){
+          geenOrderMode=true;
+          callData.route=''; callData.orderBron=''; callData.driver1=''; callData.driver2='';
+          callData.model=''; callData.tijdvak=''; callData.aankomsttijd='';
+          callData.product=''; callData.formaatTV=''; callData.productVerfijnd='';
+          isProductAutoGuessed=false;
+          var kf=['fname','lname'].filter(function(k){return answeredKeys.includes(k);});
+          answeredKeys.length=0; kf.forEach(function(k){answeredKeys.push(k);});
+          var ka=['fname','lname'].filter(function(k){return autoFilledKeys.includes(k);});
+          autoFilledKeys.length=0; ka.forEach(function(k){autoFilledKeys.push(k);});
+          renderApp();
+        };
+        container.appendChild(geenOrderLink);
+      } else {
+        var geenOrderLbl=idoc.createElement('div');
+        geenOrderLbl.style.cssText='font-size:11px;color:#888;margin-top:10px;';
+        geenOrderLbl.innerText='Gegevens gewist — kies bellertype';
+        container.appendChild(geenOrderLbl);
+      }
 
     // CBF LOCATIE SELECT — Onderweg / Vraag voor het depot
     } else if (stap.type==='cbf-locatie-select') {
