@@ -612,6 +612,15 @@ try {
 
   await navigator.clipboard.writeText('');
 
+  // ── STAP 7: KANAAL + NETWERK DEFINITIEF ZETTEN (als laatste — Duitsland-land reset kan deze wissen) ─
+  if (isSameDay || isPickup) {
+    await new Promise(resolve => setTimeout(resolve, 400));
+    setDxDropdown('_channelId', 16);
+    await new Promise(resolve => setTimeout(resolve, 400));
+    setDxDropdown('_networkId', 12);
+    await new Promise(resolve => setTimeout(resolve, 200));
+  }
+
   // ── CHECKPOINT C: einde, vlak voor toast ─────────────────────
   {
     const a = document.querySelectorAll('input[id$="_articleTypeId"]');
