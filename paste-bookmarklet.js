@@ -532,6 +532,10 @@ try {
   }
 
   // ── STAP 4b: SAME DAY — KANAAL / NETWERK / SERVICE ───────────
+  // Extra wacht voor Duitsland: country-change triggert trager reload van kanaal/netwerk dropdowns
+  if ((isSameDay || isPickup) && orderData.detectedCountry === 'Duitsland') {
+    await new Promise(resolve => setTimeout(resolve, 1200));
+  }
   if ((isSameDay || isPickup) && orderData.serviceTypeId) {
     const builtInServices = [277249, 51068, 322997, 277248, 254509, 254508, 490316, 490317];
     const needsBuiltIn = builtInServices.includes(parseInt(orderData.serviceTypeId));
