@@ -348,6 +348,7 @@
     afwijkend_reden:'', afwijkend_toelichting:'',
     cbf_depot_reden:'', cbf_depot_toelichting:'',
     cbf_pakket_reden:'', cbf_pakket_uitkomst:'',
+    cbb_hub_reden:'', cbb_hub_toelichting:'',
     tl_reden:'', tl_uitkomst:'',
     winkel_reden:'', ks_advies_uitkomst:'',
     orderOplossing:'', dsWaarde:'',
@@ -459,7 +460,7 @@
   if (scrapedRoute) { var rm=scrapedRoute.match(/[A-Z]{4}/); if (rm) { var rg=alleDepots.find(function(d){ return d.code===rm[0]; }); if (rg) callData.depot=rg.name; } }
 
   // ── PROBLEEM OPTIES ───────────────────────────────────────────
-  var alleProbleemOpties=['Trekschakelaar aansluiten','Milieuretour / Pick-up ophalen','Plaatsen / Naar boven tillen','Apparaat inbouwen (Keuken)','Aansluiting controleren','Schade / Defect','TV installeren','TV ophangen en installeren','TV + Soundbar installeren','TV + Soundbar ophangen en installeren','Stapelkit plaatsen','Deur omdraaien','Service niet uitvoerbaar','Verkeerd gelabeld product'];
+  var alleProbleemOpties=['Trekschakelaar aansluiten','Milieuretour / Pick-up ophalen','Plaatsen / Naar boven tillen','Apparaat inbouwen (Keuken)','Aansluiting controleren','Schade / Defect','TV installeren','TV ophangen en installeren','TV + Soundbar installeren','TV + Soundbar ophangen en installeren','Stapelkit plaatsen','Deur omdraaien','Service niet uitvoerbaar','Verkeerd gelabeld product','Blijverkoop vergeten'];
 
   var witgoedTypes = ['wasmachine','wasdroogcombinatie','droger','koelkast','vriezer','koel-vries','vaatwasser','inbouw vaatwasser','inbouw koelkast','inbouw vriezer','oven','magnetron','fornuis','kookplaat'];
 
@@ -555,23 +556,23 @@
   function toLogLabel(disp) { return probleemLabels[disp] || disp; }
 
   var probleemPerType = {
-    'wasmachine':        ['Trekschakelaar','Plaatsen / tillen','Milieuretour / pick-up','Stapelkit','Aansluiting','Schade / defect','Onverwacht retour','Milieuretour past niet in bus'],
-    'wasdroogcombinatie':['Trekschakelaar','Plaatsen / tillen','Milieuretour / pick-up','Stapelkit','Aansluiting','Schade / defect','Onverwacht retour','Milieuretour past niet in bus'],
-    'droger':            ['Trekschakelaar','Plaatsen / tillen','Milieuretour / pick-up','Stapelkit','Deur omdraaien','Schade / defect','Aansluiting','Onverwacht retour','Milieuretour past niet in bus'],
-    'koelkast':          ['Plaatsen / tillen','Deur omdraaien','Inbouwen','Milieuretour / pick-up','Aansluiting','Schade / defect','Onverwacht retour','Milieuretour past niet in bus'],
-    'vriezer':           ['Plaatsen / tillen','Deur omdraaien','Inbouwen','Milieuretour / pick-up','Aansluiting','Schade / defect','Onverwacht retour','Milieuretour past niet in bus'],
-    'koel-vries combo':  ['Plaatsen / tillen','Deur omdraaien','Inbouwen','Milieuretour / pick-up','Aansluiting','Schade / defect','Onverwacht retour','Milieuretour past niet in bus'],
-    'inbouw koelkast':   ['Inbouwen','Deur omdraaien','Milieuretour / pick-up','Aansluiting','Schade / defect','Onverwacht retour','Milieuretour past niet in bus'],
-    'inbouw vriezer':    ['Inbouwen','Milieuretour / pick-up','Aansluiting','Schade / defect','Onverwacht retour','Milieuretour past niet in bus'],
-    'vaatwasser':        ['Inbouwen','Plaatsen / tillen','Deur omdraaien','Aansluiting','Milieuretour / pick-up','Schade / defect','Onverwacht retour','Milieuretour past niet in bus'],
-    'inbouw vaatwasser': ['Inbouwen','Deur omdraaien','Aansluiting','Milieuretour / pick-up','Schade / defect','Onverwacht retour','Milieuretour past niet in bus'],
-    'oven':              ['Inbouwen','Aansluiting','Milieuretour / pick-up','Schade / defect','Niet uitvoerbaar','Onverwacht retour','Milieuretour past niet in bus'],
-    'magnetron':         ['Inbouwen','Aansluiting','Milieuretour / pick-up','Schade / defect','Niet uitvoerbaar','Onverwacht retour','Milieuretour past niet in bus'],
-    'fornuis':           ['Niet uitvoerbaar','Milieuretour / pick-up','Schade / defect','Onverwacht retour'],
-    'kookplaat':         ['Milieuretour / pick-up','Schade / defect','Niet uitvoerbaar','Onverwacht retour','Milieuretour past niet in bus'],
-    'televisie':         ['TV installeren','TV ophangen','Milieuretour / pick-up','Schade / defect','Niet uitvoerbaar','Onverwacht retour','Milieuretour past niet in bus'],
-    'televisie+soundbar':['TV + Soundbar','TV + Soundbar ophangen','Milieuretour / pick-up','Schade / defect','Niet uitvoerbaar','Onverwacht retour','Milieuretour past niet in bus'],
-    'soundbar':          ['TV + Soundbar','TV + Soundbar ophangen','Milieuretour / pick-up','Schade / defect','Onverwacht retour','Milieuretour past niet in bus']
+    'wasmachine':        ['Trekschakelaar','Plaatsen / tillen','Milieuretour / pick-up','Stapelkit','Aansluiting','Schade / defect','Onverwacht retour','Milieuretour past niet in bus','Blijverkoop vergeten'],
+    'wasdroogcombinatie':['Trekschakelaar','Plaatsen / tillen','Milieuretour / pick-up','Stapelkit','Aansluiting','Schade / defect','Onverwacht retour','Milieuretour past niet in bus','Blijverkoop vergeten'],
+    'droger':            ['Trekschakelaar','Plaatsen / tillen','Milieuretour / pick-up','Stapelkit','Deur omdraaien','Schade / defect','Aansluiting','Onverwacht retour','Milieuretour past niet in bus','Blijverkoop vergeten'],
+    'koelkast':          ['Plaatsen / tillen','Deur omdraaien','Inbouwen','Milieuretour / pick-up','Aansluiting','Schade / defect','Onverwacht retour','Milieuretour past niet in bus','Blijverkoop vergeten'],
+    'vriezer':           ['Plaatsen / tillen','Deur omdraaien','Inbouwen','Milieuretour / pick-up','Aansluiting','Schade / defect','Onverwacht retour','Milieuretour past niet in bus','Blijverkoop vergeten'],
+    'koel-vries combo':  ['Plaatsen / tillen','Deur omdraaien','Inbouwen','Milieuretour / pick-up','Aansluiting','Schade / defect','Onverwacht retour','Milieuretour past niet in bus','Blijverkoop vergeten'],
+    'inbouw koelkast':   ['Inbouwen','Deur omdraaien','Milieuretour / pick-up','Aansluiting','Schade / defect','Onverwacht retour','Milieuretour past niet in bus','Blijverkoop vergeten'],
+    'inbouw vriezer':    ['Inbouwen','Milieuretour / pick-up','Aansluiting','Schade / defect','Onverwacht retour','Milieuretour past niet in bus','Blijverkoop vergeten'],
+    'vaatwasser':        ['Inbouwen','Plaatsen / tillen','Deur omdraaien','Aansluiting','Milieuretour / pick-up','Schade / defect','Onverwacht retour','Milieuretour past niet in bus','Blijverkoop vergeten'],
+    'inbouw vaatwasser': ['Inbouwen','Deur omdraaien','Aansluiting','Milieuretour / pick-up','Schade / defect','Onverwacht retour','Milieuretour past niet in bus','Blijverkoop vergeten'],
+    'oven':              ['Inbouwen','Aansluiting','Milieuretour / pick-up','Schade / defect','Niet uitvoerbaar','Onverwacht retour','Milieuretour past niet in bus','Blijverkoop vergeten'],
+    'magnetron':         ['Inbouwen','Aansluiting','Milieuretour / pick-up','Schade / defect','Niet uitvoerbaar','Onverwacht retour','Milieuretour past niet in bus','Blijverkoop vergeten'],
+    'fornuis':           ['Niet uitvoerbaar','Milieuretour / pick-up','Schade / defect','Onverwacht retour','Blijverkoop vergeten'],
+    'kookplaat':         ['Milieuretour / pick-up','Schade / defect','Niet uitvoerbaar','Onverwacht retour','Milieuretour past niet in bus','Blijverkoop vergeten'],
+    'televisie':         ['TV installeren','TV ophangen','Milieuretour / pick-up','Schade / defect','Niet uitvoerbaar','Onverwacht retour','Milieuretour past niet in bus','Blijverkoop vergeten'],
+    'televisie+soundbar':['TV + Soundbar','TV + Soundbar ophangen','Milieuretour / pick-up','Schade / defect','Niet uitvoerbaar','Onverwacht retour','Milieuretour past niet in bus','Blijverkoop vergeten'],
+    'soundbar':          ['TV + Soundbar','TV + Soundbar ophangen','Milieuretour / pick-up','Schade / defect','Onverwacht retour','Milieuretour past niet in bus','Blijverkoop vergeten']
   };
   var tvOnlyOpties = ['TV installeren','TV ophangen'];
 
@@ -713,7 +714,7 @@
           }
         }
       } else if (callData.locatie === 'Vraag voor het depot') {
-        s.push({key:'cbf_depot_reden',label:'Waar gaat de vraag over?',type:'ux-select',opties:['Ziekmelding','Fiets kapot / incident','Informeren waar de vracht is','Anders']});
+        s.push({key:'cbf_depot_reden',label:'Waar gaat de vraag over?',type:'ux-select',opties:['Ziekmelding','Fiets kapot / incident','Informeren waar de vracht is','Alarm / sleutelkastje hub','Anders']});
         if (answeredKeys.includes('cbf_depot_reden') && callData.cbf_depot_reden==='Anders') {
           s.push({key:'cbf_depot_toelichting',label:'Wat is de vraag?',type:'text'});
         }
@@ -729,7 +730,7 @@
       if (!answeredKeys.includes('product_keuze')) return s;
     }
 
-    s.push({key:'locatie',label:'Waar zijn de helden?',type:'locatie-select',opties:['Bij de klant','Onderweg']});
+    s.push({key:'locatie',label:'Waar zijn de helden?',type:'locatie-select',opties:['Bij de klant','Onderweg','Vraag over depot / hub']});
     if (!answeredKeys.includes('locatie')) return s;
 
     if (callData.locatie==='Bij de klant') {
@@ -767,6 +768,9 @@
           if (!skipDienstType()) s.push({key:'dienstType',label:'Is dit Nazorg of een Extra dienst?',type:'dienst-select'});
           if (answeredKeys.includes('dienstType')||skipDienstType()) s.push({key:'next_day_reden',label:'Waarom niet same day?',type:'ux-select',opties:nextDayRedenen});
         }
+      } else if (callData.probleem==='Blijverkoop vergeten') {
+        s.push({key:'uitkomst',label:'Wat was de uitkomst?',type:'ux-select',opties:['Same day gepland','Advies gegeven aan Held','Geen oplossing gepland']});
+        if (callData.uitkomst==='Same day gepland') s.push({key:'geplandeRoute',label:'Op welke route gepland?',type:'route-input'});
       } else {
         if (!answeredKeys.includes('product')) {
           var tvProbleem = callData.probleem.includes('TV') || callData.probleem.includes('Soundbar');
@@ -833,6 +837,12 @@
         } else if (callData.onderweg_type==='Vraag over service') {
           s.push({key:'onderweg_uitkomst',label:'Wat was de uitkomst?',type:'ux-select',opties:['Vraag beantwoord, held kan verder','Nee, geen oplossing door DS']});
         }
+      }
+
+    } else if (callData.locatie==='Vraag over depot / hub') {
+      s.push({key:'cbb_hub_reden',label:'Wat is de vraag over het depot / hub?',type:'ux-select',opties:['Alarm staat op','Sleutelkastje ophalen / code','Andere vraag over depot']});
+      if (answeredKeys.includes('cbb_hub_reden') && callData.cbb_hub_reden==='Andere vraag over depot') {
+        s.push({key:'cbb_hub_toelichting',label:'Wat is de vraag precies?',type:'text'});
       }
 
     } else if (callData.locatie==='Klantenservice' || callData.locatie==='Winkel') {
@@ -1016,6 +1026,11 @@
         if (callData.uitkomst==='Held gevraagd TL te bellen voor bevestiging') return 'Milieuretour past niet in bus — TL gebeld voor bevestiging';
         return 'Milieuretour past niet in bus';
       }
+      if (callData.probleem==='Blijverkoop vergeten') {
+        if (callData.uitkomst==='Same day gepland') return 'Blijverkoop vergeten — same day stop gepland';
+        if (callData.uitkomst==='Advies gegeven aan Held') return 'Blijverkoop vergeten — advies gegeven aan Held';
+        return 'Blijverkoop vergeten — geen oplossing gepland';
+      }
       var isAdv=callData.probleem==='Advies gegeven'||callData.uitkomst==='Advies gegeven';
       if (isAdv) return callData.advies_gelukt==='Ja, service uitgevoerd' ? 'Advies gegeven aan held waardoor service uitgevoerd is' : 'Nee, geen oplossing door DS';
       if (callData.uitkomst==='Same day gepland')    return 'Ja stop gepland (same day)';
@@ -1023,6 +1038,8 @@
       if (callData.uitkomst==='Klant ziet af van service (meerkosten)') return 'Klant ziet af van service vanwege meerkosten';
       if (callData.uitkomst==='Geen oplossing gepland') return 'Geen oplossing gepland door DS';
       return 'Nee, geen oplossing door DS';
+    } else if (callData.locatie==='Vraag over depot / hub') {
+      return 'Vraag over depot/hub: ' + (callData.cbb_hub_reden||'') + (callData.cbb_hub_toelichting ? ' — ' + callData.cbb_hub_toelichting : '');
     } else {
       // CBB onderweg
       if (callData.onderweg_type==='Advies gegeven') return callData.advies_gelukt==='Ja, service uitgevoerd' ? 'Advies gegeven aan held waardoor service uitgevoerd is' : 'Nee, geen oplossing door DS';
@@ -1037,7 +1054,7 @@
     if (callData.user)  h+='<span class="status-line">DS medewerker: <b>'+callData.user+'</b></span>';
     if (callData.route) h+='<span class="status-line">Route: <b>'+callData.route+'</b></span>';
     if (callData.bellerType) h+='<span class="status-line">Beller: <b>'+callData.bellerType+'</b></span>';
-    var lbl={product_keuze:'Model',locatie:'Locatie',probleem:'Taak',ks_reden:'Reden',ks_uitkomst:'KS uitkomst',afwijkend_reden:'Reden',afwijkend_toelichting:'Toelichting',milieuretour_type:'Type ophaling',formaatTV:'TV formaat',uitkomst:'Uitkomst',geplandeRoute:'Route gepland',next_day_reden:'Reden next day',geen_oplossing_reden:'Reden geen oplossing',advies_gelukt:'Advies uitkomst',onderweg_type:'Probleem',onderweg_uitkomst:'Uitkomst',cbf_depot_reden:'Vraag',cbf_depot_toelichting:'Toelichting',tl_reden:'Vraag TL',tl_uitkomst:'Uitkomst TL'};
+    var lbl={product_keuze:'Model',locatie:'Locatie',probleem:'Taak',ks_reden:'Reden',ks_uitkomst:'KS uitkomst',afwijkend_reden:'Reden',afwijkend_toelichting:'Toelichting',milieuretour_type:'Type ophaling',formaatTV:'TV formaat',uitkomst:'Uitkomst',geplandeRoute:'Route gepland',next_day_reden:'Reden next day',geen_oplossing_reden:'Reden geen oplossing',advies_gelukt:'Advies uitkomst',onderweg_type:'Probleem',onderweg_uitkomst:'Uitkomst',cbf_depot_reden:'Vraag',cbf_depot_toelichting:'Toelichting',cbb_hub_reden:'Hub vraag',cbb_hub_toelichting:'Toelichting',tl_reden:'Vraag TL',tl_uitkomst:'Uitkomst TL'};
     // Apparaat + model tonen
     if (callData.model) {
       if (meerdereProducten && !answeredKeys.includes('product_keuze')) {
@@ -1051,7 +1068,7 @@
         }
       }
     }
-    ['locatie','ks_reden','ks_uitkomst','afwijkend_reden','afwijkend_toelichting','probleem','milieuretour_type','formaatTV','uitkomst','geplandeRoute','next_day_reden','geen_oplossing_reden','advies_gelukt','onderweg_type','onderweg_uitkomst','cbf_depot_reden','cbf_depot_toelichting','tl_reden','tl_uitkomst'].forEach(function(k){
+    ['locatie','ks_reden','ks_uitkomst','afwijkend_reden','afwijkend_toelichting','probleem','milieuretour_type','formaatTV','uitkomst','geplandeRoute','next_day_reden','geen_oplossing_reden','advies_gelukt','onderweg_type','onderweg_uitkomst','cbf_depot_reden','cbf_depot_toelichting','cbb_hub_reden','cbb_hub_toelichting','tl_reden','tl_uitkomst'].forEach(function(k){
       if (answeredKeys.includes(k)&&callData[k]&&k!=='fname'&&k!=='lname')
         h+='<span class="status-line">'+lbl[k]+': <b>'+callData[k]+'</b></span>';
     });
@@ -1097,7 +1114,7 @@
             '<button class="park-info-btn" id="btn-park-info">\u2139</button>' +
           '</div>' +
         '</div></div>' +
-        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.19.0</div>' +
+        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.20.0</div>' +
       '</div>';
 
     // Park tooltip
@@ -1678,11 +1695,12 @@
           geenOrderMode=true;
           callData.route=''; callData.orderBron=''; callData.driver1=''; callData.driver2='';
           callData.model=''; callData.tijdvak=''; callData.aankomsttijd='';
-          ['fname','lname'].forEach(function(k){
-            callData[k]='';
-            var ix=answeredKeys.indexOf(k); if(ix>-1) answeredKeys.splice(ix,1);
-            var ax=autoFilledKeys.indexOf(k); if(ax>-1) autoFilledKeys.splice(ax,1);
-          });
+          callData.product=''; callData.formaatTV=''; callData.productVerfijnd='';
+          isProductAutoGuessed=false;
+          var kf=['fname','lname'].filter(function(k){return answeredKeys.includes(k);});
+          answeredKeys.length=0; kf.forEach(function(k){answeredKeys.push(k);});
+          var ka=['fname','lname'].filter(function(k){return autoFilledKeys.includes(k);});
+          autoFilledKeys.length=0; ka.forEach(function(k){autoFilledKeys.push(k);});
           renderApp();
         };
         container.appendChild(geenOrderBtn);
@@ -1919,6 +1937,10 @@
       redenNextDay       = callData.next_day_reden||'';
       routeLog           = (ksOpl==='Next day gepland') ? 'Next Day' : callData.geplandeRoute;
       orderOplLog        = (ksOpl==='Same day gepland'||ksOpl==='Next day gepland') ? callData.orderBron+'-DS' : '';
+    } else if (callData.locatie==='Vraag over depot / hub') {
+      probLog            = 'Vraag over depot/hub: ' + (callData.cbb_hub_reden||'') + (callData.cbb_hub_toelichting ? ' — ' + callData.cbb_hub_toelichting : '');
+      redenGeenOplossing = ''; redenNextDay = ''; routeLog = ''; orderOplLog = '';
+      logDriver1 = ''; logDriver2 = '';
     } else if (callData.locatie==='Bij de klant') {
       probLog            = callData.milieuretour_type ? (callData.milieuretour_type==='Pick-up' ? 'Pick-up (handmatig gepland)' : 'Milieuretour ophalen') : callData.probleem;
       redenGeenOplossing = callData.geen_oplossing_reden||'';
