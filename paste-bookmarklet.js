@@ -532,16 +532,16 @@ try {
   }
 
   // ── STAP 4b: SAME DAY — KANAAL / NETWERK / SERVICE ───────────
-  // Extra wacht voor Duitsland: country-change triggert trager reload van kanaal/netwerk dropdowns
-  if ((isSameDay || isPickup) && orderData.detectedCountry === 'Duitsland') {
-    await new Promise(resolve => setTimeout(resolve, 1200));
-  }
   if ((isSameDay || isPickup) && orderData.serviceTypeId) {
     const builtInServices = [277249, 51068, 322997, 277248, 254509, 254508, 490316, 490317];
     const needsBuiltIn = builtInServices.includes(parseInt(orderData.serviceTypeId));
     if (needsBuiltIn) {
       setDxDropdown('_channelId', 132134);
-      await new Promise(resolve => setTimeout(resolve, 800));
+      // Voor Duitsland: DireXtion reset kanaal async na country-change — wacht tot reset klaar is,
+      // zet daarna kanaal opnieuw zodat het zeker actief is als services worden ingesteld
+      await new Promise(resolve => setTimeout(resolve, orderData.detectedCountry === 'Duitsland' ? 2000 : 800));
+      if (orderData.detectedCountry === 'Duitsland') setDxDropdown('_channelId', 132134);
+      await new Promise(resolve => setTimeout(resolve, 500));
       setDxTagBox('_services', [parseInt(orderData.serviceTypeId)]);
       await new Promise(resolve => setTimeout(resolve, 400));
       setDxDropdown('_channelId', 16);
