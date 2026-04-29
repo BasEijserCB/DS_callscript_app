@@ -683,7 +683,7 @@
 
     // ── CBF FLOW ─────────────────────────────────────────────────
     if (callData.bellerType === 'CBF') {
-      s.push({key:'locatie',label:'Wat is de situatie?',type:'cbf-locatie-select',opties:['Onderweg','Bij de klant','Vraag voor het depot']});
+      s.push({key:'locatie',label:'Wat is de situatie?',type:'cbf-locatie-select',opties:['Onderweg','Bij de klant','Vraag voor het depot','Vraag over depot / hub']});
       if (!answeredKeys.includes('locatie')) return s;
 
       if (callData.locatie === 'Onderweg') {
@@ -717,6 +717,11 @@
         s.push({key:'cbf_depot_reden',label:'Waar gaat de vraag over?',type:'ux-select',opties:['Ziekmelding','Fiets kapot / incident','Informeren waar de vracht is','Alarm / sleutelkastje hub','Anders']});
         if (answeredKeys.includes('cbf_depot_reden') && callData.cbf_depot_reden==='Anders') {
           s.push({key:'cbf_depot_toelichting',label:'Wat is de vraag?',type:'text'});
+        }
+      } else if (callData.locatie === 'Vraag over depot / hub') {
+        s.push({key:'cbb_hub_reden',label:'Wat is de vraag over het depot / hub?',type:'ux-select',opties:['Alarm staat op','Sleutelkastje ophalen / code','Andere vraag over depot']});
+        if (answeredKeys.includes('cbb_hub_reden') && callData.cbb_hub_reden==='Andere vraag over depot') {
+          s.push({key:'cbb_hub_toelichting',label:'Wat is de vraag precies?',type:'text'});
         }
       }
       return s;
@@ -966,6 +971,9 @@
     if (callData.bellerType === 'CBF') {
       if (callData.locatie === 'Vraag voor het depot') {
         return 'Advies gegeven (CBF doorverwezen naar depot) — ' + (callData.cbf_depot_reden||'reden onbekend') + (callData.cbf_depot_toelichting ? ': ' + callData.cbf_depot_toelichting : '');
+      }
+      if (callData.locatie === 'Vraag over depot / hub') {
+        return 'Vraag over depot/hub: ' + (callData.cbb_hub_reden||'') + (callData.cbb_hub_toelichting ? ' — ' + callData.cbb_hub_toelichting : '');
       }
       if (callData.locatie === 'Bij de klant') {
         return callData.cbf_pakket_uitkomst || callData.cbf_pakket_reden || 'Vraag over pakket';
@@ -1906,6 +1914,9 @@
     } else if (callData.bellerType === 'CBF') {
       if (callData.locatie === 'Vraag voor het depot') {
         probLog = 'Vraag voor het depot: ' + (callData.cbf_depot_reden||'') + (callData.cbf_depot_toelichting ? ' — ' + callData.cbf_depot_toelichting : '');
+        logDriver1 = ''; logDriver2 = ''; logOrderBron = '';
+      } else if (callData.locatie === 'Vraag over depot / hub') {
+        probLog = 'Vraag over depot/hub: ' + (callData.cbb_hub_reden||'') + (callData.cbb_hub_toelichting ? ' — ' + callData.cbb_hub_toelichting : '');
         logDriver1 = ''; logDriver2 = ''; logOrderBron = '';
       } else if (callData.locatie === 'Bij de klant') {
         probLog = 'Vraag over pakket: ' + (callData.cbf_pakket_reden||'');
