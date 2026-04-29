@@ -454,7 +454,8 @@
   }
 
   var alleDepots=[{code:'NLAL',name:'Almere'},{code:'NLDE',name:'Deventer'},{code:'NLGR',name:'Groningen'},{code:'NLRO',name:'Rotterdam'},{code:'NLTI',name:'Tilburg'},{code:'NLUT',name:'Utrecht'},{code:'NLVE',name:'Venlo'},{code:'NLEI',name:'Eindhoven'},{code:'NLDH',name:'Den Haag'},{code:'NLOV',name:'Overamstel'},{code:'DEDU',name:'Dusseldorf'},{code:'DEKE',name:'Kelsterbach'},{code:'DEHA',name:'Hamm'},{code:'DELA',name:'Langenhagen'},{code:'DEHM',name:'Hamburg'},{code:'DESC',name:'Schonefeld'},{code:'DETA',name:'Tamm'},{code:'DENU',name:'Nürnberg'},{code:'DEES',name:'Essen'},{code:'BEAN',name:'Antwerpen'},{code:'BEGE',name:'Gent'},{code:'BENI',name:'Nijvel'},{code:'BEZA',name:'Zaventem'},{code:'BEWI',name:'Wilrijk'}];
-  if (scrapedRoute) { var rm=scrapedRoute.match(/[A-Z]{4}/); if (rm) { var rg=alleDepots.find(function(d){ return d.code===rm[0]; }); if (rg) callData.depot=rg.name; } }
+  var bkDepots={'NLOV':'Fietshub Overamstel','NLUT':'Fietshub Utrecht','NLRO':'Fietshub Rotterdam','NLDE':'Fietshub Den Haag','NLEI':'Fietshub Eindhoven','BEZA':'Fietshub Zaventem','BEWI':'Fietshub Wilrijk'};
+  if (scrapedRoute) { var rm=scrapedRoute.match(/[A-Z]{4}/); if (rm) { var isBkRoute=/^BK[-\s]/i.test(scrapedRoute); var depotName=isBkRoute?(bkDepots[rm[0]]||null):((alleDepots.find(function(d){return d.code===rm[0];})||{}).name||null); if (depotName) callData.depot=depotName; } }
 
   // ── PROBLEEM OPTIES ───────────────────────────────────────────
   var alleProbleemOpties=['Trekschakelaar aansluiten','Milieuretour / Pick-up ophalen','Plaatsen / Naar boven tillen','Apparaat inbouwen (Keuken)','Aansluiting controleren','Schade / Defect','TV installeren','TV ophangen en installeren','TV + Soundbar installeren','TV + Soundbar ophangen en installeren','Stapelkit plaatsen','Deur omdraaien','Service niet uitvoerbaar','Verkeerd gelabeld product','Blijverkoop vergeten'];
@@ -1121,7 +1122,7 @@
             '<span style="font-size:11px;color:'+(geenOrderMode?'#ff6600':'#aaa')+';">'+(geenOrderMode?'Gegevens gewist':'Geen order')+'</span>' +
           '</div>' : '') +
         '</div></div>' +
-        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.20.4</div>' +
+        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.20.5</div>' +
       '</div>';
 
     idoc.getElementById('btn-close').onclick = function(){ wrapper.remove(); };
