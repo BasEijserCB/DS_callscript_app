@@ -541,12 +541,12 @@ try {
       setDxDropdown('_networkId', 132137); // Coolblue Built-in netwerk — services laden pas als kanaal én netwerk op built-in staan
       // Voor Duitsland: DireXtion reset kanaal/netwerk async na country-change — wacht tot reset klaar is,
       // zet daarna beide opnieuw zodat services correct laden
-      await new Promise(resolve => setTimeout(resolve, orderData.detectedCountry === 'Duitsland' ? 1800 : 800));
+      await new Promise(resolve => setTimeout(resolve, orderData.detectedCountry === 'Duitsland' ? 1000 : 800));
       if (orderData.detectedCountry === 'Duitsland') {
         setDxDropdown('_channelId', 132134);
         setDxDropdown('_networkId', 132137);
+        await new Promise(resolve => setTimeout(resolve, 500));
       }
-      await new Promise(resolve => setTimeout(resolve, 500));
       setDxTagBox('_services', [parseInt(orderData.serviceTypeId)]);
       await new Promise(resolve => setTimeout(resolve, 400));
       setDxDropdown('_channelId', 16);
@@ -623,11 +623,9 @@ try {
 
   // ── STAP 7: KANAAL + NETWERK DEFINITIEF ZETTEN (niet voor Duitsland — te snel en wist services) ─
   if ((isSameDay || isPickup) && orderData.detectedCountry !== 'Duitsland') {
-    await new Promise(resolve => setTimeout(resolve, 400));
-    setDxDropdown('_channelId', 16);
-    await new Promise(resolve => setTimeout(resolve, 400));
-    setDxDropdown('_networkId', 12);
     await new Promise(resolve => setTimeout(resolve, 200));
+    setDxDropdown('_channelId', 16);
+    setDxDropdown('_networkId', 12);
   }
 
   // ── CHECKPOINT C: einde, vlak voor toast ─────────────────────
