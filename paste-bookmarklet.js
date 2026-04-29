@@ -1,6 +1,6 @@
 javascript:(async function(){
 try {
-  const PASTE_VERSION = 'v1.18.1';
+  const PASTE_VERSION = 'v1.19.0';
   const clipboardText = await navigator.clipboard.readText();
   const orderData = JSON.parse(clipboardText);
   if (!orderData.time || (Date.now() - orderData.time) > 300000) {

@@ -10,12 +10,10 @@ Browsergebaseerde widget voor het Coolblue Delivery Support team. Draait bovenop
 |---|---|
 | `ds-logboek.js` | Volledige widget: UI, gespreksflow, DOM-scraping, clipboard output. Gehost op GitHub, geladen via raw URL met cache-busting. |
 | `loader-bookmarklet.js` | Leesbare broncode van de loader bookmarklet. Haalt `ds-logboek.js` op, cached in localStorage (`ds_app_prod_cache`), stale-while-revalidate met `{cache:'no-store'}` om CDN-cache te omzeilen. |
-| `loader-bookmarklet-min.txt` | Gegenereerde URL-geëncodeerde loader bookmarklet URL (regel 2). Output van `build.py`. |
 | `paste-bookmarklet.js` | Volledige paste logica. Bevat `PASTE_VERSION` constante. Gehost op GitHub, geladen via raw URL door de paste loader. |
 | `paste-loader-bookmarklet.js` | Leesbare broncode van de paste bookmarklet loader. Haalt `paste-bookmarklet.js` op, cached in localStorage (`ds_paste_prod_cache`), stale-while-revalidate. Toont oranje toast als nieuwe versie gedownload is. |
-| `paste-bookmarklet-min.txt` | Gegenereerde URL-geëncodeerde paste-loader bookmarklet URL (regel 2). Output van `build.py`. |
-| `install.html` | Installatiepagina. Bevat **beide** bookmarklets als sleepbare knoppen — moet altijd in sync zijn met `loader-bookmarklet-min.txt` en `paste-bookmarklet-min.txt`. |
-| `build.py` | Minificeert beide bookmarklets → `*-min.txt`. Detecteert versienummer automatisch. |
+| `install.html` | Installatiepagina. Bevat **beide** bookmarklets als sleepbare knoppen. |
+| `build.py` | Syntax-checkt `ds-logboek.js` en `paste-bookmarklet.js`, detecteert versienummer uit `ds-logboek.js` en synchroniseert `PASTE_VERSION` in `paste-bookmarklet.js`. |
 | `gas-backend.js` | Broncode van het Google Apps Script backend (`doGet`). Schrijft elke log-entry als rij naar de actieve Google Sheet. Moet handmatig gekopieerd worden naar de GAS editor bij wijzigingen. |
 
 ---
@@ -32,14 +30,7 @@ De loader bookmarklet haalt de nieuwe `ds-logboek.js` automatisch op in de achte
 localStorage.removeItem('ds_app_prod_cache')
 ```
 
-**Versienummer** alleen ophogen bij wijzigingen aan `ds-logboek.js` — zonder te vragen. Patch voor bugfix, minor voor nieuwe feature.
-
-**BELANGRIJK:** `install.html` moet altijd **beide** bookmarklets up-to-date bevatten. Na `python3 build.py` moet je `install.html` updaten:
-- Versie in badge en footer → hoogste versie uit de min.txt bestanden (regel 1)
-- Loader-bookmarklet `href` → `loader-bookmarklet-min.txt` regel 2 (volledige URL)
-- Paste-bookmarklet `href` → `paste-bookmarklet-min.txt` regel 2 (volledige URL)
-
-Controleer dat beide `href`-waarden in `install.html` exact overeenkomen met regel 2 van de bijbehorende `*-min.txt`.
+**Versienummer** alleen ophogen bij wijzigingen aan `ds-logboek.js` — zonder te vragen. Patch voor bugfix, minor voor nieuwe feature. `build.py` synchroniseert `PASTE_VERSION` in `paste-bookmarklet.js` automatisch naar hetzelfde versienummer.
 
 ---
 
