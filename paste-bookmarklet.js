@@ -612,8 +612,8 @@ try {
 
   await navigator.clipboard.writeText('');
 
-  // ── STAP 7: KANAAL + NETWERK DEFINITIEF ZETTEN (als laatste — Duitsland-land reset kan deze wissen) ─
-  if (isSameDay || isPickup) {
+  // ── STAP 7: KANAAL + NETWERK DEFINITIEF ZETTEN (niet voor Duitsland — te snel en wist services) ─
+  if ((isSameDay || isPickup) && orderData.detectedCountry !== 'Duitsland') {
     await new Promise(resolve => setTimeout(resolve, 400));
     setDxDropdown('_channelId', 16);
     await new Promise(resolve => setTimeout(resolve, 400));
