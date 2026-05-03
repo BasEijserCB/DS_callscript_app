@@ -39,7 +39,7 @@
     --paper:#fff;--line:#e2e7ec;--line-soft:#eef1f4;
     --ok:#2c8a4a;--ok-bg:#e6f4ec;--warn:#b85c00;--warn-bg:#fdf1de;
     --r-sm:4px;--r-md:6px;--r-lg:10px;
-    position:fixed;top:16px;right:16px;width:460px;
+    position:fixed;bottom:16px;left:16px;width:460px;
     max-height:calc(100vh - 32px);
     z-index:2147483645;
     font:13.5px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI","Helvetica Neue",Arial,sans-serif;
