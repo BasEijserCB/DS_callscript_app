@@ -30,7 +30,7 @@ over deze werkende flow heen worden gezet.
 | Bestand | Rol |
 |---|---|
 | `ds-logboek-staging.js` | Functionele staging-widget. Gebaseerd op productiegedrag, met staging wrapper `#ds-combi-staging-wrapper` en zonder parkeerfunctie. |
-| `loader-staging-bookmarklet.js` | Leesbare broncode van de staging loader bookmarklet. Aparte cache-key (`ds_app_staging_cache`), aparte toast-tekst, aparte raw URL. |
+| `loader-staging-bookmarklet.js` | Leesbare broncode van de staging loader bookmarklet. Aparte cache-key (`ds_app_staging_cache_v2`), aparte toast-tekst, aparte raw URL. |
 | `install-staging.html` | Installatiepagina met de staging loader als sleepbare knop. |
 
 ## Hoe te testen
@@ -49,7 +49,7 @@ Open twee DireXtion-tabs naast elkaar:
 - Tab 1: klik prod loader
 - Tab 2: klik staging loader
 
-Staging gebruikt een eigen loader-cache (`ds_app_staging_cache`) en eigen DOM
+Staging gebruikt een eigen loader-cache (`ds_app_staging_cache_v2`) en eigen DOM
 wrapper (`#ds-combi-staging-wrapper`). Formaatvoorkeuren staan ook los van prod:
 `ds_staging_height` en `ds_staging_wide`.
 

@@ -112,7 +112,7 @@
 
       <div class="row">
         <a class="draggable"
-           href="javascript:%28function%20%28%29%20%7B%20const%20SCRIPT_URL%20%3D%20%22https%3A%2F%2Fraw.githubusercontent.com%2FBasEijserCB%2FDS_callscript_app%2Fmain%2Fstaging%2Fds-logboek-staging.js%22%3B%20const%20CACHE_KEY%20%3D%20%22ds_app_staging_cache%22%3B%20const%20TOAST_LABEL%20%3D%20%22DS%20Logboek%20staging%22%3B%20const%20cached%20%3D%20localStorage.getItem%28CACHE_KEY%29%3B%20if%20%28cached%29%20%7B%20try%20%7B%20%280%2C%20eval%29%28cached%29%3B%20%7D%20catch%20%28e%29%20%7B%20console.error%28%22%5B%22%20%2B%20TOAST_LABEL%20%2B%20%22%5D%20cached%20eval%20failed%3A%22%2C%20e%29%3B%20%7D%20%7D%20fetch%28SCRIPT_URL%2C%20%7B%20cache%3A%20%22no-store%22%20%7D%29%20.then%28r%20%3D%3E%20r.ok%20%3F%20r.text%28%29%20%3A%20Promise.reject%28r.status%29%29%20.then%28fresh%20%3D%3E%20%7B%20if%20%28fresh%20%3D%3D%3D%20cached%29%20return%3B%20localStorage.setItem%28CACHE_KEY%2C%20fresh%29%3B%20if%20%28cached%29%20%7B%20const%20toast%20%3D%20document.createElement%28%22div%22%29%3B%20toast.textContent%20%3D%20%22%E2%86%BB%20%22%20%2B%20TOAST_LABEL%20%2B%20%22%3A%20nieuwe%20versie%20gedownload%22%3B%20toast.style.cssText%20%3D%20%5B%20%22position%3Afixed%22%2C%22right%3A16px%22%2C%22bottom%3A16px%22%2C%22z-index%3A1000001%22%2C%20%22background%3A%230090e3%22%2C%22color%3A%23fff%22%2C%22padding%3A10px%2014px%22%2C%22border-radius%3A6px%22%2C%20%22font%3A600%2012px%20-apple-system%2Csans-serif%22%2C%22box-shadow%3A0%204px%2016px%20rgba%280%2C0%2C0%2C.2%29%22%2C%20%22cursor%3Apointer%22%20%5D.join%28%22%3B%22%29%3B%20toast.onclick%20%3D%20%28%29%20%3D%3E%20toast.remove%28%29%3B%20document.body.appendChild%28toast%29%3B%20setTimeout%28%28%29%20%3D%3E%20toast.remove%28%29%2C%208000%29%3B%20%7D%20else%20%7B%20try%20%7B%20%280%2C%20eval%29%28fresh%29%3B%20%7D%20catch%20%28e%29%20%7B%20console.error%28%22%5B%22%20%2B%20TOAST_LABEL%20%2B%20%22%5D%20fresh%20eval%20failed%3A%22%2C%20e%29%3B%20%7D%20%7D%20%7D%29%20.catch%28err%20%3D%3E%20%7B%20if%20%28%21cached%29%20%7B%20alert%28TOAST_LABEL%20%2B%20%22%3A%20kan%20staging%20script%20niet%20ophalen.%5Cn%22%20%2B%20err%29%3B%20%7D%20else%20%7B%20console.warn%28%22%5B%22%20%2B%20TOAST_LABEL%20%2B%20%22%5D%20update%20fetch%20failed%20%28using%20cached%29%3A%22%2C%20err%29%3B%20%7D%20%7D%29%3B%20%7D%29%28%29%3B"
+           href="#"
            id="staging-bookmarklet"
            draggable="true">↻ DS Logboek (staging)</a>
         <span style="color:#5a6a7f;font-size:12px">← sleep naar bookmarkbalk</span>
@@ -152,7 +152,7 @@
       <ul>
         <li>Productie: blauwe knop → huidige <code>ds-logboek.js</code></li>
         <li>Staging: oranje knop → functionele <code>ds-logboek-staging.js</code></li>
-        <li>Aparte localStorage caches (<code>ds_app_prod_cache</code> vs. <code>ds_app_staging_cache</code>)</li>
+        <li>Aparte localStorage caches (<code>ds_app_prod_cache</code> vs. <code>ds_app_staging_cache_v2</code>)</li>
         <li>Aparte DOM-wrapper (<code>#ds-combi-staging-wrapper</code>) — geen conflict</li>
         <li>Beide gebruiken hetzelfde paste-bookmarklet (clipboard schema is identiek)</li>
       </ul>
@@ -170,5 +170,11 @@
       </p>
     </div>
   </div>
+  <script>
+    (function () {
+      var code = "(function(){const SCRIPT_URL='https://raw.githubusercontent.com/BasEijserCB/DS_callscript_app/main/staging/ds-logboek-staging.js';const CACHE_KEY='ds_app_staging_cache_v2';const TOAST_LABEL='DS Logboek staging';function cleanup(){['ds-logboek-staging-root','ds-logboek-staging-style','ds-combi-staging-wrapper'].forEach(function(id){var el=document.getElementById(id);if(el)el.remove();});}const cached=localStorage.getItem(CACHE_KEY);if(cached){try{(0,eval)(cached);}catch(e){console.error('['+TOAST_LABEL+'] cached eval failed:',e);}}fetch(SCRIPT_URL,{cache:'no-store'}).then(function(r){return r.ok?r.text():Promise.reject(r.status);}).then(function(fresh){if(fresh===cached)return;localStorage.setItem(CACHE_KEY,fresh);if(cached){cleanup();try{(0,eval)(fresh);}catch(e){console.error('['+TOAST_LABEL+'] fresh eval failed:',e);}var toast=document.createElement('div');toast.textContent='↻ '+TOAST_LABEL+': nieuwe versie geladen';toast.style.cssText=['position:fixed','right:16px','bottom:16px','z-index:1000001','background:#0090e3','color:#fff','padding:10px 14px','border-radius:6px','font:600 12px -apple-system,sans-serif','box-shadow:0 4px 16px rgba(0,0,0,.2)','cursor:pointer'].join(';');toast.onclick=function(){toast.remove();};document.body.appendChild(toast);setTimeout(function(){toast.remove();},8000);}else{try{(0,eval)(fresh);}catch(e){console.error('['+TOAST_LABEL+'] fresh eval failed:',e);}}}).catch(function(err){if(!cached){alert(TOAST_LABEL+': kan staging script niet ophalen.\\n'+err);}else{console.warn('['+TOAST_LABEL+'] update fetch failed (using cached):',err);}});})();";
+      document.getElementById("staging-bookmarklet").href = "javascript:" + encodeURIComponent(code);
+    })();
+  </script>
 </body>
 </html>

@@ -6,6 +6,11 @@
 (function(){
   var STAGING_VERSION = '1.20.5-staging-functional';
 
+  var oldPreviewRoot = document.getElementById('ds-logboek-staging-root');
+  if (oldPreviewRoot) oldPreviewRoot.remove();
+  var oldPreviewStyle = document.getElementById('ds-logboek-staging-style');
+  if (oldPreviewStyle) oldPreviewStyle.remove();
+
   // ── PAGINA DETECTIE ───────────────────────────────────────────
   var isBasicPage = window.location.pathname.toLowerCase().indexOf('/basic') !== -1;
 
