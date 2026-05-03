@@ -3,7 +3,7 @@
 //
 // Werkt identiek aan loader-bookmarklet.js, maar:
 //  - haalt ds-logboek-staging.js op (i.p.v. ds-logboek.js)
-//  - gebruikt eigen localStorage cache key (ds_app_staging_cache_v2)
+//  - gebruikt eigen localStorage cache key (ds_app_staging_cache_v3)
 //  - toast-melding label is "DS Logboek staging" (zodat je niet verwart welke versie geüpdatet is)
 //
 // Hoe te bookmarklet-iseren:
@@ -16,7 +16,7 @@
 
 (function () {
   const SCRIPT_URL  = "https://raw.githubusercontent.com/BasEijserCB/DS_callscript_app/main/staging/ds-logboek-staging.js";
-  const CACHE_KEY   = "ds_app_staging_cache_v2";
+  const CACHE_KEY   = "ds_app_staging_cache_v3";
   const TOAST_LABEL = "DS Logboek staging";
 
   function cleanupOldStagingUi() {

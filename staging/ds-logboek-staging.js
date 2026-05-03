@@ -4,7 +4,7 @@
 // old park/resume session flow.
 
 (function(){
-  var STAGING_VERSION = '1.20.5-staging-functional';
+  var STAGING_VERSION = '1.20.5-staging-functional-design';
 
   var oldPreviewRoot = document.getElementById('ds-logboek-staging-root');
   if (oldPreviewRoot) oldPreviewRoot.remove();
@@ -53,7 +53,7 @@
   // Het ordernummer is het anker: als dat er is, is de DOM klaar.
   // We pollen max 3 seconden voordat we verdergaan (ook als het leeg blijft).
   function doScrapeAndInit() {
-  var scrapedOrder, scrapedRoute, scrapedAdres, scrapedPC, scrapedAdresQuery, driver1, driver2, alleGescrapteProducten, scrapedArtikelsoortenMap, scrapedTijdvak, scrapedAankomsttijd;
+  var scrapedOrder, scrapedRoute, scrapedAdres, scrapedPC, scrapedAdresQuery, scrapedNaam, scrapedPhone, driver1, driver2, alleGescrapteProducten, scrapedArtikelsoortenMap, scrapedTijdvak, scrapedAankomsttijd;
 
   if (!isBasicPage) {
     // ── CONSUMER PORTAL ────────────────────────────────────────
@@ -65,6 +65,8 @@
     scrapedRoute  = getTxt('Static.TourName');
     scrapedAdres  = getTxt('Static.Visit.Address') || getTxt('ConsigneeAddress') || '';
     scrapedPC     = (getTxt('Static.Visit.PostalCode').match(/^\d{4}\s?[A-Z]{2}|^\d{4,5}/i) || [''])[0].trim();
+    scrapedNaam   = getTxt('Static.Visit.ContactName') || getTxt('ConsigneeName') || '';
+    scrapedPhone  = getTxt('Static.Visit.Phone') || getTxt('Static.Visit.PhoneNumber') || getTxt('PhoneNumber') || '';
     var driverEls = document.querySelectorAll("[data-bind*='DriversFirstName']");
     driver1       = driverEls.length > 0 ? driverEls[0].innerText.trim() : '';
     driver2       = driverEls.length > 1 ? driverEls[1].innerText.trim() : '';
@@ -91,6 +93,8 @@
     // Adres en postcode staan als losse velden in de Geadresseerde sectie
     scrapedAdres  = basicField('Adres') || '';
     scrapedPC     = basicField('Postcode') || '';
+    scrapedNaam   = basicField('Naam') || '';
+    scrapedPhone  = basicFieldInSection('Geadresseerde', 'Telefoonnummer') || basicFieldInSection('Geadresseerde', 'Mobiel nummer') || '';
 
     // Rijders staan niet op de Basic orderdetailpagina
     driver1 = '';
@@ -208,64 +212,75 @@
   if (document.getElementById('ds-combi-staging-wrapper')) document.getElementById('ds-combi-staging-wrapper').remove();
   var wrapper = document.createElement('div');
   wrapper.id = 'ds-combi-staging-wrapper';
-  // Op Basic links-onder zodat het de interface minder verstoort; op consumer portal rechts-boven
   var wrapperPos = 'bottom:20px;left:20px;';
-  wrapper.style.cssText = 'position:fixed;' + wrapperPos + 'width:340px;background:#fff;border:2px solid #0090e3;box-shadow:0 8px 24px rgba(0,0,0,0.18);z-index:999999;border-radius:10px;overflow:hidden;';
+  wrapper.style.cssText = 'position:fixed;' + wrapperPos + 'width:460px;background:#fff;border:0;box-shadow:0 6px 24px rgba(10,30,60,.18),0 2px 6px rgba(10,30,60,.08);z-index:999999;border-radius:8px;overflow:hidden;';
   var iframe = document.createElement('iframe');
-  iframe.style.cssText = 'width:100%;height:620px;border:none;background:#fff;display:block;';
+  iframe.style.cssText = 'width:100%;height:640px;border:none;background:#fff;display:block;';
   wrapper.appendChild(iframe); document.body.appendChild(wrapper);
   var idoc = iframe.contentDocument || iframe.contentWindow.document;
 
   idoc.head.innerHTML = '<style>' +
-    'html,body{height:100%;margin:0;padding:0;overflow:hidden;font-family:"Segoe UI",Arial,sans-serif;color:#333333;}' +
-    '.app{display:flex;flex-direction:column;height:100%;}' +
-    '.header{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-bottom:1px solid #DDDDDD;flex-shrink:0;background:#fff;}' +
-    '.header-title{color:#285dab;font-size:17px;font-weight:700;}' +
+    ':root{--cb-blue:#0090e3;--cb-blue-deep:#007ec7;--cb-blue-darker:#005a92;--cb-blue-bg:#eaf5fc;--cb-blue-line:#cfe6f5;--accent:#f7a81b;--accent-dark:#e89400;--ink-1:#0e2540;--ink-2:#2a3a4f;--ink-3:#5a6a7f;--ink-4:#8b9bad;--paper:#fff;--line:#e2e7ec;--line-soft:#eef1f4;--ok:#2c8a4a;--ok-bg:#e6f4ec;--warn:#b85c00;--warn-bg:#fdf1de;}' +
+    'html,body{height:100%;margin:0;padding:0;overflow:hidden;font:13.5px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI","Helvetica Neue",Arial,sans-serif;color:var(--ink-1);background:#fff;-webkit-font-smoothing:antialiased;}' +
+    '*{box-sizing:border-box;}' +
+    '.app{display:flex;flex-direction:column;height:100%;background:var(--paper);}' +
+    '.header{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;flex-shrink:0;background:linear-gradient(180deg,var(--cb-blue),var(--cb-blue-deep));color:#fff;}' +
+    '.header-title{display:inline-flex;align-items:center;gap:8px;color:#fff;font-size:12px;font-weight:700;letter-spacing:.02em;background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.18);border-radius:999px;padding:4px 10px 4px 6px;}' +
+    '.header-title:before{content:"";width:14px;height:14px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 2px rgba(255,255,255,.35) inset;}' +
     '.header-actions{display:flex;gap:6px;align-items:center;}' +
-    '.toggle-btn{font-size:10px;background:#F3F3F3;border:1px solid #DDDDDD;color:#999999;padding:3px 9px;border-radius:4px;cursor:pointer;}' +
-    '.close-btn{font-size:16px;background:none;border:none;color:#999999;cursor:pointer;padding:0 4px;line-height:1;font-weight:300;}' +
-    '.close-btn:hover{color:#333333;}' +
-    '.content{flex-shrink:0;padding:14px;}' +
-    '.status-bar{font-size:11px;background:#F2F7FC;border:1px solid #cce9f9;padding:8px 12px;border-radius:6px;margin-bottom:12px;color:#285dab;}' +
+    '.stage-banner{background:#fff7e2;border-bottom:1px solid #f4dca0;color:#7a5300;font-size:11px;padding:6px 12px;display:flex;align-items:center;gap:6px;font-weight:700;flex-shrink:0;}' +
+    '.stage-banner:before{content:"";width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-bottom:9px solid var(--accent-dark);}' +
+    '.order-card{background:var(--cb-blue-bg);border-bottom:1px solid var(--cb-blue-line);padding:10px 14px 12px;display:grid;gap:6px;flex-shrink:0;}' +
+    '.order-top{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--cb-blue-darker);font-weight:700;letter-spacing:.03em;text-transform:uppercase;}' +
+    '.order-top .mono{font-family:ui-monospace,Menlo,monospace;}' +
+    '.order-main{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:700;color:var(--ink-1);}' +
+    '.order-phone{margin-left:auto;font:600 12px ui-monospace,Menlo,monospace;color:var(--ink-2);}' +
+    '.order-meta{display:grid;grid-template-columns:72px 1fr;gap:3px 8px;border-top:1px dashed var(--cb-blue-line);padding-top:8px;font-size:12px;}' +
+    '.order-meta span:nth-child(odd){color:var(--ink-3);}' +
+    '.order-meta span:nth-child(even){font-weight:600;color:var(--ink-1);}' +
+    '.resize-btn,.close-btn{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);color:#fff;border-radius:4px;height:24px;min-width:24px;display:inline-flex;align-items:center;justify-content:center;padding:0 7px;cursor:pointer;font-weight:700;font-size:11px;}' +
+    '.resize-btn:hover,.close-btn:hover{background:rgba(255,255,255,.22);color:#fff;}' +
+    '.close-btn{font-size:15px;line-height:1;}' +
+    '.content{flex-shrink:0;padding:12px 14px 14px;}' +
+    '.status-bar{font-size:11px;background:var(--cb-blue-bg);border:1px solid var(--cb-blue-line);padding:8px 12px;border-radius:6px;margin-bottom:12px;color:var(--cb-blue-darker);}' +
     '.status-line{display:block;margin-bottom:2px;}' +
-    '.footer{padding:10px 14px;border-top:1px solid #DDDDDD;flex-shrink:0;background:#fff;}' +
+    '.footer{padding:8px 14px;border-top:1px solid var(--line);flex-shrink:0;background:#fbfcfd;}' +
     '.footer-inner{display:flex;flex-direction:column;gap:6px;}' +
-    '.footer-hint{font-size:11px;color:#999999;text-align:center;line-height:1.4;}' +
-    '.back-btn{width:100%;padding:9px;background:#fff;border:1px solid #DDDDDD;border-radius:8px;color:#DDDDDD;font-size:13px;cursor:default;}' +
-    '.back-btn.active{border-color:#0090e3;color:#0090e3;cursor:pointer;}' +
-    '.back-btn.active:hover{background:#F2F7FC;}' +
-    'label{font-size:14px;font-weight:600;color:#333333;display:block;margin-bottom:8px;}' +
-    'input[type=text]{width:100%;padding:9px 11px;border:1px solid #DDDDDD;border-radius:6px;font-size:14px;box-sizing:border-box;color:#333333;outline:none;}' +
-    'input[type=text]:focus{border-color:#0090e3;}' +
-    '.ux-btn{width:100%;text-align:left;padding:9px 13px;margin-bottom:5px;border:1px solid #DDDDDD;border-radius:8px;background:#F2F7FC;cursor:pointer;font-size:13px;color:#333333;font-weight:500;transition:0.12s;}' +
-    '.btn-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:0;}' +
-    '.btn-grid .ux-btn{margin-bottom:0;font-size:12px;padding:8px 10px;}' +
-    '.ux-btn.selected{background:#d4edda;border-color:#00B900;color:#155724;font-weight:600;}' +
-    '.advies-btn{background:#fff3eb;border-color:#ff6600;color:#ff6600;}' +
-    '.advies-btn:hover{background:#ffe8d6;border-color:#cc5200;color:#cc5200;}' +
-    '.action-btn{width:100%;padding:11px;border:none;border-radius:8px;background:#0090e3;color:white;font-weight:600;cursor:pointer;font-size:14px;margin-top:8px;}' +
-    '.action-btn:hover{background:#007bc4;}' +
-    '.submit-btn{background:#00B900;}' +
-    '.submit-btn:hover{background:#009900;}' +
-    '.summary-box{font-size:12px;background:#F2F7FC;padding:12px;border-radius:8px;border-left:4px solid #cce9f9;margin-bottom:10px;color:#333333;line-height:1.6;}' +
-    '.warning-box{font-size:12px;background:#fff0f0;border:1px solid #E50000;border-left:4px solid #E50000;padding:10px 12px;border-radius:6px;color:#E50000;margin-bottom:10px;line-height:1.5;}' +
-    '.controle-box{background:#F2F7FC;border:1px solid #cce9f9;border-left:4px solid #0090e3;border-radius:6px;padding:10px 12px;margin-bottom:10px;}' +
-    '.controle-title{font-size:11px;font-weight:700;color:#285dab;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;}' +
-    '.controle-item{font-size:13px;color:#285dab;margin-bottom:5px;line-height:1.4;}' +
+    '.footer-hint{font-size:11px;color:var(--ink-4);text-align:center;line-height:1.4;}' +
+    '.back-btn{width:100%;padding:8px 10px;background:#fff;border:1px solid var(--line);border-radius:6px;color:#c2cad3;font-size:12.5px;cursor:default;font-weight:700;}' +
+    '.back-btn.active{border-color:var(--cb-blue);color:var(--cb-blue-darker);cursor:pointer;}' +
+    '.back-btn.active:hover{background:var(--cb-blue-bg);}' +
+    'label{font-size:14px;font-weight:700;color:var(--ink-1);display:block;margin:4px 0 8px;}' +
+    'input[type=text]{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:6px;font:inherit;color:var(--ink-1);background:#fff;outline:none;}' +
+    'input[type=text]:focus{border-color:var(--cb-blue);box-shadow:0 0 0 3px rgba(0,144,227,.18);}' +
+    '.ux-btn{width:100%;text-align:left;padding:9px 12px;margin-bottom:6px;border:1px solid var(--line);border-left:3px solid var(--line);border-radius:6px;background:#fff;cursor:pointer;font-size:13.5px;color:var(--ink-1);font-weight:600;transition:border-color .12s,background .12s;}' +
+    '.ux-btn:hover{border-color:var(--cb-blue);border-left-color:var(--cb-blue);background:#f7fbfe;}' +
+    '.btn-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:0;}' +
+    '.btn-grid .ux-btn{margin-bottom:0;font-size:12.5px;padding:8px 10px;}' +
+    '.ux-btn.selected{background:var(--cb-blue-bg);border-color:var(--cb-blue-deep);border-left-color:var(--accent);color:var(--ink-1);}' +
+    '.advies-btn,.advies-knop{background:#fff8e8;border-color:#f4dca0;border-left-color:var(--accent);color:#7a5300;}' +
+    '.advies-btn:hover,.advies-knop:hover{background:#fff2d4;border-color:var(--accent);}' +
+    '.action-btn{width:100%;padding:11px 12px;border:1px solid var(--cb-blue-deep);border-radius:6px;background:var(--cb-blue);color:white;font-weight:700;cursor:pointer;font-size:13.5px;margin-top:8px;text-align:center;}' +
+    '.action-btn:hover{background:var(--cb-blue-deep);}' +
+    '.submit-btn{background:var(--accent);border-color:var(--accent-dark);}' +
+    '.submit-btn:hover{background:var(--accent-dark);}' +
+    '.summary-box{font-size:12px;background:#fafbfd;padding:10px 12px;border-radius:6px;border:1px solid var(--line);border-left:3px solid var(--cb-blue);margin-bottom:10px;color:var(--ink-1);line-height:1.6;}' +
+    '.warning-box{font-size:12px;background:#fff0f0;border:1px solid #E50000;border-left:4px solid #E50000;padding:10px 12px;border-radius:6px;color:#C1121F;margin-bottom:10px;line-height:1.5;}' +
+    '.controle-box,.info-box{background:var(--cb-blue-bg);border:1px solid var(--cb-blue-line);border-left:4px solid var(--cb-blue);border-radius:6px;padding:10px 12px;margin-bottom:10px;color:var(--cb-blue-darker);}' +
+    '.controle-title{font-size:11px;font-weight:800;color:var(--cb-blue-darker);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;}' +
+    '.controle-item{font-size:12.5px;color:var(--cb-blue-darker);margin-bottom:5px;line-height:1.4;}' +
     '.controle-item:last-child{margin-bottom:0;}' +
-    '.info-box{font-size:12px;background:#F2F7FC;border:1px solid #cce9f9;border-left:4px solid #0090e3;padding:10px 12px;border-radius:6px;color:#285dab;margin-bottom:10px;line-height:1.5;}' +
-    '.section-divider{border:none;border-top:1px solid #DDDDDD;margin:10px 0 8px;}' +
-    '.section-label{font-size:10px;color:#999999;text-transform:uppercase;letter-spacing:0.6px;margin-bottom:6px;}' +
-    '.toggle-link{font-size:12px;color:#0090e3;text-align:center;margin:6px 0;cursor:pointer;}' +
+    '.info-box{font-size:12.5px;line-height:1.5;}' +
+    '.section-divider{border:none;border-top:1px dashed var(--line);margin:10px 0 8px;}' +
+    '.section-label{font-size:10px;color:var(--ink-4);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;font-weight:800;}' +
+    '.toggle-link{font-size:12px;color:var(--cb-blue-darker);text-align:center;margin:6px 0;cursor:pointer;font-weight:700;}' +
     '.toggle-link:hover{text-decoration:underline;}' +
     '.main-row{display:flex;flex:1;min-height:0;overflow:hidden;}' +
-    '.main-row .content{flex:1;overflow-y:auto;min-width:0;padding:14px;}' +
-    '.sidebar{flex:1;border-left:2px solid #DDDDDD;overflow-y:auto;background:#FAFAFA;padding:8px 10px;box-sizing:border-box;font-size:12px;}' +
-    '.anders-scroll{flex:1;overflow-y:auto;min-height:0;padding:8px 14px;box-sizing:border-box;border-top:1px solid #DDDDDD;}' +
-    '.resize-btn{font-size:11px;background:#F3F3F3;border:1px solid #DDDDDD;color:#666;padding:3px 8px;border-radius:4px;cursor:pointer;font-weight:600;}' +
-    '.resize-btn:hover{background:#E8E8E8;}' +
-    '.advies-knop{background:#F0FFF0;border-color:#b2dfb2;}' +
-    '.afwijkend-knop{background:#FFFFF0;border-color:#e0e0a0;}' +
+    '.main-row .content{flex:1;overflow-y:auto;min-width:0;padding:12px 14px;}' +
+    '.main-row .content::-webkit-scrollbar{width:8px}.main-row .content::-webkit-scrollbar-thumb{background:#d9dfe5;border-radius:4px;}' +
+    '.sidebar{flex:1;border-left:1px solid var(--line);overflow-y:auto;background:#fafbfd;padding:8px 10px;box-sizing:border-box;font-size:12px;}' +
+    '.anders-scroll{flex:1;overflow-y:auto;min-height:0;padding:8px 14px;box-sizing:border-box;border-top:1px solid var(--line);background:#fbfcfd;}' +
+    '.afwijkend-knop{background:#fffff0;border-color:#e0e0a0;border-left-color:#d6b645;}' +
     '</style>';
 
   var appContainer = idoc.createElement('div');
@@ -285,7 +300,7 @@
   // Apply initial sizing
   dsHeight = clampHeight(dsHeight);
   iframe.style.height = dsHeight + 'px';
-  wrapper.style.width = dsWide ? '600px' : '340px';
+  wrapper.style.width = dsWide ? '680px' : '460px';
 
   // ── PRODUCT SETUP ─────────────────────────────────────────────
   // Bouw per gescrapt product een keuze-label: "ETNA FGV160RVS - Vaatwasser"
@@ -306,6 +321,7 @@
     route: scrapedRoute, orderBron: scrapedOrder,
     driver1: driver1, driver2: driver2,
     depot: 'Onbekend', model: scrapedModel,
+    contactName: scrapedNaam||'', contactPhone: scrapedPhone||'',
     bellerType: '',
     locatie:'', probleem:'', milieuretour_type:'',
     product:'', formaatTV:'',
@@ -1049,6 +1065,19 @@
   // ── RENDER APP ────────────────────────────────────────────────
   function renderApp() {
     var backClass = canGoBack() ? 'back-btn active' : 'back-btn';
+    var orderSummary = '';
+    if (callData.orderBron || callData.model || callData.route) {
+      orderSummary =
+        '<section class="order-card">' +
+          '<div class="order-top"><span class="mono">#' + (callData.orderBron || 'Geen order') + '</span><span style="margin-left:auto;">' + (isBasicPage ? 'Basic' : 'DireXtion') + '</span></div>' +
+          '<div class="order-main"><span>' + (callData.contactName || (callData.fname || callData.lname ? ((callData.fname || '') + ' ' + (callData.lname || '')).trim() : 'Gesprek registreren')) + '</span><span class="order-phone">' + (callData.contactPhone || callData.route || '') + '</span></div>' +
+          '<div class="order-meta">' +
+            '<span>Product</span><span>' + (effectiefProduct() || callData.model || 'Nog niet bepaald') + '</span>' +
+            '<span>Model</span><span>' + (callData.model || '-') + '</span>' +
+            '<span>Tijdvak</span><span>' + (callData.tijdvak || '-') + '</span>' +
+          '</div>' +
+        '</section>';
+    }
 
     var statusAndContent = '<div id="stap-container"></div>';
     var mainContent = '';
@@ -1068,6 +1097,8 @@
             '<button class="close-btn" id="btn-close">\u2715</button>' +
           '</div>' +
         '</div>' +
+        '<div class="stage-banner">STAGING - functionele testbuild met nieuw paneldesign</div>' +
+        orderSummary +
         mainContent +
         '<div class="footer"><div class="footer-inner" style="display:flex;flex-direction:row;justify-content:space-between;align-items:center;gap:8px;">' +
           '<button class="' + backClass + '" id="btn-terug" style="flex:1;">\u2190 Terug</button>' +
@@ -1094,7 +1125,7 @@
     idoc.getElementById('btn-wide').onclick = function() {
       dsWide = !dsWide;
       localStorage.setItem('ds_staging_wide', dsWide ? '1' : '0');
-      wrapper.style.width = dsWide ? '600px' : '340px';
+      wrapper.style.width = dsWide ? '680px' : '460px';
       renderApp();
     };
     if (canGoBack()) idoc.getElementById('btn-terug').onclick = goBack;

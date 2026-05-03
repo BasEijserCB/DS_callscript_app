@@ -8,7 +8,7 @@ werken terwijl staging apart getest wordt.
 ## Status
 
 `ds-logboek-staging.js` is nu een functionele staging-baseline op basis van de
-productie-widget:
+productie-widget, met de panelstijl uit de nieuwe design-preview:
 
 - DOM-scrape voor `coolbluebezorgt.dirextion.nl` en
   `coolblue.dirextion.nl/Basic`
@@ -21,16 +21,16 @@ productie-widget:
 
 De oude parkeer-/hervat-flow is bewust verwijderd uit staging.
 
-Let op: de eerdere React/Babel design-preview is hiermee vervangen door een
-functionele baseline. Het nieuwe side-panel design kan hierna gericht opnieuw
-over deze werkende flow heen worden gezet.
+Let op: de eerdere React/Babel mock-preview is niet meer de runtime. Staging
+gebruikt nu de productieflow met een nieuwe side-panel stylinglaag, zodat er
+geen mockdata zoals "Sanne de Vries" meer in de tool zit.
 
 ## Bestanden
 
 | Bestand | Rol |
 |---|---|
 | `ds-logboek-staging.js` | Functionele staging-widget. Gebaseerd op productiegedrag, met staging wrapper `#ds-combi-staging-wrapper` en zonder parkeerfunctie. |
-| `loader-staging-bookmarklet.js` | Leesbare broncode van de staging loader bookmarklet. Aparte cache-key (`ds_app_staging_cache_v2`), aparte toast-tekst, aparte raw URL. |
+| `loader-staging-bookmarklet.js` | Leesbare broncode van de staging loader bookmarklet. Aparte cache-key (`ds_app_staging_cache_v3`), aparte toast-tekst, aparte raw URL. |
 | `install-staging.html` | Installatiepagina met de staging loader als sleepbare knop. |
 
 ## Hoe te testen
@@ -49,15 +49,15 @@ Open twee DireXtion-tabs naast elkaar:
 - Tab 1: klik prod loader
 - Tab 2: klik staging loader
 
-Staging gebruikt een eigen loader-cache (`ds_app_staging_cache_v2`) en eigen DOM
+Staging gebruikt een eigen loader-cache (`ds_app_staging_cache_v3`) en eigen DOM
 wrapper (`#ds-combi-staging-wrapper`). Formaatvoorkeuren staan ook los van prod:
 `ds_staging_height` en `ds_staging_wide`.
 
 ## Nog te doen
 
 - Test de volledige flow-matrix op echte DireXtion orders.
-- Beslis of het nieuwe side-panel design opnieuw bovenop deze functionele
-  baseline wordt gebouwd.
+- Vergelijk de styling met de oorspronkelijke design-preview en verfijn waar
+  nodig per onderdeel.
 - Voeg `staging/ds-logboek-staging.js` toe aan een syntax-check of aparte
   staging buildstap zodra Node lokaal beschikbaar is.
 
