@@ -106,7 +106,7 @@
     </header>
     <div class="body">
       <p>
-        Sleep de oranje knop hieronder naar je bookmarkbalk om de <b>nieuwe design preview</b>
+        Sleep de oranje knop hieronder naar je bookmarkbalk om de <b>functionele staging build</b>
         te installeren. Hij staat los van je productie bookmarklet — beide blijven werken.
       </p>
 
@@ -119,10 +119,10 @@
       </div>
 
       <div class="warn">
-        <b>⚠️ Voor je sleept:</b> open <code>loader-staging-bookmarklet.js</code> en
-        vervang <code>&lt;owner&gt;/&lt;repo&gt;</code> in de <code>SCRIPT_URL</code> door je
-        eigen GitHub gebruikersnaam en repo-naam. Plak daarna de geminifyde versie in
-        het <code>href</code>-attribuut van de knop hierboven (zie stap 2).
+        <b>⚠️ Voor je sleept:</b> controleer in <code>loader-staging-bookmarklet.js</code>
+        dat <code>SCRIPT_URL</code> naar de raw GitHub URL van
+        <code>staging/ds-logboek-staging.js</code> wijst. Plak daarna de geminifyde
+        loader in het <code>href</code>-attribuut van de knop hierboven (zie stap 2).
       </div>
 
       <h2>Installatie — 4 stappen</h2>
@@ -144,30 +144,29 @@
       </div>
 
       <div class="step">
-        <b>4.</b> Open een DireXtion order, klik de staging bookmarklet → het nieuwe
-        side panel verschijnt rechts.
+        <b>4.</b> Open een DireXtion order, klik de staging bookmarklet. De functionele
+        staging-widget verschijnt los van productie.
       </div>
 
       <h2>A/B test workflow</h2>
       <ul>
         <li>Productie: blauwe knop → huidige <code>ds-logboek.js</code></li>
-        <li>Staging: oranje knop → nieuwe <code>ds-logboek-staging.js</code></li>
+        <li>Staging: oranje knop → functionele <code>ds-logboek-staging.js</code></li>
         <li>Aparte localStorage caches (<code>ds_app_prod_cache</code> vs. <code>ds_app_staging_cache</code>)</li>
-        <li>Aparte DOM-roots (<code>#ds-logboek-staging-root</code>) — geen conflict</li>
+        <li>Aparte DOM-wrapper (<code>#ds-combi-staging-wrapper</code>) — geen conflict</li>
         <li>Beide gebruiken hetzelfde paste-bookmarklet (clipboard schema is identiek)</li>
       </ul>
 
-      <h2>Wat de staging build NOG NIET doet</h2>
+      <h2>Status van deze staging build</h2>
       <ul>
-        <li>DOM-scrape van DireXtion orderdata — toont mock data</li>
-        <li>Schrijven naar Google Sheets via GAS</li>
-        <li>Echte clipboard payload voor paste-bookmarklet (alleen voorbeeld JSON)</li>
-        <li>CBF / Teamleider / Andere bellers / Algemeen gesprek volledig</li>
-        <li>Sessie park/herstel</li>
+        <li>DOM-scrape van DireXtion orderdata is aangesloten</li>
+        <li>Schrijven naar Google Sheets via GAS is aangesloten</li>
+        <li>Clipboard payload voor paste-bookmarklet is aangesloten</li>
+        <li>CBF / Teamleider / Andere bellers / Algemeen gesprek komen mee uit productie</li>
+        <li>Parkeren en hervatten is bewust verwijderd</li>
       </ul>
       <p style="font-size:12.5px;color:#5a6a7f">
-        Zie <code>staging/README.md</code> voor de volledige TODO-lijst en port-instructies
-        naar productie.
+        Zie <code>staging/README.md</code> voor de huidige status en testinstructies.
       </p>
     </div>
   </div>
