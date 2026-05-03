@@ -106,23 +106,23 @@
     </header>
     <div class="body">
       <p>
-        Sleep de oranje knop hieronder naar je bookmarkbalk om de <b>functionele staging build</b>
+        Sleep de oranje knop hieronder naar je bookmarkbalk om de <b>nieuwe design preview</b>
         te installeren. Hij staat los van je productie bookmarklet — beide blijven werken.
       </p>
 
       <div class="row">
         <a class="draggable"
-           href="#"
+           href="javascript:void(0)"
            id="staging-bookmarklet"
            draggable="true">↻ DS Logboek (staging)</a>
         <span style="color:#5a6a7f;font-size:12px">← sleep naar bookmarkbalk</span>
       </div>
 
       <div class="warn">
-        <b>⚠️ Voor je sleept:</b> controleer in <code>loader-staging-bookmarklet.js</code>
-        dat <code>SCRIPT_URL</code> naar de raw GitHub URL van
-        <code>staging/ds-logboek-staging.js</code> wijst. Plak daarna de geminifyde
-        loader in het <code>href</code>-attribuut van de knop hierboven (zie stap 2).
+        <b>⚠️ Voor je sleept:</b> open <code>loader-staging-bookmarklet.js</code> en
+        vervang <code>&lt;owner&gt;/&lt;repo&gt;</code> in de <code>SCRIPT_URL</code> door je
+        eigen GitHub gebruikersnaam en repo-naam. Plak daarna de geminifyde versie in
+        het <code>href</code>-attribuut van de knop hierboven (zie stap 2).
       </div>
 
       <h2>Installatie — 4 stappen</h2>
@@ -144,37 +144,32 @@
       </div>
 
       <div class="step">
-        <b>4.</b> Open een DireXtion order, klik de staging bookmarklet. De functionele
-        staging-widget verschijnt los van productie.
+        <b>4.</b> Open een DireXtion order, klik de staging bookmarklet → het nieuwe
+        side panel verschijnt rechts.
       </div>
 
       <h2>A/B test workflow</h2>
       <ul>
         <li>Productie: blauwe knop → huidige <code>ds-logboek.js</code></li>
-        <li>Staging: oranje knop → functionele <code>ds-logboek-staging.js</code></li>
-        <li>Aparte localStorage caches (<code>ds_app_prod_cache</code> vs. <code>ds_app_staging_cache_v3</code>)</li>
-        <li>Aparte DOM-wrapper (<code>#ds-combi-staging-wrapper</code>) — geen conflict</li>
+        <li>Staging: oranje knop → nieuwe <code>ds-logboek-staging.js</code></li>
+        <li>Aparte localStorage caches (<code>ds_app_prod_cache</code> vs. <code>ds_app_staging_cache</code>)</li>
+        <li>Aparte DOM-roots (<code>#ds-logboek-staging-root</code>) — geen conflict</li>
         <li>Beide gebruiken hetzelfde paste-bookmarklet (clipboard schema is identiek)</li>
       </ul>
 
-      <h2>Status van deze staging build</h2>
+      <h2>Wat de staging build NOG NIET doet</h2>
       <ul>
-        <li>DOM-scrape van DireXtion orderdata is aangesloten</li>
-        <li>Schrijven naar Google Sheets via GAS is aangesloten</li>
-        <li>Clipboard payload voor paste-bookmarklet is aangesloten</li>
-        <li>CBF / Teamleider / Andere bellers / Algemeen gesprek komen mee uit productie</li>
-        <li>Parkeren en hervatten is bewust verwijderd</li>
+        <li>DOM-scrape van DireXtion orderdata — toont mock data</li>
+        <li>Schrijven naar Google Sheets via GAS</li>
+        <li>Echte clipboard payload voor paste-bookmarklet (alleen voorbeeld JSON)</li>
+        <li>CBF / Teamleider / Andere bellers / Algemeen gesprek volledig</li>
+        <li>Sessie park/herstel</li>
       </ul>
       <p style="font-size:12.5px;color:#5a6a7f">
-        Zie <code>staging/README.md</code> voor de huidige status en testinstructies.
+        Zie <code>staging/README.md</code> voor de volledige TODO-lijst en port-instructies
+        naar productie.
       </p>
     </div>
   </div>
-  <script>
-    (function () {
-      var code = "(function(){const SCRIPT_URL='https://raw.githubusercontent.com/BasEijserCB/DS_callscript_app/main/staging/ds-logboek-staging.js';const CACHE_KEY='ds_app_staging_cache_v3';const TOAST_LABEL='DS Logboek staging';function cleanup(){['ds-logboek-staging-root','ds-logboek-staging-style','ds-combi-staging-wrapper'].forEach(function(id){var el=document.getElementById(id);if(el)el.remove();});}const cached=localStorage.getItem(CACHE_KEY);if(cached){try{(0,eval)(cached);}catch(e){console.error('['+TOAST_LABEL+'] cached eval failed:',e);}}fetch(SCRIPT_URL,{cache:'no-store'}).then(function(r){return r.ok?r.text():Promise.reject(r.status);}).then(function(fresh){if(fresh===cached)return;localStorage.setItem(CACHE_KEY,fresh);if(cached){cleanup();try{(0,eval)(fresh);}catch(e){console.error('['+TOAST_LABEL+'] fresh eval failed:',e);}var toast=document.createElement('div');toast.textContent='↻ '+TOAST_LABEL+': nieuwe versie geladen';toast.style.cssText=['position:fixed','right:16px','bottom:16px','z-index:1000001','background:#0090e3','color:#fff','padding:10px 14px','border-radius:6px','font:600 12px -apple-system,sans-serif','box-shadow:0 4px 16px rgba(0,0,0,.2)','cursor:pointer'].join(';');toast.onclick=function(){toast.remove();};document.body.appendChild(toast);setTimeout(function(){toast.remove();},8000);}else{try{(0,eval)(fresh);}catch(e){console.error('['+TOAST_LABEL+'] fresh eval failed:',e);}}}).catch(function(err){if(!cached){alert(TOAST_LABEL+': kan staging script niet ophalen.\\n'+err);}else{console.warn('['+TOAST_LABEL+'] update fetch failed (using cached):',err);}});})();";
-      document.getElementById("staging-bookmarklet").href = "javascript:" + encodeURIComponent(code);
-    })();
-  </script>
 </body>
 </html>

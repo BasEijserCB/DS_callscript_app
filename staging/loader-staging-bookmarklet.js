@@ -3,7 +3,7 @@
 //
 // Werkt identiek aan loader-bookmarklet.js, maar:
 //  - haalt ds-logboek-staging.js op (i.p.v. ds-logboek.js)
-//  - gebruikt eigen localStorage cache key (ds_app_staging_cache_v3)
+//  - gebruikt eigen localStorage cache key (ds_app_staging_cache)
 //  - toast-melding label is "DS Logboek staging" (zodat je niet verwart welke versie geüpdatet is)
 //
 // Hoe te bookmarklet-iseren:
@@ -15,16 +15,9 @@
 // LET OP: pas SCRIPT_URL aan naar je eigen GitHub raw URL voor het staging bestand.
 
 (function () {
-  const SCRIPT_URL  = "https://raw.githubusercontent.com/BasEijserCB/DS_callscript_app/main/staging/ds-logboek-staging.js";
-  const CACHE_KEY   = "ds_app_staging_cache_v3";
+  const SCRIPT_URL  = "https://raw.githubusercontent.com/<owner>/<repo>/main/staging/ds-logboek-staging.js";
+  const CACHE_KEY   = "ds_app_staging_cache";
   const TOAST_LABEL = "DS Logboek staging";
-
-  function cleanupOldStagingUi() {
-    ["ds-logboek-staging-root", "ds-logboek-staging-style", "ds-combi-staging-wrapper"].forEach(id => {
-      const el = document.getElementById(id);
-      if (el) el.remove();
-    });
-  }
 
   // 1. Run cached versie direct (instant boot)
   const cached = localStorage.getItem(CACHE_KEY);
@@ -42,13 +35,9 @@
       localStorage.setItem(CACHE_KEY, fresh);
 
       if (cached) {
-        cleanupOldStagingUi();
-        try { (0, eval)(fresh); }
-        catch (e) { console.error("[" + TOAST_LABEL + "] fresh eval failed:", e); }
-
         // Toon update-toast (alleen als er al een vorige versie was)
         const toast = document.createElement("div");
-        toast.textContent = "↻ " + TOAST_LABEL + ": nieuwe versie geladen";
+        toast.textContent = "↻ " + TOAST_LABEL + ": nieuwe versie gedownload";
         toast.style.cssText = [
           "position:fixed","right:16px","bottom:16px","z-index:1000001",
           "background:#0090e3","color:#fff","padding:10px 14px","border-radius:6px",
