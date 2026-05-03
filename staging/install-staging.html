@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <title>DS Logboek — Staging install</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body {
+      margin: 0;
+      font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+      color: #0e2540;
+      background: #f3f4f6;
+      padding: 32px 24px 64px;
+    }
+    .wrap { max-width: 720px; margin: 0 auto; }
+    header {
+      background: linear-gradient(180deg, #0090e3, #007ec7);
+      color: #fff;
+      padding: 20px 24px;
+      border-radius: 10px 10px 0 0;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .logo {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: #f7a81b;
+      box-shadow: 0 0 0 3px rgba(255,255,255,.35) inset;
+    }
+    h1 { margin: 0; font-size: 20px; font-weight: 700; }
+    .stage-tag {
+      margin-left: auto;
+      background: rgba(255,255,255,.18);
+      border: 1px solid rgba(255,255,255,.3);
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+    .body {
+      background: #fff;
+      padding: 24px;
+      border-radius: 0 0 10px 10px;
+      box-shadow: 0 4px 16px rgba(10,30,60,.08);
+    }
+    p { color: #2a3a4f; }
+    .draggable {
+      display: inline-block;
+      background: #f7a81b;
+      color: #fff;
+      padding: 12px 18px;
+      border-radius: 6px;
+      font-weight: 700;
+      text-decoration: none;
+      box-shadow: 0 2px 6px rgba(0,0,0,.1);
+      cursor: grab;
+      user-select: none;
+    }
+    .draggable:active { cursor: grabbing; }
+    .draggable.is-prod { background: #0090e3; }
+    .row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin: 18px 0;
+    }
+    .step {
+      background: #eaf5fc;
+      border: 1px solid #cfe6f5;
+      border-radius: 8px;
+      padding: 14px 18px;
+      margin: 14px 0;
+    }
+    .step b { color: #005a92; }
+    code, pre {
+      background: #0e2540;
+      color: #d6e4f0;
+      padding: 1px 6px;
+      border-radius: 3px;
+      font: 12px ui-monospace, Menlo, monospace;
+    }
+    pre { padding: 12px 16px; overflow-x: auto; }
+    .warn {
+      background: #fdf1de;
+      border: 1px solid #f4dca0;
+      color: #b85c00;
+      padding: 12px 16px;
+      border-radius: 6px;
+      margin: 16px 0;
+      font-size: 13px;
+    }
+    h2 { font-size: 16px; margin-top: 24px; }
+    ul { margin: 8px 0; padding-left: 22px; }
+    li { margin: 4px 0; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <span class="logo"></span>
+      <h1>DS Logboek — Staging</h1>
+      <span class="stage-tag">Test build</span>
+    </header>
+    <div class="body">
+      <p>
+        Sleep de oranje knop hieronder naar je bookmarkbalk om de <b>nieuwe design preview</b>
+        te installeren. Hij staat los van je productie bookmarklet — beide blijven werken.
+      </p>
+
+      <div class="row">
+        <a class="draggable"
+           href="javascript:%28function%20%28%29%20%7B%20const%20SCRIPT_URL%20%3D%20%22https%3A%2F%2Fraw.githubusercontent.com%2FBasEijserCB%2FDS_callscript_app%2Fmain%2Fstaging%2Fds-logboek-staging.js%22%3B%20const%20CACHE_KEY%20%3D%20%22ds_app_staging_cache%22%3B%20const%20TOAST_LABEL%20%3D%20%22DS%20Logboek%20staging%22%3B%20const%20cached%20%3D%20localStorage.getItem%28CACHE_KEY%29%3B%20if%20%28cached%29%20%7B%20try%20%7B%20%280%2C%20eval%29%28cached%29%3B%20%7D%20catch%20%28e%29%20%7B%20console.error%28%22%5B%22%20%2B%20TOAST_LABEL%20%2B%20%22%5D%20cached%20eval%20failed%3A%22%2C%20e%29%3B%20%7D%20%7D%20fetch%28SCRIPT_URL%2C%20%7B%20cache%3A%20%22no-store%22%20%7D%29%20.then%28r%20%3D%3E%20r.ok%20%3F%20r.text%28%29%20%3A%20Promise.reject%28r.status%29%29%20.then%28fresh%20%3D%3E%20%7B%20if%20%28fresh%20%3D%3D%3D%20cached%29%20return%3B%20localStorage.setItem%28CACHE_KEY%2C%20fresh%29%3B%20if%20%28cached%29%20%7B%20const%20toast%20%3D%20document.createElement%28%22div%22%29%3B%20toast.textContent%20%3D%20%22%E2%86%BB%20%22%20%2B%20TOAST_LABEL%20%2B%20%22%3A%20nieuwe%20versie%20gedownload%22%3B%20toast.style.cssText%20%3D%20%5B%20%22position%3Afixed%22%2C%22right%3A16px%22%2C%22bottom%3A16px%22%2C%22z-index%3A1000001%22%2C%20%22background%3A%230090e3%22%2C%22color%3A%23fff%22%2C%22padding%3A10px%2014px%22%2C%22border-radius%3A6px%22%2C%20%22font%3A600%2012px%20-apple-system%2Csans-serif%22%2C%22box-shadow%3A0%204px%2016px%20rgba%280%2C0%2C0%2C.2%29%22%2C%20%22cursor%3Apointer%22%20%5D.join%28%22%3B%22%29%3B%20toast.onclick%20%3D%20%28%29%20%3D%3E%20toast.remove%28%29%3B%20document.body.appendChild%28toast%29%3B%20setTimeout%28%28%29%20%3D%3E%20toast.remove%28%29%2C%208000%29%3B%20%7D%20else%20%7B%20try%20%7B%20%280%2C%20eval%29%28fresh%29%3B%20%7D%20catch%20%28e%29%20%7B%20console.error%28%22%5B%22%20%2B%20TOAST_LABEL%20%2B%20%22%5D%20fresh%20eval%20failed%3A%22%2C%20e%29%3B%20%7D%20%7D%20%7D%29%20.catch%28err%20%3D%3E%20%7B%20if%20%28%21cached%29%20%7B%20alert%28TOAST_LABEL%20%2B%20%22%3A%20kan%20staging%20script%20niet%20ophalen.%5Cn%22%20%2B%20err%29%3B%20%7D%20else%20%7B%20console.warn%28%22%5B%22%20%2B%20TOAST_LABEL%20%2B%20%22%5D%20update%20fetch%20failed%20%28using%20cached%29%3A%22%2C%20err%29%3B%20%7D%20%7D%29%3B%20%7D%29%28%29%3B"
+           id="staging-bookmarklet"
+           draggable="true">↻ DS Logboek (staging)</a>
+        <span style="color:#5a6a7f;font-size:12px">← sleep naar bookmarkbalk</span>
+      </div>
+
+      <div class="warn">
+        <b>⚠️ Voor je sleept:</b> open <code>loader-staging-bookmarklet.js</code> en
+        vervang <code>&lt;owner&gt;/&lt;repo&gt;</code> in de <code>SCRIPT_URL</code> door je
+        eigen GitHub gebruikersnaam en repo-naam. Plak daarna de geminifyde versie in
+        het <code>href</code>-attribuut van de knop hierboven (zie stap 2).
+      </div>
+
+      <h2>Installatie — 4 stappen</h2>
+
+      <div class="step">
+        <b>1.</b> Push <code>staging/ds-logboek-staging.js</code> naar je GitHub repo.
+        Zorg dat de raw URL publiek bereikbaar is.
+      </div>
+
+      <div class="step">
+        <b>2.</b> Minify <code>loader-staging-bookmarklet.js</code> (bv. via
+        <code>esbuild --minify</code> of een online minifier). Zet er <code>javascript:</code>
+        voor en plak het resultaat als <code>href</code> in de oranje knop hierboven.
+      </div>
+
+      <div class="step">
+        <b>3.</b> Sleep de oranje knop naar je bookmarkbalk, naast je bestaande blauwe
+        prod-loader.
+      </div>
+
+      <div class="step">
+        <b>4.</b> Open een DireXtion order, klik de staging bookmarklet → het nieuwe
+        side panel verschijnt rechts.
+      </div>
+
+      <h2>A/B test workflow</h2>
+      <ul>
+        <li>Productie: blauwe knop → huidige <code>ds-logboek.js</code></li>
+        <li>Staging: oranje knop → nieuwe <code>ds-logboek-staging.js</code></li>
+        <li>Aparte localStorage caches (<code>ds_app_prod_cache</code> vs. <code>ds_app_staging_cache</code>)</li>
+        <li>Aparte DOM-roots (<code>#ds-logboek-staging-root</code>) — geen conflict</li>
+        <li>Beide gebruiken hetzelfde paste-bookmarklet (clipboard schema is identiek)</li>
+      </ul>
+
+      <h2>Wat de staging build NOG NIET doet</h2>
+      <ul>
+        <li>DOM-scrape van DireXtion orderdata — toont mock data</li>
+        <li>Schrijven naar Google Sheets via GAS</li>
+        <li>Echte clipboard payload voor paste-bookmarklet (alleen voorbeeld JSON)</li>
+        <li>CBF / Teamleider / Andere bellers / Algemeen gesprek volledig</li>
+        <li>Sessie park/herstel</li>
+      </ul>
+      <p style="font-size:12.5px;color:#5a6a7f">
+        Zie <code>staging/README.md</code> voor de volledige TODO-lijst en port-instructies
+        naar productie.
+      </p>
+    </div>
+  </div>
+</body>
+</html>
