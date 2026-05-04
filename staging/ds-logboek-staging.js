@@ -6,7 +6,7 @@
 // React, ReactDOM, DS, and browser globals are accessible inside JSX.
 
 (function () {
-  const STAGING_VERSION = "0.3.3-staging";
+  const STAGING_VERSION = "0.3.4-staging";
   const ROOT_ID = "ds-logboek-staging-root";
   const STYLE_ID = "ds-logboek-staging-style";
   const GAS_URL = "https://script.google.com/a/macros/coolblue.nl/s/AKfycbxb-OwLCFGlDQ48qz3KnGnmsgnVLWxuOjvEr7UG3M3z0WzO0kVsTKGd_8mZjtvHvPHnEg/exec";
@@ -1090,6 +1090,16 @@ function App(){
           ans('product_keuze',multiSel.join(', '),ex3,ak3,afk3);
         }}>Volgende ({multiSel.length} geselecteerd)</button>
         <div className="ds-note is-info"><div>Geldt het probleem voor meerdere producten? Klik ze dan allemaal aan.</div></div>
+      </div>
+    );
+  }else if(stap.type==='product-type-keuze'){
+    var ptOpties=['Wasmachine','Wasdroogcombinatie','Droger','Koelkast / Vriezer','Vaatwasser','Oven / Magnetron','Kookplaat','Televisie','Soundbar','Overig'];
+    stepBody=(
+      <div className="ds-stack">
+        {cd.model&&<div className="ds-note is-info"><div><strong>Gescand model:</strong> {cd.model}</div></div>}
+        <div className="ds-grid2">
+          {ptOpties.map(function(o){return <button key={o} className="ds-opt" onClick={function(){handleSelect(o);}}><span className="ds-opt__label">{o}</span></button>;})}
+        </div>
       </div>
     );
   }else{
