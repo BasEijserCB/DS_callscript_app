@@ -15,6 +15,9 @@ Browsergebaseerde widget voor het Coolblue Delivery Support team. Draait bovenop
 | `install.html` | Installatiepagina. Bevat **beide** bookmarklets als sleepbare knoppen. |
 | `build.py` | Syntax-checkt `ds-logboek.js` en `paste-bookmarklet.js`, detecteert versienummer uit `ds-logboek.js` en synchroniseert `PASTE_VERSION` in `paste-bookmarklet.js`. |
 | `gas-backend.js` | Broncode van het Google Apps Script backend (`doGet`). Schrijft elke log-entry als rij naar de actieve Google Sheet. Moet handmatig gekopieerd worden naar de GAS editor bij wijzigingen. |
+| `staging/ds-logboek-staging.js` | Staging build van de widget: zelfde data-laag (scraping, flow engine, logging, clipboard) als `ds-logboek.js`, maar met een volledig nieuwe React+Babel UI (side-panel design). Bevat `STAGING_VERSION` constante (`vX.X.X-staging`). |
+| `staging/loader-staging-bookmarklet.js` | Loader bookmarklet voor de staging widget. Haalt `ds-logboek-staging.js` op via raw GitHub URL, cached in localStorage (`ds_app_staging_cache`), stale-while-revalidate. Toont eigen toast bij update. |
+| `staging/install-staging.html` | Installatiepagina voor de staging bookmarklet. |
 
 ---
 
@@ -31,6 +34,39 @@ localStorage.removeItem('ds_app_prod_cache')
 ```
 
 **Versienummer** alleen ophogen bij wijzigingen aan `ds-logboek.js` — zonder te vragen. Patch voor bugfix, minor voor nieuwe feature. `build.py` synchroniseert `PASTE_VERSION` in `paste-bookmarklet.js` automatisch naar hetzelfde versienummer.
+
+---
+
+## Staging — wat het is en hoe het werkt
+
+De staging build (`staging/ds-logboek-staging.js`) is een volledig werkende alternatieve versie van de widget bedoeld om nieuwe UI-ontwerpen te testen zonder de productieversie te raken. De data-laag (scraping, flow engine, `bouwLogParams`, `kopieerNaarKlembord`, GAS logging) is identiek aan `ds-logboek.js` en wordt samen bijgehouden. De UI is volledig herschreven in React+Babel (via CDN) en draait als side-panel in de browser.
+
+**Verschillen met productie:**
+- UI: React+Babel side-panel i.p.v. vanilla JS widget
+- Toont een gele "⚠ STAGING — design preview" banner bovenin
+- Root element: `#ds-logboek-staging-root` (apart van productie, kan naast elkaar draaien)
+- Cache key: `ds_app_staging_cache` (apart van `ds_app_prod_cache`)
+- Versie-suffix: `-staging` (bijv. `v0.3.0-staging`)
+
+**Versienummer staging** ophogen bij elke wijziging aan `staging/ds-logboek-staging.js` — zonder te vragen, zelfde regels als productie (patch voor bugfix, minor voor nieuwe feature/UI-wijziging). De `STAGING_VERSION` constante staat bovenin het bestand. `build.py` raakt de staging versie **niet** — handmatig bijwerken in het bestand zelf.
+
+**Deploy staging:**
+```bash
+# Na wijziging in staging/ds-logboek-staging.js:
+git add staging/ds-logboek-staging.js && git commit -m "staging: beschrijving, bump to vX.X.X-staging" && git push
+```
+
+De staging loader haalt de nieuwe versie automatisch op via stale-while-revalidate. Cache handmatig legen als fallback:
+```javascript
+localStorage.removeItem('ds_app_staging_cache')
+```
+
+**Staging versiegeschiedenis (recent):**
+
+| Versie | Wijziging |
+|---|---|
+| v0.3.1-staging | Patch: versie-bump om update-systeem te testen |
+| v0.3.0-staging | Full data layer port from ds-logboek.js; React+Babel side-panel UI; scraping, flow engine, logging, clipboard identiek aan productie |
 
 ---
 

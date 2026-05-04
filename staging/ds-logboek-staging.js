@@ -1,4 +1,4 @@
-// ds-logboek-staging.js  v0.3.0-staging
+// ds-logboek-staging.js  v0.3.1-staging
 // Staging build — new side-panel design with real data layer.
 // Scraping, flow engine, and logging ported from ds-logboek.js.
 // UI: React+Babel from CDN, mounted in #ds-logboek-staging-root.
@@ -6,7 +6,7 @@
 // React, ReactDOM, DS, and browser globals are accessible inside JSX.
 
 (function () {
-  const STAGING_VERSION = "0.3.0-staging";
+  const STAGING_VERSION = "0.3.1-staging";
   const ROOT_ID = "ds-logboek-staging-root";
   const STYLE_ID = "ds-logboek-staging-style";
   const GAS_URL = "https://script.google.com/a/macros/coolblue.nl/s/AKfycbxb-OwLCFGlDQ48qz3KnGnmsgnVLWxuOjvEr7UG3M3z0WzO0kVsTKGd_8mZjtvHvPHnEg/exec";
