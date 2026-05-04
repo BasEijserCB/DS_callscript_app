@@ -141,7 +141,7 @@
     'wisberg':  [['WBWM','wasmachine'],['WBDR','droger'],['WBDW','vaatwasser'],['WBBI','inbouw vaatwasser'],['WBKVC','koel-vries combo'],['WBKK','koelkast'],['WBKV','vriezer'],['WBVR','vriezer'],['WBCF','vriezer'],['WBCDND','koel-vries combo'],['WBSBSW','koelkast'],['WBSBS','koelkast'],['WBTM','koelkast'],['WBTT','koelkast'],['WBMKK','koelkast'],['WBMVR','vriezer']],
     'zanussi':  [['ZWF','wasmachine'],['ZW','wasmachine'],['ZDT','inbouw vaatwasser'],['ZDTS','inbouw vaatwasser'],['ZP','droger'],['ZD','droger'],['ZOB','oven'],['ZOPNA','oven']],
     // ── NIEUWE MERKEN ────────────────────────────────────────────
-    'miele':    [['WCA','wasmachine'],['WCB','wasmachine'],['WCE','wasmachine'],['WCI','wasdroogcombinatie'],['WWG','wasmachine'],['WWH','wasmachine'],['WTD','wasdroogcombinatie'],['TCE','droger'],['TCJ','droger'],['TCI','droger'],['TCR','droger'],['TWF','droger'],['TWI','droger'],['TWR','droger'],['TKG','droger'],['G','vaatwasser'],['KFN','koelkast'],['KD','koelkast'],['KS','koelkast'],['K','koelkast'],['FN','vriezer'],['F','vriezer'],['H','oven'],['M','magnetron'],['KM','kookplaat']],
+    'miele':    [['WCA','wasmachine'],['WCB','wasmachine'],['WCE','wasmachine'],['WEC','wasmachine'],['WCI','wasdroogcombinatie'],['WWG','wasmachine'],['WWH','wasmachine'],['WTD','wasdroogcombinatie'],['TCE','droger'],['TCJ','droger'],['TCI','droger'],['TCR','droger'],['TWF','droger'],['TWI','droger'],['TWR','droger'],['TKG','droger'],['G','vaatwasser'],['KFN','koelkast'],['KD','koelkast'],['KS','koelkast'],['K','koelkast'],['FN','vriezer'],['F','vriezer'],['H','oven'],['M','magnetron'],['KM','kookplaat']],
     'electrolux':[['EW6F','wasmachine'],['EW7F','wasmachine'],['EW8F','wasmachine'],['EW9F','wasmachine'],['EW6C','droger'],['EW7C','droger'],['EW8C','droger'],['EW9C','droger'],['EEM','vaatwasser'],['ESM','vaatwasser'],['ESF','vaatwasser'],['EES','inbouw vaatwasser'],['ERB','koelkast'],['LRB','koelkast'],['LRT','koelkast'],['ENL','koelkast'],['ENT','koelkast'],['EOC','oven'],['EVL','oven'],['EZC','oven'],['OEL','oven'],['EOF','oven']],
     'hisense':  [['WFGA','wasmachine'],['WFQY','wasmachine'],['WFGE','wasmachine'],['WDQA','wasdroogcombinatie'],['DHGE','droger'],['HV','vaatwasser'],['RB','koelkast'],['RS','koelkast'],['FV','vriezer'],['AX','soundbar'],['U','televisie'],['A','televisie'],['E','televisie']],
     'neff':     [['B','oven'],['T','kookplaat']],
@@ -1122,7 +1122,7 @@
             '<span style="font-size:11px;color:'+(geenOrderMode?'#ff6600':'#aaa')+';">'+(geenOrderMode?'Gegevens gewist':'Geen order')+'</span>' +
           '</div>' : '') +
         '</div></div>' +
-        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.20.5</div>' +
+        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.20.6</div>' +
       '</div>';
 
     idoc.getElementById('btn-close').onclick = function(){ wrapper.remove(); };
