@@ -945,7 +945,7 @@ function App(){
     var isGep=cd.uitkomst==='Same day gepland'||cd.uitkomst==='Next day gepland'||cd.uitkomst==='Same day visit gepland'||cd.uitkomst==='Next day visit gepland'||cd.ks_uitkomst==='Same day gepland'||cd.ks_uitkomst==='Next day gepland';
     var cat=DS.berekenCategorie(cd);
     return (
-      <div>
+      <div style={{display:'flex',flexDirection:'column',height:'100%'}}>
         <Header/><StageBanner/><OrderCard/>
         <div className="ds-body">
           <ProductChip/>
@@ -1103,7 +1103,7 @@ function App(){
   }
 
   return (
-    <div>
+    <div style={{display:'flex',flexDirection:'column',height:'100%'}}>
       <Header/><StageBanner/><OrderCard/>
       <div className="ds-body">
         <ProductChip/>
