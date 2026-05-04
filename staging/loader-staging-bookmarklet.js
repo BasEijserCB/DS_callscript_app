@@ -15,7 +15,7 @@
 // LET OP: pas SCRIPT_URL aan naar je eigen GitHub raw URL voor het staging bestand.
 
 (function () {
-  const SCRIPT_URL  = "https://raw.githubusercontent.com/<owner>/<repo>/main/staging/ds-logboek-staging.js";
+  const SCRIPT_URL  = "https://raw.githubusercontent.com/BasEijserCB/DS_callscript_app/main/staging/ds-logboek-staging.js";
   const CACHE_KEY   = "ds_app_staging_cache";
   const TOAST_LABEL = "DS Logboek staging";
 
