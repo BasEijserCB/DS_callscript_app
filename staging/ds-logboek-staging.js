@@ -6,7 +6,7 @@
 // React, ReactDOM, DS, and browser globals are accessible inside JSX.
 
 (function () {
-  const STAGING_VERSION = "0.3.6-staging";
+  const STAGING_VERSION = "0.3.7-staging";
   const ROOT_ID = "ds-logboek-staging-root";
   const STYLE_ID = "ds-logboek-staging-style";
   const GAS_URL = "https://script.google.com/a/macros/coolblue.nl/s/AKfycbxb-OwLCFGlDQ48qz3KnGnmsgnVLWxuOjvEr7UG3M3z0WzO0kVsTKGd_8mZjtvHvPHnEg/exec";
@@ -839,6 +839,7 @@ function initConv(sc){
 
 function App(){
   var sc=DS.scraped;
+  var adresLand=(function(){var p=(sc.pc||'').replace(/\\s/g,'').toUpperCase();if(/[A-Z]/.test(p)&&p.replace(/\\D/g,'').length===4)return 'NL';if(!/[A-Z]/.test(p)&&p.length===4)return 'BE';if(!/[A-Z]/.test(p)&&p.length===5)return 'DE';return 'NL';})();
   var alleProds=sc.alleGescrapteProducten||[];
   var _cs=useState(function(){return initConv(sc);}),conv=_cs[0],setConv=_cs[1];
   var _cd=useState(false),logDone=_cd[0],setLogDone=_cd[1];
@@ -949,7 +950,7 @@ function App(){
           <ProductChip/>
           {cd.bellerType==='CBF'&&cd.locatie==='Vraag voor het depot'&&<div className="ds-note is-info"><div><strong>Advies aan de fietser</strong><br/>Voor deze vraag dient de fietser contact op te nemen met het depot.</div></div>}
           {cd.probleem==='Verkeerd gelabeld product'&&<div className="ds-note is-info"><div><strong>Instructie voor de Held</strong><br/>Kies in Jerney voor "Verkeerd gelabeld product". Neem het product mee terug naar het depot.</div></div>}
-          {cd.onderweg_type==='Adres klopt niet'&&<div className="ds-note is-info"><div><strong>Instructie voor de Held</strong><br/>Geef aan in Jerney dat het adres niet klopt. Noteer het correcte adres in het opmerkingenveld.</div></div>}
+          {cd.onderweg_type==='Adres klopt niet'&&<div className="ds-note is-info"><div><strong>Instructie voor de Held</strong><br/>Geef aan in Jerney dat het adres niet klopt. Noteer het correcte adres in het opmerkingenveld.{sc.adresQuery&&<span style={{display:'block',marginTop:8}}><strong>🔍 Zoek het adres op:</strong>{adresLand==='NL'&&<a href={'https://bagviewer.kadaster.nl/lvbag/bag-viewer/?searchQuery='+sc.adresQuery+'&zoomlevel=15'} target="_blank" rel="noreferrer" style={{color:'#0090e3',display:'block',marginTop:4}}>🇳🇱 Bagviewer (Kadaster)</a>}{adresLand==='BE'&&<a href={'https://www.geopunt.be/kaart?zoomLevel=14&locationSearch='+sc.adresQuery} target="_blank" rel="noreferrer" style={{color:'#0090e3',display:'block',marginTop:4}}>🇧🇪 Geopunt</a>}<a href={'https://www.google.com/maps/search/'+sc.adresQuery} target="_blank" rel="noreferrer" style={{color:'#0090e3',display:'block',marginTop:4}}>🗺 Google Maps</a><a href={'https://www.bing.com/maps?q='+sc.adresQuery} target="_blank" rel="noreferrer" style={{color:'#0090e3',display:'block',marginTop:4}}>🗺 Bing Maps</a></span>}</div></div>}
           {cd.onderweg_type==='Klant niet thuis'&&<div className="ds-note is-info"><div><strong>Check of de held deze stappen heeft doorlopen:</strong><br/>\u{1f514} Aangebeld · \u{1f4de} Klant gebeld · \u{1f550} Binnen tijdvak<br/><strong>Afmelden in Jerney:</strong> kies "Klant niet thuis", maak foto van de voordeur.</div></div>}
           {cd.bellerType==='Andere beller'&&<div className="ds-note is-info"><div><strong>Andere beller</strong><br/>Dit gesprek gaat niet over een bezorging. Loggen is voldoende.</div></div>}
           {isGep&&<div className="ds-note is-info"><div><strong>✓ Check voor het plannen</strong><br/>\u{1f4e6} Kan het product bij de klant blijven?{cd.uitkomst==='Same day gepland'&&<span><br/>\u{1f3e0} Is de klant later vandaag nog thuis?</span>}</div></div>}
@@ -1103,9 +1104,17 @@ function App(){
       </div>
     );
   }else{
+    var showAdresLinks=stap.key==='onderweg_uitkomst'&&cd.onderweg_type==='Adres niet gevonden / niet bereikbaar'&&sc.adresQuery;
     stepBody=(
       <div className="ds-stack">
         {(stap.opties||[]).map(function(o){return <button key={o} className="ds-opt" onClick={function(){handleSelect(o);}}><span className="ds-opt__label">{o}</span></button>;})}
+        {showAdresLinks&&<div style={{background:'#F2F7FC',border:'1px solid #cce9f9',borderLeft:'3px solid #0090e3',borderRadius:6,padding:'10px 12px',fontSize:12,color:'#285dab',lineHeight:1.6}}>
+          🔍 <strong>Zoek het adres op:</strong>
+          {adresLand==='NL'&&<a href={'https://bagviewer.kadaster.nl/lvbag/bag-viewer/?searchQuery='+sc.adresQuery+'&zoomlevel=15'} target="_blank" rel="noreferrer" style={{color:'#0090e3',display:'block',marginTop:6}}>🇳🇱 Bagviewer (Kadaster)</a>}
+          {adresLand==='BE'&&<a href={'https://www.geopunt.be/kaart?zoomLevel=14&locationSearch='+sc.adresQuery} target="_blank" rel="noreferrer" style={{color:'#0090e3',display:'block',marginTop:6}}>🇧🇪 Geopunt</a>}
+          <a href={'https://www.google.com/maps/search/'+sc.adresQuery} target="_blank" rel="noreferrer" style={{color:'#0090e3',display:'block',marginTop:4}}>🗺 Google Maps</a>
+          <a href={'https://www.bing.com/maps?q='+sc.adresQuery} target="_blank" rel="noreferrer" style={{color:'#0090e3',display:'block',marginTop:4}}>🗺 Bing Maps</a>
+        </div>}
       </div>
     );
   }
