@@ -594,19 +594,6 @@
     navigator.clipboard.writeText(JSON.stringify(payload));
   }
 
-  // ── PARK / HERSTEL ────────────────────────────────────────────
-  function parkeerSessie(orderNr, cd, ak, afk, isProductAutoGuessed) {
-    if (!orderNr) return;
-    localStorage.setItem('ds_park_'+orderNr, JSON.stringify({callData:cd,answeredKeys:ak,autoFilledKeys:afk,isProductAutoGuessed:isProductAutoGuessed,timestamp:Date.now()}));
-  }
-  function herstelSessie(orderNr) {
-    if (!orderNr) return null;
-    try { return JSON.parse(localStorage.getItem('ds_park_'+orderNr)); } catch(e) { return null; }
-  }
-  function verwijderGeparkeerd(orderNr) {
-    if (orderNr) localStorage.removeItem('ds_park_'+orderNr);
-  }
-
   // ── CSS INJECTION ─────────────────────────────────────────────
   const css = `
   #${ROOT_ID} {
@@ -618,6 +605,7 @@
     --ok:#2c8a4a;--ok-bg:#e6f4ec;--warn:#b85c00;--warn-bg:#fdf1de;
     --r-sm:4px;--r-md:6px;--r-lg:10px;
     position:fixed;bottom:16px;left:16px;width:460px;
+    height:640px;
     max-height:calc(100vh - 32px);
     z-index:2147483645;
     font:13.5px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI","Helvetica Neue",Arial,sans-serif;
@@ -810,9 +798,7 @@
       berekenCategorie: berekenCategorie,
       bouwLogParams: bouwLogParams,
       kopieerNaarKlembord: kopieerNaarKlembord,
-      parkeerSessie: parkeerSessie,
-      herstelSessie: herstelSessie,
-      verwijderGeparkeerd: verwijderGeparkeerd,
+
       parseToTourAlias: parseToTourAlias,
       effectiefProduct: effectiefProduct,
       skipDienstType: skipDienstType,
@@ -855,7 +841,6 @@ function App(){
   var sc=DS.scraped;
   var alleProds=sc.alleGescrapteProducten||[];
   var _cs=useState(function(){return initConv(sc);}),conv=_cs[0],setConv=_cs[1];
-  var _ch=useState(function(){return sc.orderNr?!!DS.herstelSessie(sc.orderNr):false;}),hervatten=_ch[0],setHervatten=_ch[1];
   var _cd=useState(false),logDone=_cd[0],setLogDone=_cd[1];
   var _ct=useState(''),textVal=_ct[0],setTextVal=_ct[1];
   var _cm=useState([]),multiSel=_cm[0],setMultiSel=_cm[1];
@@ -897,7 +882,6 @@ function App(){
   }
 
   var canBack=ak.some(function(k){return !afk.includes(k);});
-  function doPark(){DS.parkeerSessie(sc.orderNr,cd,ak,afk,isAG);document.getElementById('ds-logboek-staging-root').style.display='none';}
 
   function handleSelect(val){
     var extra={},akExt=[],afkExt=[],clr=null;
@@ -929,15 +913,25 @@ function App(){
   function Header(){return (
     <div className="ds-header">
       <div className="ds-header__brand"><div className="ds-logo"><div className="ds-logo__dot"></div>&nbsp;DS Logboek</div>{sc.orderNr&&<span className="ds-header__sub">{sc.orderNr}</span>}</div>
-      <div className="ds-header__right">{sc.orderNr&&<button className="ds-iconbtn" title="Parkeer sessie" onClick={doPark}>⏸</button>}<span className="ds-version">{DS.version}</span></div>
+      <div className="ds-header__right"><button className="ds-iconbtn" title="Sluiten" onClick={function(){document.getElementById('ds-logboek-staging-root').remove();}}>✕</button><span className="ds-version">{DS.version}</span></div>
     </div>
   );}
   function StageBanner(){return <div className="ds-stage-banner">⚠ STAGING — design preview</div>;}
-  function OrderCard(){if(!sc.orderNr)return null;return(
+  function OrderCard(){if(!sc.orderNr)return null;
+    var adresStr=(sc.adres&&sc.pc)?sc.adres+', '+sc.pc:sc.adres||sc.pc||'';
+    var productStr=sc.alleGescrapteProducten&&sc.alleGescrapteProducten.length>0?sc.alleGescrapteProducten.join(', '):'';
+    return(
     <div className="ds-order"><div className="ds-order__head">
       <div className="ds-order__top"><span className="ds-order__nr">{sc.orderNr}</span>{sc.route&&<span style={{marginLeft:'auto',fontFamily:'ui-monospace,monospace',fontSize:11}}>{sc.route}</span>}</div>
-      {sc.driver1&&<div className="ds-order__name"><span>\u{1f464}</span>{sc.driver1}{sc.driver2&&' + '+sc.driver2}</div>}
-    </div></div>
+      {sc.driver1&&<div className="ds-order__name"><span>👤</span>{sc.driver1}{sc.driver2&&' + '+sc.driver2}</div>}
+    </div>
+    {(adresStr||productStr||sc.tijdvak)&&<div className="ds-order__body">
+      {adresStr&&<div className="ds-row"><span className="ds-row__l">Adres</span><span className="ds-row__v">{adresStr}</span></div>}
+      {productStr&&<div className="ds-row"><span className="ds-row__l">Product</span><span className="ds-row__v">{productStr}</span></div>}
+      {sc.tijdvak&&<div className="ds-row"><span className="ds-row__l">Tijdvak</span><span className="ds-row__v is-mono">{sc.tijdvak}</span></div>}
+      {sc.email&&<div className="ds-row"><span className="ds-row__l">E-mail</span><span className="ds-row__v">{sc.email}</span></div>}
+    </div>}
+    </div>
   );}
   function ProductChip(){if(!chip)return null;return <div style={{fontSize:11,color:'#5a6a7f',background:'#eef1f4',border:'1px solid #e2e7ec',borderRadius:12,padding:'3px 8px',display:'inline-block',marginBottom:8}}>{chip}</div>;}
   function StepHead(){return(
@@ -946,24 +940,6 @@ function App(){
       {trail.length>0&&<ul className="ds-trail">{trail.map(function(v,i){return <li key={i}>{v}</li>;})}</ul>}
     </div>
   );}
-
-  // HERVATTEN SCREEN
-  if(hervatten){
-    var staat=DS.herstelSessie(sc.orderNr);
-    return (
-      <div>
-        <Header/><StageBanner/>
-        <div className="ds-body">
-          <div className="ds-note is-ok"><div><strong>⏸ Geparkeerde sessie gevonden</strong><br/>Wil je verdergaan waar je gebleven was?</div></div>
-          <div className="ds-actions">
-            <button className="ds-btn ds-btn--secondary ds-btn--lg" onClick={function(){if(staat){setConv({cd:Object.assign({},initConv(sc).cd,staat.callData),ak:staat.answeredKeys||[],afk:staat.autoFilledKeys||[],isAG:staat.isProductAutoGuessed||false});}setHervatten(false);}}>Ja, verder gaan</button>
-            <button className="ds-btn ds-btn--lg" onClick={function(){DS.verwijderGeparkeerd(sc.orderNr);setConv(initConv(sc));setHervatten(false);}}>Nee, opnieuw beginnen</button>
-          </div>
-        </div>
-        <div className="ds-footer"><span className="ds-hint">STAGING</span></div>
-      </div>
-    );
-  }
 
   // SUBMIT SCREEN
   if(!stap){
@@ -993,11 +969,11 @@ function App(){
               {isGep?(
                 <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:6}}>
                   <button className="ds-btn ds-btn--lg" onClick={function(){DS.kopieerNaarKlembord(cd);}}>Klembord</button>
-                  <button className="ds-btn ds-btn--secondary ds-btn--lg" onClick={function(){DS.verwijderGeparkeerd(sc.orderNr);fetch(DS.GAS_URL+DS.bouwLogParams(cd)).catch(function(){});setLogDone(true);}}>Loggen</button>
-                  <button className="ds-btn ds-btn--primary ds-btn--lg" onClick={function(){DS.kopieerNaarKlembord(cd);DS.verwijderGeparkeerd(sc.orderNr);fetch(DS.GAS_URL+DS.bouwLogParams(cd)).catch(function(){});setLogDone(true);}}>Loggen + Klembord</button>
+                  <button className="ds-btn ds-btn--secondary ds-btn--lg" onClick={function(){fetch(DS.GAS_URL+DS.bouwLogParams(cd)).catch(function(){});setLogDone(true);}}>Loggen</button>
+                  <button className="ds-btn ds-btn--primary ds-btn--lg" onClick={function(){DS.kopieerNaarKlembord(cd);fetch(DS.GAS_URL+DS.bouwLogParams(cd)).catch(function(){});setLogDone(true);}}>Loggen + Klembord</button>
                 </div>
               ):(
-                <button className="ds-btn ds-btn--secondary ds-btn--lg" style={{width:'100%'}} onClick={function(){DS.verwijderGeparkeerd(sc.orderNr);fetch(DS.GAS_URL+DS.bouwLogParams(cd)).catch(function(){});setLogDone(true);}}>✓ Loggen</button>
+                <button className="ds-btn ds-btn--secondary ds-btn--lg" style={{width:'100%'}} onClick={function(){fetch(DS.GAS_URL+DS.bouwLogParams(cd)).catch(function(){});setLogDone(true);}}>✓ Loggen</button>
               )}
             </div>
           )}
