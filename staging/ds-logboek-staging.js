@@ -6,7 +6,7 @@
 // React, ReactDOM, DS, and browser globals are accessible inside JSX.
 
 (function () {
-  const STAGING_VERSION = "0.3.4-staging";
+  const STAGING_VERSION = "0.3.5-staging";
   const ROOT_ID = "ds-logboek-staging-root";
   const STYLE_ID = "ds-logboek-staging-style";
   const GAS_URL = "https://script.google.com/a/macros/coolblue.nl/s/AKfycbxb-OwLCFGlDQ48qz3KnGnmsgnVLWxuOjvEr7UG3M3z0WzO0kVsTKGd_8mZjtvHvPHnEg/exec";
@@ -913,7 +913,7 @@ function App(){
   function Header(){return (
     <div className="ds-header">
       <div className="ds-header__brand"><div className="ds-logo"><div className="ds-logo__dot"></div>&nbsp;DS Logboek</div>{sc.orderNr&&<span className="ds-header__sub">{sc.orderNr}</span>}</div>
-      <div className="ds-header__right"><button className="ds-iconbtn" title="Sluiten" onClick={function(){document.getElementById('ds-logboek-staging-root').remove();}}>✕</button><span className="ds-version">{DS.version}</span></div>
+      <div className="ds-header__right"><button className="ds-iconbtn" title="Sluiten" onClick={function(){document.getElementById('ds-logboek-staging-root').remove();}}>✕</button></div>
     </div>
   );}
   function StageBanner(){return <div className="ds-stage-banner">⚠ STAGING — design preview</div>;}
@@ -975,7 +975,7 @@ function App(){
             </div>
           )}
         </div>
-        <div className="ds-footer">{canBack&&<button className="ds-btn ds-btn--ghost" onClick={goBack}>← Terug</button>}<span className="ds-hint">DS Logboek STAGING</span></div>
+        <div className="ds-footer">{canBack&&<button className="ds-btn ds-btn--ghost" onClick={goBack}>← Terug</button>}<span className="ds-hint">{DS.version}</span></div>
       </div>
     );
   }
@@ -1121,7 +1121,7 @@ function App(){
           {stepBody}
         </div>
       </div>
-      <div className="ds-footer">{canBack&&<button className="ds-btn ds-btn--ghost" onClick={goBack}>← Terug</button>}<span className="ds-hint">STAGING</span></div>
+      <div className="ds-footer">{canBack&&<button className="ds-btn ds-btn--ghost" onClick={goBack}>← Terug</button>}<span className="ds-hint">{DS.version}</span></div>
     </div>
   );
 }
