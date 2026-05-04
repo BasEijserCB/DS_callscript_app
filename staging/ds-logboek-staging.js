@@ -6,7 +6,7 @@
 // React, ReactDOM, DS, and browser globals are accessible inside JSX.
 
 (function () {
-  const STAGING_VERSION = "0.3.1-staging";
+  const STAGING_VERSION = "0.3.3-staging";
   const ROOT_ID = "ds-logboek-staging-root";
   const STYLE_ID = "ds-logboek-staging-style";
   const GAS_URL = "https://script.google.com/a/macros/coolblue.nl/s/AKfycbxb-OwLCFGlDQ48qz3KnGnmsgnVLWxuOjvEr7UG3M3z0WzO0kVsTKGd_8mZjtvHvPHnEg/exec";
@@ -920,10 +920,9 @@ function App(){
   function OrderCard(){if(!sc.orderNr)return null;
     var adresStr=(sc.adres&&sc.pc)?sc.adres+', '+sc.pc:sc.adres||sc.pc||'';
     var productStr=sc.alleGescrapteProducten&&sc.alleGescrapteProducten.length>0?sc.alleGescrapteProducten.join(', '):'';
+    if(!adresStr&&!productStr&&!sc.tijdvak&&!sc.email)return null;
     return(
-    <div className="ds-order"><div className="ds-order__head">
-      <div className="ds-order__top"><span className="ds-order__nr">{sc.orderNr}</span>{sc.route&&<span style={{marginLeft:'auto',fontFamily:'ui-monospace,monospace',fontSize:11}}>{sc.route}</span>}</div>
-    </div>
+    <div className="ds-order">
     {(adresStr||productStr||sc.tijdvak)&&<div className="ds-order__body">
       {adresStr&&<div className="ds-row"><span className="ds-row__l">Adres</span><span className="ds-row__v">{adresStr}</span></div>}
       {productStr&&<div className="ds-row"><span className="ds-row__l">Product</span><span className="ds-row__v">{productStr}</span></div>}
@@ -935,7 +934,6 @@ function App(){
   function ProductChip(){if(!chip)return null;return <div style={{fontSize:11,color:'#5a6a7f',background:'#eef1f4',border:'1px solid #e2e7ec',borderRadius:12,padding:'3px 8px',display:'inline-block',marginBottom:8}}>{chip}</div>;}
   function StepHead(){return(
     <div className="ds-step-head">
-      {canBack&&<button className="ds-back" onClick={goBack}>← Terug</button>}
       {trail.length>0&&<ul className="ds-trail">{trail.map(function(v,i){return <li key={i}>{v}</li>;})}</ul>}
     </div>
   );}
