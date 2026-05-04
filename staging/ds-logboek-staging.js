@@ -605,7 +605,7 @@
     --ok:#2c8a4a;--ok-bg:#e6f4ec;--warn:#b85c00;--warn-bg:#fdf1de;
     --r-sm:4px;--r-md:6px;--r-lg:10px;
     position:fixed;bottom:16px;left:16px;width:460px;
-    height:640px;
+    height:768px;
     max-height:calc(100vh - 32px);
     z-index:2147483645;
     font:13.5px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI","Helvetica Neue",Arial,sans-serif;
@@ -923,7 +923,6 @@ function App(){
     return(
     <div className="ds-order"><div className="ds-order__head">
       <div className="ds-order__top"><span className="ds-order__nr">{sc.orderNr}</span>{sc.route&&<span style={{marginLeft:'auto',fontFamily:'ui-monospace,monospace',fontSize:11}}>{sc.route}</span>}</div>
-      {sc.driver1&&<div className="ds-order__name"><span>👤</span>{sc.driver1}{sc.driver2&&' + '+sc.driver2}</div>}
     </div>
     {(adresStr||productStr||sc.tijdvak)&&<div className="ds-order__body">
       {adresStr&&<div className="ds-row"><span className="ds-row__l">Adres</span><span className="ds-row__v">{adresStr}</span></div>}
@@ -995,7 +994,7 @@ function App(){
           <button className="ds-opt" onClick={function(){ans('bellerType','Anders',{locatie:'Winkel'},['locatie']);}}><span className="ds-opt__label">Winkel belt</span></button>
           <button className="ds-opt" onClick={function(){ans('bellerType','Teamleider');}}><span className="ds-opt__label">Teamleider belt</span></button>
         </div>
-        <details className="ds-disclose"><summary>Andere bellers ▾</summary>
+        <details className="ds-disclose" onToggle={function(e){if(e.target.open)e.target.scrollIntoView({behavior:'smooth',block:'nearest'});}}><summary>Andere bellers ▾</summary>
           <div className="ds-stack" style={{paddingTop:8}}>
             {['Technische Dienst','Yeply','G4S'].map(function(loc){return(
               <button key={loc} className="ds-opt" onClick={function(){ans('bellerType','Andere beller',{locatie:loc},['locatie']);}}>
@@ -1011,7 +1010,7 @@ function App(){
     stepBody=(
       <div className="ds-stack">
         {(stap.opties||[]).map(function(o){return <button key={o} className="ds-opt" onClick={function(){handleSelect(o);}}><span className="ds-opt__label">{o}</span></button>;})}
-        <details className="ds-disclose"><summary>Afhandeling buiten DS ▾</summary>
+        <details className="ds-disclose" onToggle={function(e){if(e.target.open)e.target.scrollIntoView({behavior:'smooth',block:'nearest'});}}><summary>Afhandeling buiten DS ▾</summary>
           <div className="ds-stack" style={{paddingTop:8}}>
             {['Product niet aanwezig','Klant moet KS bellen','Held moet dit bij afmelden regelen met TL','Verkeerd gelabeld product','Overig'].map(function(o){return(
               <button key={o} className="ds-opt" onClick={function(){ans('afwijkend_reden',o,{locatie:'Afhandeling buiten DS'},['locatie'],[],['probleem','product','formaatTV','milieuretour_type','uitkomst','geplandeRoute','next_day_reden','geen_oplossing_reden','advies_gelukt','product_keuze']);}}>
@@ -1026,7 +1025,7 @@ function App(){
     stepBody=(
       <div className="ds-stack">
         {(stap.opties||[]).map(function(o){return <button key={o} className="ds-opt" onClick={function(){handleSelect(o);}}><span className="ds-opt__label">{o}</span></button>;})}
-        <details className="ds-disclose"><summary>Advies gegeven ▾</summary>
+        <details className="ds-disclose" onToggle={function(e){if(e.target.open)e.target.scrollIntoView({behavior:'smooth',block:'nearest'});}}><summary>Advies gegeven ▾</summary>
           <div className="ds-stack" style={{paddingTop:8}}>
             <button className="ds-opt" onClick={function(){ans('advies_gelukt','Ja, service uitgevoerd',{onderweg_type:'Advies gegeven',locatie:'Onderweg'},['locatie','onderweg_type']);}}>
               <span className="ds-opt__label">Ja, service alsnog uitgevoerd vandaag</span>
