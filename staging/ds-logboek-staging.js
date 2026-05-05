@@ -6,7 +6,7 @@
 // React, ReactDOM, DS, and browser globals are accessible inside JSX.
 
 (function () {
-  const STAGING_VERSION = "0.4.1-staging";
+  const STAGING_VERSION = "0.4.3-staging";
   const ROOT_ID = "ds-logboek-staging-root";
   const STYLE_ID = "ds-logboek-staging-style";
   const GAS_URL = "https://script.google.com/a/macros/coolblue.nl/s/AKfycbxb-OwLCFGlDQ48qz3KnGnmsgnVLWxuOjvEr7UG3M3z0WzO0kVsTKGd_8mZjtvHvPHnEg/exec";
@@ -64,7 +64,7 @@
       email = gt('Static.Visit.Email')||gt('Email')||'';
       alleGescrapteProducten = Array.from(document.querySelectorAll("[data-bind*='ArticleDescription']"))
         .map(function(el){ return el.innerText.trim(); })
-        .filter(function(n){ var l=n.toLowerCase(); return n&&!l.includes('coolblue-doos')&&!l.includes('coolblue box')&&!l.includes('rest van je bestelling')&&!l.includes('rest of your order')&&!l.includes('verzameldoos'); })
+        .filter(function(n){ var l=n.toLowerCase(); return n&&!l.includes('coolblue-doos')&&!l.includes('coolblue box')&&!l.includes('rest van je bestelling')&&!l.includes('rest of your order')&&!l.includes('verzameldoos')&&!l.includes('stapelkit'); })
         .filter(function(n,i,a){ return a.indexOf(n)===i; });
     } else {
       var raw = basicField('Pakbonnummer')||basicField('Order nr. verlader')||basicField('Afnemer nummer')||'';
@@ -81,7 +81,7 @@
         var omschr=(cells[2].textContent||'').trim(), soort=(cells[4].textContent||'').trim().toLowerCase();
         if(!omschr) return;
         var l=omschr.toLowerCase();
-        if(l.includes('coolblue-doos')||l.includes('coolblue box')||l.includes('rest van je bestelling')||l.includes('rest of your order')||l.includes('verzameldoos')) return;
+        if(l.includes('coolblue-doos')||l.includes('coolblue box')||l.includes('rest van je bestelling')||l.includes('rest of your order')||l.includes('verzameldoos')||l.includes('stapelkit')) return;
         if(soort==='barcodes') return;
         if(/^[A-Z0-9]{6,}$/.test(omschr)) return;
         if(alleGescrapteProducten.indexOf(omschr)===-1){ alleGescrapteProducten.push(omschr); artikelsoortenMap[omschr]=soort; }
@@ -234,17 +234,16 @@
     function eprod() { return effectiefProduct(cd); }
     function skipDT() { return skipDienstType(cd); }
     function getProbleemOpties() {
-      if (meerdereProducten && !ak.includes('product_keuze')) {
-        var heeftTV=alleProds.some(isTV), heeftSB=alleProds.some(isSoundbar);
-        var andereProds=alleProds.filter(function(n){ return !isTV(n); });
-        var andereZijnAcc=andereProds.length>0&&andereProds.every(function(n){ return !isWitgoed(n); });
-        if (heeftTV&&(heeftSB||andereZijnAcc)) return ['TV + Soundbar installeren','TV + Soundbar ophangen en installeren','TV installeren','TV ophangen en installeren','Milieuretour / Pick-up ophalen','Schade / Defect'];
-        var union=[];
-        alleProds.forEach(function(naam){
-          var det=detecteerType(naam); var type=det&&det.typeGuess?det.typeGuess:(isTV(naam)?'televisie':naam);
-          getOptiesVoorType(type).forEach(function(o){ if(!union.includes(o)) union.push(o); });
+      if (ak.includes('product_keuze') && cd.model) {
+        var namen = cd.model.split(', ');
+        if (namen.length <= 1) return getOptiesVoorType(cd.product||cd.model);
+        var union = [];
+        namen.forEach(function(naam) {
+          var det = detecteerType(naam);
+          var type = det && det.typeGuess ? det.typeGuess : (isTV(naam) ? 'televisie' : naam.toLowerCase());
+          getOptiesVoorType(type).forEach(function(o) { if (!union.includes(o)) union.push(o); });
         });
-        return union;
+        return union.length > 0 ? union : alleProbleemOpties;
       }
       return getOptiesVoorType(cd.product||cd.model||'');
     }
@@ -294,14 +293,14 @@
     }
 
     // ── CBB / ANDERS FLOW ────────────────────────────────────────
-    if (meerdereProducten && !ak.includes('product_keuze') && ak.includes('probleem') && cd.probleem!=='Advies gegeven') {
-      s.push({key:'product_keuze',label:'Over welk product gaat het?',type:'product-multi',opties:(alleProds||[]).map(maakProductLabel)});
-      if (!ak.includes('product_keuze')) return s;
-    }
     s.push({key:'locatie',label:'Waar zijn de helden?',type:'locatie-select',opties:['Bij de klant','Onderweg','Vraag over depot / hub']});
     if (!ak.includes('locatie')) return s;
 
     if (cd.locatie==='Bij de klant') {
+      if (meerdereProducten && !ak.includes('product_keuze')) {
+        s.push({key:'product_keuze',label:'Over welk product gaat de vraag?',type:'product-multi',opties:(alleProds||[]).map(maakProductLabel)});
+        if (!ak.includes('product_keuze')) return s;
+      }
       if (!meerdereProducten&&!ak.includes('product')) {
         s.push({key:'product',label:'Om welk apparaat gaat het?',type:'product-type-keuze'});
         if (!ak.includes('product')) return s;
@@ -393,6 +392,7 @@
       s.push({key:'ks_reden',label:(isW?'Wat is de reden van het winkelbelletje?':'Wat is de reden van het KS-belletje?'),type:'ux-select',opties:isW?['Nazorg nodig','Winkel vraagt om held terug te sturen','Advies gegeven aan Winkel','Informatie over vracht','Witgoed Demo Wissel','Spullen achtergelaten bij klant']:['Nazorg nodig','KS vraagt om held terug te sturen','Advies gegeven aan KS','Spullen achtergelaten bij klant','Bezorgadres/telefoonnummer klant doorgeven aan held']});
       if (ak.includes('ks_reden')) {
         if (cd.ks_reden==='Nazorg nodig') {
+          if (meerdereProducten && !ak.includes('product_keuze')) { s.push({key:'product_keuze',label:'Over welk product gaat de vraag?',type:'product-multi',opties:(alleProds||[]).map(maakProductLabel)}); if (!ak.includes('product_keuze')) return s; }
           if (!meerdereProducten&&!ak.includes('product')) { s.push({key:'product',label:'Om welk apparaat gaat het?',type:'product-type-keuze'}); if (!ak.includes('product')) return s; }
           if (ak.includes('product')&&pnv()) { s.push({key:'productVerfijnd',label:'Welk type product precies?',type:'ux-select',opties:getProductVerfijningOpties(cd.product)}); if (!ak.includes('productVerfijnd')) return s; }
           s.push({key:'probleem',label:'Wat moet er gebeuren bij de klant?',type:'probleem-grouped',opties:getProbleemOpties()});
@@ -1098,7 +1098,7 @@ function App(){
           if(pr3==='Televisie'){var tvM3=eersteNaam.toLowerCase().match(/(?:qe|oled|kd|xr|ue|gq|tx-)?([4-8]\\d)[a-z]/i)||eersteNaam.toLowerCase().match(/\\b([4-8]\\d)\\s?(inch|")\\b/i);if(tvM3){ex3.formaatTV=parseInt(tvM3[1])>=55?'Ja (>= 55 inch)':'Nee (< 55 inch)';ak3.push('formaatTV');afk3.push('formaatTV');}}
           ans('product_keuze',multiSel.join(', '),ex3,ak3,afk3);
         }}>Volgende ({multiSel.length} geselecteerd)</button>
-        <div className="ds-note is-info"><div>Geldt het probleem voor meerdere producten? Klik ze dan allemaal aan.</div></div>
+        <div className="ds-note is-info"><div>Geldt de vraag voor meerdere producten? Klik ze dan allemaal aan.</div></div>
       </div>
     );
   }else if(stap.type==='product-type-keuze'){
