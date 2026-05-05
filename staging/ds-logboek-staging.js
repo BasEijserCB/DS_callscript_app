@@ -1,4 +1,4 @@
-// ds-logboek-staging.js  v0.3.1-staging
+// ds-logboek-staging.js  v0.4.1-staging
 // Staging build — new side-panel design with real data layer.
 // Scraping, flow engine, and logging ported from ds-logboek.js.
 // UI: React+Babel from CDN, mounted in #ds-logboek-staging-root.
@@ -6,7 +6,7 @@
 // React, ReactDOM, DS, and browser globals are accessible inside JSX.
 
 (function () {
-  const STAGING_VERSION = "0.4.0-staging";
+  const STAGING_VERSION = "0.4.1-staging";
   const ROOT_ID = "ds-logboek-staging-root";
   const STYLE_ID = "ds-logboek-staging-style";
   const GAS_URL = "https://script.google.com/a/macros/coolblue.nl/s/AKfycbxb-OwLCFGlDQ48qz3KnGnmsgnVLWxuOjvEr7UG3M3z0WzO0kVsTKGd_8mZjtvHvPHnEg/exec";
@@ -177,19 +177,15 @@
   var alleProbleemOpties = ['Trekschakelaar aansluiten','Milieuretour / Pick-up ophalen','Plaatsen / Naar boven tillen','Apparaat inbouwen (Keuken)','Aansluiting controleren','Schade / Defect','TV installeren','TV ophangen en installeren','TV + Soundbar installeren','TV + Soundbar ophangen en installeren','Stapelkit plaatsen','Deur omdraaien','Service niet uitvoerbaar','Verkeerd gelabeld product','Blijverkoop vergeten'];
   function getOptiesVoorType(type) {
     var p=(type||'').toLowerCase();
-    if (p==='televisie'||p.includes('tv')) return ['TV installeren','TV ophangen en installeren','Milieuretour / Pick-up ophalen','Schade / Defect','Service niet uitvoerbaar','Onverwacht retour','Milieuretour past niet in bus','Blijverkoop vergeten'];
-    if (p==='soundbar'||p.includes('soundbar')) return ['TV + Soundbar installeren','TV + Soundbar ophangen en installeren','Milieuretour / Pick-up ophalen','Schade / Defect','Onverwacht retour','Milieuretour past niet in bus','Blijverkoop vergeten'];
-    if (p.includes('kookplaat')) return ['Milieuretour / Pick-up ophalen','Schade / Defect','Service niet uitvoerbaar','Onverwacht retour','Milieuretour past niet in bus','Blijverkoop vergeten'];
-    if (p.includes('oven')||p.includes('magnetron')||p.includes('afzuigkap')) return ['Apparaat inbouwen (Keuken)','Aansluiting controleren','Milieuretour / Pick-up ophalen','Schade / Defect','Service niet uitvoerbaar','Onverwacht retour','Milieuretour past niet in bus','Blijverkoop vergeten'];
-    if (p==='fornuis'||p.includes('fornuis')) return ['Service niet uitvoerbaar','Milieuretour / Pick-up ophalen','Schade / Defect','Onverwacht retour','Blijverkoop vergeten'];
-    if (p.includes('inbouw koelkast')) return ['Apparaat inbouwen (Keuken)','Deur omdraaien','Milieuretour / Pick-up ophalen','Aansluiting controleren','Schade / Defect','Onverwacht retour','Milieuretour past niet in bus','Blijverkoop vergeten'];
-    if (p.includes('inbouw vriezer')) return ['Apparaat inbouwen (Keuken)','Milieuretour / Pick-up ophalen','Aansluiting controleren','Schade / Defect','Onverwacht retour','Milieuretour past niet in bus','Blijverkoop vergeten'];
-    if (p.includes('inbouw vaatwasser')) return ['Apparaat inbouwen (Keuken)','Deur omdraaien','Aansluiting controleren','Milieuretour / Pick-up ophalen','Schade / Defect','Onverwacht retour','Milieuretour past niet in bus','Blijverkoop vergeten'];
-    if (p.includes('inbouw')) return ['Apparaat inbouwen (Keuken)','Milieuretour / Pick-up ophalen','Aansluiting controleren','Deur omdraaien','Onverwacht retour','Milieuretour past niet in bus','Blijverkoop vergeten'];
-    if (p.includes('wasmachine')||p.includes('wasdroog')) return ['Trekschakelaar aansluiten','Plaatsen / Naar boven tillen','Milieuretour / Pick-up ophalen','Stapelkit plaatsen','Aansluiting controleren','Schade / Defect','Onverwacht retour','Milieuretour past niet in bus','Blijverkoop vergeten'];
-    if (p.includes('droger')) return ['Trekschakelaar aansluiten','Plaatsen / Naar boven tillen','Milieuretour / Pick-up ophalen','Stapelkit plaatsen','Deur omdraaien','Schade / Defect','Aansluiting controleren','Onverwacht retour','Milieuretour past niet in bus','Blijverkoop vergeten'];
-    if (p.includes('koelkast')||p.includes('vriezer')||p.includes('koel-vries')) return ['Plaatsen / Naar boven tillen','Deur omdraaien','Apparaat inbouwen (Keuken)','Milieuretour / Pick-up ophalen','Aansluiting controleren','Schade / Defect','Onverwacht retour','Milieuretour past niet in bus','Blijverkoop vergeten'];
-    if (p.includes('vaatwasser')) return ['Apparaat inbouwen (Keuken)','Plaatsen / Naar boven tillen','Deur omdraaien','Aansluiting controleren','Milieuretour / Pick-up ophalen','Schade / Defect','Onverwacht retour','Milieuretour past niet in bus','Blijverkoop vergeten'];
+    if (p==='televisie'||p.includes('tv')||p.includes('televisie')||p.match(/(oled|qled|inch)/)) return ['TV installeren','TV ophangen en installeren','Milieuretour / Pick-up ophalen','Schade / Defect'];
+    if (p==='soundbar'||p.includes('soundbar')) return ['TV + Soundbar installeren','TV + Soundbar ophangen en installeren','Milieuretour / Pick-up ophalen','Schade / Defect'];
+    if (p==='oven'||p==='magnetron'||p.includes('oven')||p.includes('magnetron')||p.includes('kookplaat')||p.includes('afzuigkap')||p.includes('wasemkap')) return ['Apparaat inbouwen (Keuken)','Milieuretour / Pick-up ophalen','Aansluiting controleren','Schade / Defect'];
+    if (p==='fornuis'||p.includes('fornuis')) return [];
+    if (p.includes('inbouw')) return ['Apparaat inbouwen (Keuken)','Milieuretour / Pick-up ophalen','Aansluiting controleren','Deur omdraaien'];
+    if (p.includes('wasmachine')||p.includes('wasdroog')) return ['Trekschakelaar aansluiten','Plaatsen / Naar boven tillen','Stapelkit plaatsen','Milieuretour / Pick-up ophalen','Aansluiting controleren'];
+    if (p.includes('droger')) return ['Trekschakelaar aansluiten','Plaatsen / Naar boven tillen','Stapelkit plaatsen','Deur omdraaien','Milieuretour / Pick-up ophalen','Aansluiting controleren'];
+    if (p.includes('koelkast')||p.includes('vriezer')||p.includes('koel-vries')) return ['Plaatsen / Naar boven tillen','Deur omdraaien','Milieuretour / Pick-up ophalen','Aansluiting controleren','Schade / Defect'];
+    if (p.includes('vaatwasser')) return ['Plaatsen / Naar boven tillen','Apparaat inbouwen (Keuken)','Milieuretour / Pick-up ophalen','Aansluiting controleren'];
     return alleProbleemOpties;
   }
 
@@ -242,7 +238,7 @@
         var heeftTV=alleProds.some(isTV), heeftSB=alleProds.some(isSoundbar);
         var andereProds=alleProds.filter(function(n){ return !isTV(n); });
         var andereZijnAcc=andereProds.length>0&&andereProds.every(function(n){ return !isWitgoed(n); });
-        if (heeftTV&&(heeftSB||andereZijnAcc)) return ['TV + Soundbar installeren','TV + Soundbar ophangen en installeren','TV installeren','TV ophangen en installeren','Milieuretour / Pick-up ophalen','Schade / Defect','Service niet uitvoerbaar','Onverwacht retour','Milieuretour past niet in bus','Blijverkoop vergeten'];
+        if (heeftTV&&(heeftSB||andereZijnAcc)) return ['TV + Soundbar installeren','TV + Soundbar ophangen en installeren','TV installeren','TV ophangen en installeren','Milieuretour / Pick-up ophalen','Schade / Defect'];
         var union=[];
         alleProds.forEach(function(naam){
           var det=detecteerType(naam); var type=det&&det.typeGuess?det.typeGuess:(isTV(naam)?'televisie':naam);
@@ -637,9 +633,7 @@
     align-items:center;justify-content:center;padding:0}
   #${ROOT_ID} .ds-iconbtn:hover{background:rgba(255,255,255,.22)}
   #${ROOT_ID} .ds-version{font:600 10px ui-monospace,monospace;opacity:.65;letter-spacing:.03em}
-  #${ROOT_ID} .ds-stage-banner{background:#fff7e2;border-bottom:1px solid #f4dca0;color:#7a5300;
-    font-size:11px;padding:6px 12px;display:flex;align-items:center;gap:6px;font-weight:600}
-  #${ROOT_ID} .ds-order{background:var(--cb-blue-bg);border-bottom:1px solid var(--cb-blue-line);flex-shrink:0}
+#${ROOT_ID} .ds-order{background:var(--cb-blue-bg);border-bottom:1px solid var(--cb-blue-line);flex-shrink:0}
   #${ROOT_ID} .ds-order__head{width:100%;background:transparent;border:0;text-align:left;
     padding:10px 14px;position:relative;display:flex;flex-direction:column;gap:3px}
   #${ROOT_ID} .ds-order__top{display:flex;align-items:center;gap:8px;font-size:11px;
@@ -836,6 +830,22 @@ function initConv(sc){
   return {cd:cd,ak:ak,afk:afk,isAG:isAG};
 }
 
+function ProductPill({naam, index}){
+  var [open,setOpen]=useState(false);
+  var det=DS.detecteerType(naam);
+  var type=det&&det.typeGuess?det.typeGuess.charAt(0).toUpperCase()+det.typeGuess.slice(1):null;
+  var n=naam.toLowerCase();
+  if(!type&&(n.includes('tv')||n.includes('televisie')||n.match(/(oled|qled)/)))type='Televisie';
+  if(!type&&(n.includes('soundbar')||n.includes('sound bar')))type='Soundbar';
+  var label=type||('Product '+(index+1));
+  return(
+    <span style={{position:'relative',display:'inline-block'}}>
+      <span onClick={function(){setOpen(function(v){return !v;});}} style={{background:'#dde8f0',border:'1px solid #b8d0e4',borderRadius:4,padding:'2px 7px',fontSize:11,fontWeight:700,cursor:'pointer',userSelect:'none',color:'#1a4a6e'}}>{label}</span>
+      {open&&<div style={{position:'absolute',bottom:'calc(100% + 4px)',left:0,background:'#fff',border:'1px solid #b8d0e4',borderRadius:4,padding:'5px 8px',fontSize:11,boxShadow:'0 2px 8px rgba(0,0,0,.14)',whiteSpace:'nowrap',zIndex:20,color:'#1a3a52',maxWidth:260,wordBreak:'break-all'}}>{naam}</div>}
+    </span>
+  );
+}
+
 function App(){
   var sc=DS.scraped;
   var adresLand=(function(){var p=(sc.pc||'').replace(/\\s/g,'').toUpperCase();if(/[A-Z]/.test(p)&&p.replace(/\\D/g,'').length===4)return 'NL';if(!/[A-Z]/.test(p)&&p.length===4)return 'BE';if(!/[A-Z]/.test(p)&&p.length===5)return 'DE';return 'NL';})();
@@ -916,16 +926,15 @@ function App(){
       <div className="ds-header__right"><button className="ds-iconbtn" title="Sluiten" onClick={function(){document.getElementById('ds-logboek-staging-root').remove();}}>✕</button></div>
     </div>
   );}
-  function StageBanner(){return <div className="ds-stage-banner">⚠ STAGING — design preview</div>;}
   function OrderCard(){if(!sc.orderNr)return null;
     var adresStr=(sc.adres&&sc.pc)?sc.adres+', '+sc.pc:sc.adres||sc.pc||'';
-    var productStr=sc.alleGescrapteProducten&&sc.alleGescrapteProducten.length>0?sc.alleGescrapteProducten.join(', '):'';
-    if(!adresStr&&!productStr&&!sc.tijdvak&&!sc.email)return null;
+    var prods=sc.alleGescrapteProducten||[];
+    if(!adresStr&&prods.length===0&&!sc.tijdvak&&!sc.email)return null;
     return(
     <div className="ds-order">
-    {(adresStr||productStr||sc.tijdvak)&&<div className="ds-order__body">
+    {(adresStr||prods.length>0||sc.tijdvak)&&<div className="ds-order__body">
       {adresStr&&<div className="ds-row"><span className="ds-row__l">Adres</span><span className="ds-row__v">{adresStr}</span></div>}
-      {productStr&&<div className="ds-row"><span className="ds-row__l">Product</span><span className="ds-row__v">{productStr}</span></div>}
+      {prods.length>0&&<div className="ds-row"><span className="ds-row__l">Product</span><span className="ds-row__v" style={{display:'flex',gap:4,flexWrap:'wrap'}}>{prods.map(function(naam,i){return <ProductPill key={i} naam={naam} index={i}/>;})}</span></div>}
       {sc.tijdvak&&<div className="ds-row"><span className="ds-row__l">Tijdvak</span><span className="ds-row__v is-mono">{sc.tijdvak}</span></div>}
       {sc.email&&<div className="ds-row"><span className="ds-row__l">E-mail</span><span className="ds-row__v">{sc.email}</span></div>}
     </div>}
@@ -944,7 +953,7 @@ function App(){
     var cat=DS.berekenCategorie(cd);
     return (
       <div style={{display:'flex',flexDirection:'column',height:'100%'}}>
-        <Header/><StageBanner/><OrderCard/>
+        <Header/><OrderCard/>
         <div className="ds-body">
           <ProductChip/>
           {cd.bellerType==='CBF'&&cd.locatie==='Vraag voor het depot'&&<div className="ds-note is-info"><div><strong>Advies aan de fietser</strong><br/>Voor deze vraag dient de fietser contact op te nemen met het depot.</div></div>}
@@ -1120,7 +1129,7 @@ function App(){
 
   return (
     <div style={{display:'flex',flexDirection:'column',height:'100%'}}>
-      <Header/><StageBanner/><OrderCard/>
+      <Header/><OrderCard/>
       <div className="ds-body">
         <ProductChip/>
         <StepHead/>
