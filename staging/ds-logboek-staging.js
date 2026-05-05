@@ -6,7 +6,7 @@
 // React, ReactDOM, DS, and browser globals are accessible inside JSX.
 
 (function () {
-  const STAGING_VERSION = "0.3.8-staging";
+  const STAGING_VERSION = "0.3.9-staging";
   const ROOT_ID = "ds-logboek-staging-root";
   const STYLE_ID = "ds-logboek-staging-style";
   const GAS_URL = "https://script.google.com/a/macros/coolblue.nl/s/AKfycbxb-OwLCFGlDQ48qz3KnGnmsgnVLWxuOjvEr7UG3M3z0WzO0kVsTKGd_8mZjtvHvPHnEg/exec";
@@ -604,8 +604,8 @@
     --paper:#fff;--line:#e2e7ec;--line-soft:#eef1f4;
     --ok:#2c8a4a;--ok-bg:#e6f4ec;--warn:#b85c00;--warn-bg:#fdf1de;
     --r-sm:4px;--r-md:6px;--r-lg:10px;
-    position:fixed;bottom:16px;left:16px;width:460px;
-    height:768px;
+    position:fixed;bottom:16px;left:16px;width:400px;
+    height:680px;
     max-height:calc(100vh - 32px);
     z-index:2147483645;
     font:13.5px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI","Helvetica Neue",Arial,sans-serif;
