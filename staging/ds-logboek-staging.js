@@ -6,7 +6,7 @@
 // React, ReactDOM, DS, and browser globals are accessible inside JSX.
 
 (function () {
-  const STAGING_VERSION = "0.3.9-staging";
+  const STAGING_VERSION = "0.4.0-staging";
   const ROOT_ID = "ds-logboek-staging-root";
   const STYLE_ID = "ds-logboek-staging-style";
   const GAS_URL = "https://script.google.com/a/macros/coolblue.nl/s/AKfycbxb-OwLCFGlDQ48qz3KnGnmsgnVLWxuOjvEr7UG3M3z0WzO0kVsTKGd_8mZjtvHvPHnEg/exec";
@@ -176,16 +176,20 @@
   }
   var alleProbleemOpties = ['Trekschakelaar aansluiten','Milieuretour / Pick-up ophalen','Plaatsen / Naar boven tillen','Apparaat inbouwen (Keuken)','Aansluiting controleren','Schade / Defect','TV installeren','TV ophangen en installeren','TV + Soundbar installeren','TV + Soundbar ophangen en installeren','Stapelkit plaatsen','Deur omdraaien','Service niet uitvoerbaar','Verkeerd gelabeld product','Blijverkoop vergeten'];
   function getOptiesVoorType(type) {
-    var p=type.toLowerCase();
-    if (p==='televisie'||p.includes('tv')) return ['TV installeren','TV ophangen en installeren','Milieuretour / Pick-up ophalen','Schade / Defect'];
-    if (p==='soundbar'||p.includes('soundbar')) return ['TV + Soundbar installeren','TV + Soundbar ophangen en installeren','Milieuretour / Pick-up ophalen','Schade / Defect'];
-    if (p.includes('oven')||p.includes('magnetron')||p.includes('kookplaat')||p.includes('afzuigkap')) return ['Apparaat inbouwen (Keuken)','Milieuretour / Pick-up ophalen','Aansluiting controleren','Schade / Defect'];
-    if (p==='fornuis'||p.includes('fornuis')) return [];
-    if (p.includes('inbouw')) return ['Apparaat inbouwen (Keuken)','Milieuretour / Pick-up ophalen','Aansluiting controleren','Deur omdraaien'];
-    if (p.includes('wasmachine')||p.includes('wasdroog')) return ['Trekschakelaar aansluiten','Plaatsen / Naar boven tillen','Stapelkit plaatsen','Milieuretour / Pick-up ophalen','Aansluiting controleren'];
-    if (p.includes('droger')) return ['Trekschakelaar aansluiten','Plaatsen / Naar boven tillen','Stapelkit plaatsen','Deur omdraaien','Milieuretour / Pick-up ophalen','Aansluiting controleren'];
-    if (p.includes('koelkast')||p.includes('vriezer')||p.includes('koel-vries')) return ['Plaatsen / Naar boven tillen','Deur omdraaien','Milieuretour / Pick-up ophalen','Aansluiting controleren','Schade / Defect'];
-    if (p.includes('vaatwasser')) return ['Plaatsen / Naar boven tillen','Apparaat inbouwen (Keuken)','Milieuretour / Pick-up ophalen','Aansluiting controleren'];
+    var p=(type||'').toLowerCase();
+    if (p==='televisie'||p.includes('tv')) return ['TV installeren','TV ophangen en installeren','Milieuretour / Pick-up ophalen','Schade / Defect','Service niet uitvoerbaar','Onverwacht retour','Milieuretour past niet in bus','Blijverkoop vergeten'];
+    if (p==='soundbar'||p.includes('soundbar')) return ['TV + Soundbar installeren','TV + Soundbar ophangen en installeren','Milieuretour / Pick-up ophalen','Schade / Defect','Onverwacht retour','Milieuretour past niet in bus','Blijverkoop vergeten'];
+    if (p.includes('kookplaat')) return ['Milieuretour / Pick-up ophalen','Schade / Defect','Service niet uitvoerbaar','Onverwacht retour','Milieuretour past niet in bus','Blijverkoop vergeten'];
+    if (p.includes('oven')||p.includes('magnetron')||p.includes('afzuigkap')) return ['Apparaat inbouwen (Keuken)','Aansluiting controleren','Milieuretour / Pick-up ophalen','Schade / Defect','Service niet uitvoerbaar','Onverwacht retour','Milieuretour past niet in bus','Blijverkoop vergeten'];
+    if (p==='fornuis'||p.includes('fornuis')) return ['Service niet uitvoerbaar','Milieuretour / Pick-up ophalen','Schade / Defect','Onverwacht retour','Blijverkoop vergeten'];
+    if (p.includes('inbouw koelkast')) return ['Apparaat inbouwen (Keuken)','Deur omdraaien','Milieuretour / Pick-up ophalen','Aansluiting controleren','Schade / Defect','Onverwacht retour','Milieuretour past niet in bus','Blijverkoop vergeten'];
+    if (p.includes('inbouw vriezer')) return ['Apparaat inbouwen (Keuken)','Milieuretour / Pick-up ophalen','Aansluiting controleren','Schade / Defect','Onverwacht retour','Milieuretour past niet in bus','Blijverkoop vergeten'];
+    if (p.includes('inbouw vaatwasser')) return ['Apparaat inbouwen (Keuken)','Deur omdraaien','Aansluiting controleren','Milieuretour / Pick-up ophalen','Schade / Defect','Onverwacht retour','Milieuretour past niet in bus','Blijverkoop vergeten'];
+    if (p.includes('inbouw')) return ['Apparaat inbouwen (Keuken)','Milieuretour / Pick-up ophalen','Aansluiting controleren','Deur omdraaien','Onverwacht retour','Milieuretour past niet in bus','Blijverkoop vergeten'];
+    if (p.includes('wasmachine')||p.includes('wasdroog')) return ['Trekschakelaar aansluiten','Plaatsen / Naar boven tillen','Milieuretour / Pick-up ophalen','Stapelkit plaatsen','Aansluiting controleren','Schade / Defect','Onverwacht retour','Milieuretour past niet in bus','Blijverkoop vergeten'];
+    if (p.includes('droger')) return ['Trekschakelaar aansluiten','Plaatsen / Naar boven tillen','Milieuretour / Pick-up ophalen','Stapelkit plaatsen','Deur omdraaien','Schade / Defect','Aansluiting controleren','Onverwacht retour','Milieuretour past niet in bus','Blijverkoop vergeten'];
+    if (p.includes('koelkast')||p.includes('vriezer')||p.includes('koel-vries')) return ['Plaatsen / Naar boven tillen','Deur omdraaien','Apparaat inbouwen (Keuken)','Milieuretour / Pick-up ophalen','Aansluiting controleren','Schade / Defect','Onverwacht retour','Milieuretour past niet in bus','Blijverkoop vergeten'];
+    if (p.includes('vaatwasser')) return ['Apparaat inbouwen (Keuken)','Plaatsen / Naar boven tillen','Deur omdraaien','Aansluiting controleren','Milieuretour / Pick-up ophalen','Schade / Defect','Onverwacht retour','Milieuretour past niet in bus','Blijverkoop vergeten'];
     return alleProbleemOpties;
   }
 
@@ -238,17 +242,14 @@
         var heeftTV=alleProds.some(isTV), heeftSB=alleProds.some(isSoundbar);
         var andereProds=alleProds.filter(function(n){ return !isTV(n); });
         var andereZijnAcc=andereProds.length>0&&andereProds.every(function(n){ return !isWitgoed(n); });
-        if (heeftTV&&(heeftSB||andereZijnAcc)) return ['TV + Soundbar installeren','TV + Soundbar ophangen en installeren','TV installeren','TV ophangen en installeren','Milieuretour / Pick-up ophalen','Schade / Defect'];
+        if (heeftTV&&(heeftSB||andereZijnAcc)) return ['TV + Soundbar installeren','TV + Soundbar ophangen en installeren','TV installeren','TV ophangen en installeren','Milieuretour / Pick-up ophalen','Schade / Defect','Service niet uitvoerbaar','Onverwacht retour','Milieuretour past niet in bus','Blijverkoop vergeten'];
         var union=[];
         alleProds.forEach(function(naam){
           var det=detecteerType(naam); var type=det&&det.typeGuess?det.typeGuess:(isTV(naam)?'televisie':naam);
           getOptiesVoorType(type).forEach(function(o){ if(!union.includes(o)) union.push(o); });
         });
-        return alleProbleemOpties.filter(function(o){ return union.includes(o); });
+        return union;
       }
-      var p=(cd.product||cd.model||'').toLowerCase();
-      if (p==='televisie'||p.includes('tv')) return ['TV installeren','TV ophangen en installeren','Milieuretour / Pick-up ophalen','Schade / Defect'];
-      if (p==='soundbar'||p.includes('soundbar')) return ['TV + Soundbar installeren','TV + Soundbar ophangen en installeren','Milieuretour / Pick-up ophalen','Schade / Defect'];
       return getOptiesVoorType(cd.product||cd.model||'');
     }
     var s=[];
