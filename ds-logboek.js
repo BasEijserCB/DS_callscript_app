@@ -765,6 +765,10 @@
         // Geen verdere vragen — info paneeltje wordt getoond in render, direct loggen
       } else if (callData.probleem==='Onverwacht retour') {
         // Geen verdere vragen — direct loggen
+      } else if (callData.probleem==='Product niet aanwezig') {
+        // Geen verdere vragen — direct loggen
+      } else if (callData.probleem==='Klant moet KS bellen') {
+        // Geen verdere vragen — direct loggen
       } else if (callData.probleem==='Product past niet op gewenste plek') {
         if (!autoFilledKeys.includes('uitkomst')) { callData.uitkomst='Geen oplossing gepland'; autoFilledKeys.push('uitkomst'); }
       } else if (callData.probleem==='Nazorg niet gelukt / swap aanvragen') {
@@ -954,7 +958,7 @@
         // Advies gegeven aan KS / Winkel, Informatie over vracht, Bezorgadres: geen vervolgvraag
       }
     } else if (callData.locatie==='Afhandeling buiten DS') {
-      s.push({key:'afwijkend_reden',label:'Wat is de reden?',type:'ux-select',opties:['Product niet aanwezig','Klant moet KS bellen','Held moet dit bij afmelden van de route regelen met TL','Verkeerd gelabeld product','Overig']});
+      s.push({key:'afwijkend_reden',label:'Wat is de reden?',type:'ux-select',opties:['Held moet dit bij afmelden van de route regelen met TL','Overig']});
       if (answeredKeys.includes('afwijkend_reden') && callData.afwijkend_reden==='Overig') {
         s.push({key:'afwijkend_toelichting',label:'Toelichting:',type:'text'});
       }
@@ -1045,6 +1049,8 @@
     } else if (callData.locatie==='Bij de klant') {
       if (callData.probleem==='Verkeerd gelabeld product') return 'Verkeerd gelabeld product — instructie gegeven aan Held';
       if (callData.probleem==='Onverwacht retour') return 'Onverwacht retour doorgegeven';
+      if (callData.probleem==='Product niet aanwezig') return 'Product niet aanwezig bij de klant — held geïnformeerd voor Jerney-afmelding';
+      if (callData.probleem==='Klant moet KS bellen') return 'Klant doorverwezen naar KS — held geïnformeerd';
       if (callData.probleem==='Spullen achtergelaten bij klant') {
         if (callData.uitkomst==='Same day gepland') return 'Spullen achtergelaten — same day stop gepland';
         if (callData.uitkomst==='Next day gepland') return 'Spullen achtergelaten — next day stop gepland';
@@ -1147,7 +1153,7 @@
             '<span style="font-size:11px;color:'+(geenOrderMode?'#ff6600':'#aaa')+';">'+(geenOrderMode?'Gegevens gewist':'Geen order')+'</span>' +
           '</div>' : '') +
         '</div></div>' +
-        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.21.1</div>' +
+        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.21.2</div>' +
       '</div>';
 
     idoc.getElementById('btn-close').onclick = function(){ wrapper.remove(); };
@@ -1257,7 +1263,7 @@
       var afwLbl=idoc.createElement('div'); afwLbl.className='section-label'; afwLbl.innerText='Afhandeling buiten DS';
       if (!dsWide) afwLbl.style.marginTop='10px';
       cont.appendChild(afwLbl);
-      ['Product niet aanwezig','Klant moet KS bellen','Held moet dit bij afmelden regelen met TL','Verkeerd gelabeld product','Overig'].forEach(function(opt){ cont.appendChild(maakAfwijkendKnop(opt)); });
+      ['Held moet dit bij afmelden regelen met TL','Overig'].forEach(function(opt){ cont.appendChild(maakAfwijkendKnop(opt)); });
     }
 
     ac.appendChild(cont);
@@ -1397,6 +1403,9 @@
       // Blauw info paneeltje voor verkeerd gelabeld product
       if (callData.probleem==='Verkeerd gelabeld product') {
         submitHtml += '<div class="info-box">ℹ️ <b>Instructie voor de Held:</b><br>Kies in Jerney voor "Verkeerd gelabeld product". Neem het verkeerde product mee terug naar het depot. Er wordt zo snel mogelijk een nieuw product naar de klant verzonden.</div>';
+      }
+      if (callData.probleem==='Product niet aanwezig') {
+        submitHtml += '<div class="info-box">ℹ️ <b>Instructie voor de Held:</b><br>Meld de stop af in Jerney als niet uitvoerbaar. Reden: product niet aanwezig bij de klant.</div>';
       }
       // Blauw info paneeltje voor winkel informatievraag
       if (callData.locatie==='Winkel' && callData.ks_reden==='Informatie over vracht') {
@@ -1730,7 +1739,8 @@
       var bijzExpand=idoc.createElement('div'); bijzExpand.style.cssText='display:none;margin-top:5px;';
       ['Advies gegeven','Spullen achtergelaten bij klant','Onverwacht retour',
        'Nazorg niet gelukt / swap aanvragen','Product past niet op gewenste plek',
-       'Blijverkoop vergeten','Verkeerd gelabeld product'
+       'Blijverkoop vergeten','Verkeerd gelabeld product',
+       'Product niet aanwezig','Klant moet KS bellen'
       ].forEach(function(item){
         var b=idoc.createElement('button'); b.className='ux-btn'; b.style.marginBottom='4px'; b.innerText=item;
         b.onclick=(function(val){ return function(){
@@ -1832,7 +1842,7 @@
       // Afhandeling buiten DS als toggle
       var afwToggle=idoc.createElement('button'); afwToggle.className='ux-btn advies-btn'; afwToggle.innerText='Afhandeling buiten DS \u25be';
       var afwExpand=idoc.createElement('div'); afwExpand.style.cssText='display:none;margin-top:5px;';
-      ['Product niet aanwezig','Klant moet KS bellen','Held moet dit bij afmelden regelen met TL','Verkeerd gelabeld product','Overig'].forEach(function(opt){
+      ['Held moet dit bij afmelden regelen met TL','Overig'].forEach(function(opt){
         var b=idoc.createElement('button'); b.className='ux-btn'; b.style.marginBottom='4px'; b.innerText=opt;
         b.onclick=function(){
           ['probleem','product','formaatTV','milieuretour_type','uitkomst','geplandeRoute','next_day_reden','geen_oplossing_reden','advies_gelukt','product_keuze'].forEach(function(k){

@@ -6,7 +6,7 @@
 // React, ReactDOM, DS, and browser globals are accessible inside JSX.
 
 (function () {
-  const STAGING_VERSION = "0.5.2-staging";
+  const STAGING_VERSION = "0.5.3-staging";
   const ROOT_ID = "ds-logboek-staging-root";
   const STYLE_ID = "ds-logboek-staging-style";
   const GAS_URL = "https://script.google.com/a/macros/coolblue.nl/s/AKfycbxb-OwLCFGlDQ48qz3KnGnmsgnVLWxuOjvEr7UG3M3z0WzO0kVsTKGd_8mZjtvHvPHnEg/exec";
@@ -321,7 +321,7 @@
       if (!ak.includes('probleem')) return s;
       if (cd.probleem==='Advies gegeven') {
         s.push({key:'advies_gelukt',label:'Is de service na het advies uitgevoerd?',type:'info-select',opties:['Ja, service uitgevoerd','Nee, geen oplossing door DS']});
-      } else if (cd.probleem==='Verkeerd gelabeld product'||cd.probleem==='Onverwacht retour') {
+      } else if (cd.probleem==='Verkeerd gelabeld product'||cd.probleem==='Onverwacht retour'||cd.probleem==='Product niet aanwezig'||cd.probleem==='Klant moet KS bellen') {
         // direct loggen
       } else if (cd.probleem==='Spullen achtergelaten bij klant') {
         s.push({key:'uitkomst',label:'Wat was de uitkomst?',type:'ux-select',opties:['Same day gepland','Next day gepland','Helden teruggebeld, rijden terug zonder visit']});
@@ -450,7 +450,7 @@
         }
       }
     } else if (cd.locatie==='Afhandeling buiten DS') {
-      s.push({key:'afwijkend_reden',label:'Wat is de reden?',type:'ux-select',opties:['Product niet aanwezig','Klant moet KS bellen','Held moet dit bij afmelden van de route regelen met TL','Verkeerd gelabeld product','Overig']});
+      s.push({key:'afwijkend_reden',label:'Wat is de reden?',type:'ux-select',opties:['Held moet dit bij afmelden van de route regelen met TL','Overig']});
       if (ak.includes('afwijkend_reden')&&cd.afwijkend_reden==='Overig') s.push({key:'afwijkend_toelichting',label:'Toelichting:',type:'text'});
     }
     // Technische Dienst / Yeply / G4S: direct loggen
@@ -506,6 +506,8 @@
     if (cd.locatie==='Bij de klant') {
       if (cd.probleem==='Verkeerd gelabeld product') return 'Verkeerd gelabeld product — instructie gegeven aan Held';
       if (cd.probleem==='Onverwacht retour') return 'Onverwacht retour doorgegeven';
+      if (cd.probleem==='Product niet aanwezig') return 'Product niet aanwezig bij de klant — held geïnformeerd voor Jerney-afmelding';
+      if (cd.probleem==='Klant moet KS bellen') return 'Klant doorverwezen naar KS — held geïnformeerd';
       if (cd.probleem==='Product past niet op gewenste plek') return 'Product past niet op gewenste plek — held geïnformeerd voor Jerney-afmelding';
       if (cd.probleem==='Nazorg niet gelukt / swap aanvragen') return 'Nazorg niet gelukt — opmerking gemaakt, swap via KS aanvragen';
       if (cd.pick_up_status==='Pick-up niet gelukt — swap nodig') return 'Pick-up niet gelukt — held instructie gegeven voor Jerney (swap aanvragen)';
@@ -1009,6 +1011,7 @@ function App(){
           <ProductChip/>
           {cd.bellerType==='CBF'&&cd.locatie==='Depot / Hub vraag'&&<div className="ds-note is-info"><div><strong>Advies aan de fietser</strong><br/>Voor deze vraag dient de fietser contact op te nemen met het depot.</div></div>}
           {cd.probleem==='Verkeerd gelabeld product'&&<div className="ds-note is-info"><div><strong>Instructie voor de Held</strong><br/>Kies in Jerney voor "Verkeerd gelabeld product". Neem het product mee terug naar het depot.</div></div>}
+          {cd.probleem==='Product niet aanwezig'&&<div className="ds-note is-info"><div><strong>Instructie voor de Held</strong><br/>Meld de stop af in Jerney als niet uitvoerbaar. Reden: product niet aanwezig bij de klant.</div></div>}
           {cd.probleem==='Product past niet op gewenste plek'&&<div className="ds-note is-info"><div><strong>Instructie voor de Held</strong><br/>Meld af in Jerney als "Niet uitvoerbaar". Reden: product past niet op de gewenste plek.</div></div>}
           {cd.probleem==='Nazorg niet gelukt / swap aanvragen'&&<div className="ds-note is-info"><div><strong>Actie DS</strong><br/>Plaats een opmerking op de originele order dat omruil nodig is. KS plant de swap.</div></div>}
           {cd.pick_up_status==='Pick-up niet gelukt — swap nodig'&&<div className="ds-note is-info"><div><strong>Instructie voor de Held</strong><br/>Meld de pick-up af in Jerney. Kies "Swap aanvragen" als reden.</div></div>}
@@ -1073,7 +1076,7 @@ function App(){
         {(stap.opties||[]).map(function(o){return <button key={o} className="ds-opt" onClick={function(){handleSelect(o);}}><span className="ds-opt__label">{o}</span></button>;})}
         <details className="ds-disclose" onToggle={function(e){if(e.target.open)e.target.scrollIntoView({behavior:'smooth',block:'nearest'});}}><summary>Afhandeling buiten DS ▾</summary>
           <div className="ds-stack" style={{paddingTop:8}}>
-            {['Product niet aanwezig','Klant moet KS bellen','Held moet dit bij afmelden regelen met TL','Verkeerd gelabeld product','Overig'].map(function(o){return(
+            {['Held moet dit bij afmelden regelen met TL','Overig'].map(function(o){return(
               <button key={o} className="ds-opt" onClick={function(){ans('afwijkend_reden',o,{locatie:'Afhandeling buiten DS'},['locatie'],[],['probleem','product','formaatTV','milieuretour_type','uitkomst','geplandeRoute','next_day_reden','geen_oplossing_reden','advies_gelukt','product_keuze']);}}>
                 <span className="ds-opt__label">{o}</span>
               </button>
@@ -1166,7 +1169,7 @@ function App(){
       </div>
     );
   }else if(stap.type==='probleem-grouped'){
-    var bijzonderItems=['Advies gegeven','Spullen achtergelaten bij klant','Onverwacht retour','Nazorg niet gelukt / swap aanvragen','Product past niet op gewenste plek','Blijverkoop vergeten','Verkeerd gelabeld product'];
+    var bijzonderItems=['Advies gegeven','Spullen achtergelaten bij klant','Onverwacht retour','Nazorg niet gelukt / swap aanvragen','Product past niet op gewenste plek','Blijverkoop vergeten','Verkeerd gelabeld product','Product niet aanwezig','Klant moet KS bellen'];
     stepBody=(
       <div className="ds-stack">
         {(stap.opties||[]).map(function(o){return <button key={o} className="ds-opt" onClick={function(){handleSelect(o);}}><span className="ds-opt__label">{o}</span></button>;})}
