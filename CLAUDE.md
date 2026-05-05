@@ -71,13 +71,6 @@ De staging loader haalt de nieuwe versie automatisch op via stale-while-revalida
 localStorage.removeItem('ds_app_staging_cache')
 ```
 
-**Staging versiegeschiedenis (recent):**
-
-| Versie | Wijziging |
-|---|---|
-| v0.3.1-staging | Patch: versie-bump om update-systeem te testen |
-| v0.3.0-staging | Full data layer port from ds-logboek.js; React+Babel side-panel UI; scraping, flow engine, logging, clipboard identiek aan productie |
-
 ---
 
 ## Architectuur
@@ -160,28 +153,6 @@ Service moet als laatste worden ingesteld voor normale services (timing — ande
 
 ## DevExtreme widget helpers (paste-bookmarklet.js)
 
-```javascript
-// SelectBox (dropdowns)
-const setDxDropdown = (fieldId, value) => {
-  const input = document.querySelector(`input[id$="${fieldId}"]`);
-  const container = input?.closest('.dx-selectbox');
-  const instance = $(container).dxSelectBox('instance');
-  if (instance) instance.option('value', value);
-};
-
-// TagBox (multi-select, services veld)
-const setDxTagBox = (fieldId, valueArray) => {
-  const input = document.querySelector(`input[id$="${fieldId}"]`);
-  const container = input?.closest('.dx-tagbox');
-  const instance = $(container).dxTagBox('instance');
-  if (instance) instance.option('value', valueArray);
-};
-```
-
-**Belangrijk:** TagBox `valueExpr` is `Id` (hoofdletter, numeriek). Altijd `[parseInt(id)]` doorgeven — nooit een string.
-
----
-
 ## DireXtion DOM eigenaardigheden
 
 | Situatie | Oplossing |
@@ -197,45 +168,7 @@ const setDxTagBox = (fieldId, valueArray) => {
 | Verzameldoos filteren | Filteren op zowel naam (`verzameldoos`) als artikelsoort (`barcodes`) — beide varianten (coolbluebezorgt en Basic) leveren verzameldozen op |
 | Woonplaats met voorlooppostcode | BE/DE scrapen soms `"1000 Brussel"` — strip leading postcode uit city vóór invullen in DireXtion |
 | DireXtion auto-open onderdrukt op Basic | Na loggen opent de widget automatisch DireXtion in nieuw tabblad — maar NIET op de Basic variant (`isBasicPage`). Op Basic staat in plaats daarvan een handmatige herinnering in de controle-box. |
-
----
-
-## Console commands — DOM selectors ontdekken
-
-Gebruik browser DevTools console op de DireXtion Import formulierpagina om selectors te testen:
-
-```javascript
-// Vind alle elementen die voldoen aan een selector
-document.querySelectorAll('[data-options*="dxTemplate"][data-options*="article"]')
-
-// Inspecteer wat er in een attribuut zit
-document.querySelector('input[id$="_services"]')?.getAttribute('id')
-
-// Test DevExtreme instance ophalen (bijv. SelectBox, TagBox, Form)
-const input = document.querySelector('input[id$="_countryId"]');
-const container = input?.closest('.dx-selectbox');
-const instance = $(container).dxSelectBox('instance');
-instance?.option('value')  // huidige waarde
-
-// Vind de tweede form (voor remark/opmerking veld)
-document.querySelectorAll('.dx-form')[1]
-
-// Test artikel elementen klikken en hun index bepalen
-const articles = document.querySelectorAll('[data-options*="dxTemplate"][data-options*="article"]');
-articles[0].click();  // klik op artikel 1
-articles[1].click();  // klik op artikel 2 (na add-button klik)
-
-// Vind de add-button (voor meerdere artikelen)
-document.querySelector('.dx-icon-add')?.closest('.dx-button')
-```
-
-**Workflow voor nieuwe DOM manipulatie:**
-1. Open DevTools (F12), ga naar Console tab
-2. Voer `document.querySelectorAll('...')` uit om elementen te vinden
-3. Test selectors met verschillende attributen: `[id$="..."]`, `[data-bind*="..."]`, `[data-options*="..."]`, etc.
-4. Zodra je de juiste selector hebt, test je de manipulatie: `element.click()`, `instance.option('value', x)`
-5. Gebruik `await new Promise(resolve => setTimeout(resolve, 500))` voor async operaties
-6. Implementeer in paste-bookmarklet.js en test met bookmarklet op echte DireXtion pagina
+| TagBox waarde instellen | Altijd `[parseInt(id)]` doorgeven — `valueExpr` is `Id` (hoofdletter, numeriek), nooit een string |
 
 ---
 
@@ -252,8 +185,6 @@ parkeerSessie() / herstelSessie(staat) // sessie pauzeren/hervatten via localSto
 detecteerType(naam)             // detecteert merk + producttype via prefixTabel (voor coolbluebezorgt variant)
 artikelsoortNaarProduct(soort)  // converteert artikelsoort-tekst (uit Basic tabel) naar widget-productnaam
 ```
-
-**`isAlgemeen`** (module-scope, gezet na scrape): `true` wanneer geen ordernummer gescrapet kon worden → activeert de Algemeen-gesprek modus (zie beneden).
 
 **serviceTypeId mapping** (in `kopieerNaarKlembord()`): bepaalt welke DireXtion service geselecteerd wordt voor same-day/pick-up. Meeste services hebben één ID voor zowel Nazorg als Extra dienst (geen aparte Extra dienst variant beschikbaar). Uitzonderingen:
 - `stapelkit`: Nazorg=727124, Extra dienst=727123
@@ -349,62 +280,3 @@ Elke uitkomst wordt automatisch ingedeeld in één van zes vaste categorieën vi
 | `Buiten DS scope` | `locatie='Afhandeling buiten DS'` of `bellerType='Andere beller'` (beller buiten DS-context) |
 
 Bij het toevoegen van een nieuwe uitkomst: controleer of `berekenCategorie()` de nieuwe waarde correct afvangt op basis van de bestaande logica, of voeg een expliciete check toe.
-
----
-
-## Telefoonnummer normalisatie
-
-Prefixen worden gestript naar lokaal formaat: NL (+31/0031), BE (+32/0032), DE (+49/0049), PL (+48/0048).
-
----
-
-## Versiegeschiedenis (recent)
-
-| Versie | Wijziging |
-|---|---|
-| v1.18.1 | Fix: Pick-up handmatig gepland gebruikt same-day flow; shipper landafhankelijk (NL=246477, BE=246481, DE=419436) i.p.v. vaste Coolblue DS shipper; sjabloon-stap overgeslagen voor Pick-up |
-| v1.18.0 | Add: bellerType 'Teamleider' (korte flow: reden + uitkomst); CBF suboptie 'Pakje niet ingeladen' met eigen uitkomsten en Jerney-info; Basic pagina opent DireXtion niet automatisch na loggen; multi-product scraper op Basic (ArticleDescription tabel) |
-| v1.17.2 | Fix: straat nogmaals invullen na country-load op Basic module |
-| v1.17.1 | Fix: straatnaam dubbel invullen na DireXtion autocomplete voorkomen (timeout verhoogd) |
-| v1.17.0 | Add: tvNetwerk keuze voor TV-installatie next-day bij kleine TV (< 55 inch) — 'Built in (BI)' of '1X'; auto-selectie BI wanneer routenetwerk al 1X is |
-| v1.16.16 | Fix: uitkomst 'Teamleider geïnformeerd, order doorgezet' hernoemd naar 'Straat afgesloten of onvoldoende EV-rijkwijdte' — concreter en zonder TL-vermelding |
-| v1.16.15 | Update: onderweg adresflow samengevoegd — `'Adres niet gevonden'`, `'Adres niet bereikbaar'` en `'Adres niet bereikbaar (bijzonder geval)'` → één optie `'Adres niet gevonden / niet bereikbaar'` met gecombineerde uitkomsten. Nieuw: `'Adres klopt niet'` → info-paneel met Jerney-instructie, geen verdere keuze. |
-| v1.16.14 | Fix: categorie `Advies gegeven` (was `Advies / Info gegeven` — slash in URL-encoded waarde `%2F` zorgde voor lege kolom in GAS) |
-| v1.16.13 | Add: `berekenCategorie()` — elke log-entry krijgt een `categorie` kolom in Google Sheets (Same day gepland / Next day gepland / Onderweg opgelost / Advies gegeven / Geen oplossing / Buiten DS scope) |
-| v1.16.12 | Fix: updatemelding z-index verhoogd naar 1000001 in loader-bookmarklet.js (was 99999, widget zat er overheen) |
-| v1.16.11 | Revert: updatemelding terug naar toast rechtsonder op hoofdpagina (blauw met sluitknop), eerdere widget-snap varianten teruggedraaid |
-| v1.16.9 | Fix: updatebanner alleen tonen als nieuwe versie binnenkomt tijdens lopende sessie (niet bij opstarten); appContainer flexbox layout hersteld na body flex-kolom wijziging |
-| v1.16.8 | Fix: updatebanner in widgetstijl (amber), geen overlap meer met widget header |
-| v1.16.7 | Update: persistente oranje updatebanner bovenin widget vervangt subtiele toast |
-| v1.16.6 | Fix: Wisberg prefixlijst volledig herschreven met correcte product-types (o.a. WBTT/WBTM=koelkast, WBMKK/WBMVR correct) |
-| v1.16.5 | Fix: Wisberg WBTTKK prefix als koelkast i.p.v. droger |
-| v1.16.4 | Add: info paneel bij route-invoer toont vereiste netwerk / depot / routenummer formaat |
-| v1.16.3 | Fix: gebruik artikelsoort-veld op Basic pagina vóór prefix-detectie voor betrouwbaarder productherkenning |
-| v1.16.2 | Fix: verzameldoos ook filteren op coolbluebezorgt variant (via naam én artikelsoort) |
-| v1.16.1 | Fix: productrijen alleen toevoegen bij same-day, niet bij next-day met sjablonen |
-| v1.16.0 | Add: loggen opent automatisch DireXtion-order in nieuw tabblad (Same/Next day gepland). Aparte link uit controle-box verwijderd |
-| v1.15.4 | Fix: leading postcode uit city-scrape strippen (BE/DE geven soms `"1000 Brussel"` als Woonplaats terug → belandde als `residence` in DireXtion) |
-| v1.15.3 | Fix: DireXtion email-filter gebruikt juiste key `EmailAddress` + `StartDate`/`EndDate` op vandaag, URL pad `/Basic/Orders` (hoofdletter) |
-| v1.15.2 | Update: DireXtion link op submit-scherm filtert nu op email i.p.v. ordernummer — betrouwbaarder |
-| v1.15.1 | Add: derde uitkomst "Helden stellen stop uit en gaan later terug" bij onderweg_type "Klant niet thuis" |
-| v1.15.0 | Add: onderweg_type "Klant niet thuis" (CBB + CBF) — uitkomsten Advies gegeven/Geen oplossing, info-box met checklist (aangebeld, klant gebeld, binnen tijdvak) + Jerney afmeldinstructie |
-| v1.14.2 | Update: duplicate uitkomst-optie "Correct nummer doorgegeven aan Held" verwijderd uit onderweg flow (Klant niet bereikbaar / verkeerd nummer) |
-| v1.14.1 | Fix: `parseToTourAlias` herkent nu ook `built in` / `built-in` als netwerk BI |
-| v1.14.0 | Add: "Algemeen gesprek" modus — flow zonder orderdata (alleen fname/lname + advies/afhandeling-blokken), bellerType='Algemeen' |
-| v1.13.2 | Add: info box op submit screen voor andere bellers |
-| v1.13.1 | Update: footer versie-bump (geen functionele wijziging) |
-| v1.13.0 | Update: bellerType knop "Externe partner" hernoemd naar "Andere bellers"; structuurrefactor |
-| v1.12.19 | Fix: straat/woonplaats invullen 400ms uitstellen na postcode om DireXtion autocomplete-overwrite te voorkomen |
-| v1.12.18 | Fix: articleTypeId+services ingesteld ná channelId (STAP 1c Fase 2) — voorkomt dat herrender velden wist |
-| v1.12.17 | Fix: article rij klikken ook voor 1e product (niet alleen 2e+) om DX velden te activeren |
-| v1.12.16 | Add: meerdere producten ondersteuning voor plaatsen service (product_keuze → products array) |
-| v1.12.15 | Fix: plaatsen Extra dienst mapping teruggedraaid naar Nazorg default (51072) |
-| v1.12.14 | Add: dienstType vraag in same-day flow; serviceTypeId stapelkit N/E onderscheid |
-| v1.12.13 | Fix: volgorde kanaal/service/netwerk hersteld; builtInServices branch terug |
-| v1.12.12 | Fix: TagBox value als parseInt i.p.v. string; setDxTagBox vereenvoudigd |
-| v1.12.11 | Fix: setDxTagBox via dxComponents walk-up; same-day kanaal/service/netwerk flow |
-| v1.12.9 | Fix: telefoonnummer cleanup generiek voor elk landprefixformaat |
-| v1.12.8 | Add: kanaal/netwerk/service autofill uitgebreid voor same-day |
-| v1.12.7 | Update: toast melding top-right, groter |
-| v1.12.6 | Add: toast notification in paste bookmarklet; build.py opruiming |
-| v1.12.5 | Add: same-day ondersteuning (shipper + depot autofill) |
