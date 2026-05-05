@@ -6,7 +6,7 @@
 // React, ReactDOM, DS, and browser globals are accessible inside JSX.
 
 (function () {
-  const STAGING_VERSION = "0.5.0-staging";
+  const STAGING_VERSION = "0.5.2-staging";
   const ROOT_ID = "ds-logboek-staging-root";
   const STYLE_ID = "ds-logboek-staging-style";
   const GAS_URL = "https://script.google.com/a/macros/coolblue.nl/s/AKfycbxb-OwLCFGlDQ48qz3KnGnmsgnVLWxuOjvEr7UG3M3z0WzO0kVsTKGd_8mZjtvHvPHnEg/exec";
@@ -740,6 +740,9 @@
   #${ROOT_ID} .ds-disclose > summary::-webkit-details-marker{display:none}
   #${ROOT_ID} .ds-disclose > summary:hover{background:var(--cb-blue-bg)}
   #${ROOT_ID} .ds-disclose[open] > summary{margin-bottom:6px}
+  #${ROOT_ID} .ds-disclose--bijzonder{border-top:none;background:var(--warn-bg);border:1px solid #f0d5a8;border-left:3px solid var(--warn);border-radius:var(--r-md);padding:8px 10px;margin-top:8px}
+  #${ROOT_ID} .ds-disclose--bijzonder > summary{color:var(--warn);font-size:12px}
+  #${ROOT_ID} .ds-disclose--bijzonder > summary:hover{background:rgba(184,92,0,.08)}
   #${ROOT_ID} .ds-note{display:flex;gap:8px;padding:8px 10px;border-radius:var(--r-md);
     font-size:12.5px;border:1px solid;align-items:flex-start}
   #${ROOT_ID} .ds-note.is-info{background:var(--cb-blue-bg);border-color:var(--cb-blue-line);color:var(--cb-blue-darker)}
@@ -1167,7 +1170,7 @@ function App(){
     stepBody=(
       <div className="ds-stack">
         {(stap.opties||[]).map(function(o){return <button key={o} className="ds-opt" onClick={function(){handleSelect(o);}}><span className="ds-opt__label">{o}</span></button>;})}
-        <details className="ds-disclose" onToggle={function(e){if(e.target.open)e.target.scrollIntoView({behavior:'smooth',block:'nearest'});}}><summary>Bijzondere situatie ▾</summary>
+        <details className="ds-disclose ds-disclose--bijzonder" onToggle={function(e){if(e.target.open)e.target.scrollIntoView({behavior:'smooth',block:'nearest'});}}><summary>✦ Andere opties ▾</summary>
           <div className="ds-stack" style={{paddingTop:8}}>
             {bijzonderItems.map(function(o){return(
               <button key={o} className="ds-opt" onClick={function(){handleSelect(o);}}>
