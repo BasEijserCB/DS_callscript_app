@@ -4,6 +4,16 @@ Browsergebaseerde widget voor het Coolblue Delivery Support team. Draait bovenop
 
 ---
 
+## Productie vs. Staging — werkregel
+
+**Functionele wijzigingen worden altijd in BEIDE bestanden doorgevoerd:** `ds-logboek.js` én `staging/ds-logboek-staging.js`. De data-laag (scraping, flow engine, gespreksflow, logging, clipboard payload) is identiek — alleen de UI verschilt. Behandel ze als twee implementaties van dezelfde logica.
+
+**Cosmetische wijzigingen** (UI, layout, stijl, teksten, kleuren) gelden alleen voor het bestand waarop de vraag betrekking heeft — niet automatisch voor het andere.
+
+Uitzondering op de functionele regel: als uitdrukkelijk gevraagd wordt om een wijziging alleen in productie of alleen in staging door te voeren, geldt dat specifiek voor dat bestand.
+
+---
+
 ## Bestanden
 
 | Bestand | Rol |
