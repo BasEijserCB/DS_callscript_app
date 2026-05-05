@@ -6,7 +6,7 @@
 // React, ReactDOM, DS, and browser globals are accessible inside JSX.
 
 (function () {
-  const STAGING_VERSION = "0.3.7-staging";
+  const STAGING_VERSION = "0.3.8-staging";
   const ROOT_ID = "ds-logboek-staging-root";
   const STYLE_ID = "ds-logboek-staging-style";
   const GAS_URL = "https://script.google.com/a/macros/coolblue.nl/s/AKfycbxb-OwLCFGlDQ48qz3KnGnmsgnVLWxuOjvEr7UG3M3z0WzO0kVsTKGd_8mZjtvHvPHnEg/exec";
@@ -676,8 +676,6 @@
   #${ROOT_ID} .ds-p{margin:0 0 4px;color:var(--ink-2);font-size:12.5px}
   #${ROOT_ID} .ds-stack{display:flex;flex-direction:column;gap:6px}
   #${ROOT_ID} .ds-grid2{display:grid;grid-template-columns:1fr 1fr;gap:6px}
-  #${ROOT_ID} .ds-callergrid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
-  #${ROOT_ID} .ds-callergrid > .ds-opt:first-child{grid-column:1 / -1}
   #${ROOT_ID} .ds-opt{display:flex;align-items:center;gap:10px;background:#fff;
     border:1px solid var(--line);border-left:3px solid var(--line);border-radius:var(--r-md);
     padding:9px 12px;text-align:left;font-weight:500;font-size:13.5px;color:var(--ink-1);
@@ -984,23 +982,23 @@ function App(){
   // STEP BODY
   var stepBody;
   if(stap.type==='beller-select'){
+    var andereBellersIcons={'Technische Dienst':'\u{1f527}','Yeply':'\u{1f527}','G4S':'\u{1f6e1}'};
     stepBody=(
       <div className="ds-stack">
-        <div className="ds-callergrid">
-          <button className="ds-opt is-big" onClick={function(){ans('bellerType','CBB');}}><div className="ds-opt__icon">\u{1f69a}</div><span className="ds-opt__label">CBB — Bezorger belt</span></button>
-          <button className="ds-opt" onClick={function(){ans('bellerType','CBF');}}><div className="ds-opt__icon">\u{1f6b2}</div><span className="ds-opt__label">CBF — Fietser belt</span></button>
-          <button className="ds-opt" onClick={function(){ans('bellerType','Anders',{locatie:'Klantenservice'},['locatie']);}}><span className="ds-opt__label">Klantenservice belt</span></button>
-          <button className="ds-opt" onClick={function(){ans('bellerType','Anders',{locatie:'Winkel'},['locatie']);}}><span className="ds-opt__label">Winkel belt</span></button>
-          <button className="ds-opt" onClick={function(){ans('bellerType','Teamleider');}}><span className="ds-opt__label">Teamleider belt</span></button>
-        </div>
+        <button className="ds-opt is-big" onClick={function(){ans('bellerType','CBB');}}><div className="ds-opt__icon">\u{1f69a}</div><span className="ds-opt__label">CBB — Bezorger belt</span></button>
+        <button className="ds-opt" onClick={function(){ans('bellerType','CBF');}}><div className="ds-opt__icon">\u{1f6b2}</div><span className="ds-opt__label">CBF — Fietser belt</span></button>
+        <button className="ds-opt" onClick={function(){ans('bellerType','Anders',{locatie:'Klantenservice'},['locatie']);}}><div className="ds-opt__icon">\u{1f3a7}</div><span className="ds-opt__label">Klantenservice belt</span></button>
+        <button className="ds-opt" onClick={function(){ans('bellerType','Anders',{locatie:'Winkel'},['locatie']);}}><div className="ds-opt__icon">\u{1f3ea}</div><span className="ds-opt__label">Winkel belt</span></button>
+        <button className="ds-opt" onClick={function(){ans('bellerType','Teamleider');}}><div className="ds-opt__icon">\u{1f454}</div><span className="ds-opt__label">Teamleider belt</span></button>
         <details className="ds-disclose" onToggle={function(e){if(e.target.open)e.target.scrollIntoView({behavior:'smooth',block:'nearest'});}}><summary>Andere bellers ▾</summary>
           <div className="ds-stack" style={{paddingTop:8}}>
             {['Technische Dienst','Yeply','G4S'].map(function(loc){return(
               <button key={loc} className="ds-opt" onClick={function(){ans('bellerType','Andere beller',{locatie:loc},['locatie']);}}>
+                <div className="ds-opt__icon">{andereBellersIcons[loc]}</div>
                 <span className="ds-opt__label">{loc}</span>
               </button>
             );})}
-            <button className="ds-opt" onClick={function(){ans('bellerType','Andere beller');}}><span className="ds-opt__label">Andere beller (niet over bezorging)</span></button>
+            <button className="ds-opt" onClick={function(){ans('bellerType','Andere beller');}}><div className="ds-opt__icon">\u{2753}</div><span className="ds-opt__label">Andere beller (niet over bezorging)</span></button>
           </div>
         </details>
       </div>
