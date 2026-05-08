@@ -6,7 +6,7 @@
 // React, ReactDOM, DS, and browser globals are accessible inside JSX.
 
 (function () {
-  const STAGING_VERSION = "0.5.5-staging";
+  const STAGING_VERSION = "0.5.6-staging";
   const ROOT_ID = "ds-logboek-staging-root";
   const STYLE_ID = "ds-logboek-staging-style";
   const GAS_URL = "https://script.google.com/a/macros/coolblue.nl/s/AKfycbxb-OwLCFGlDQ48qz3KnGnmsgnVLWxuOjvEr7UG3M3z0WzO0kVsTKGd_8mZjtvHvPHnEg/exec";
@@ -485,7 +485,7 @@
     if (cd.bellerType==='Teamleider') return cd.tl_uitkomst||cd.tl_reden||'Teamleider belt';
     if (cd.bellerType==='Interne leveringen') {
       if (cd.intern_reden==='Bezorger meldt ETA / is bijna er') return 'ETA melding ontvangen';
-      return 'Hub niet gevonden';
+      return 'Hub niet gevonden — advies gegeven';
     }
     if (cd.bellerType==='CBF') {
       if (cd.locatie==='Depot / Hub vraag') return 'Advies gegeven (CBF doorverwezen naar depot) — '+(cd.cbf_depot_reden||'reden onbekend')+(cd.cbf_depot_toelichting?': '+cd.cbf_depot_toelichting:'');
