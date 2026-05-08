@@ -6,7 +6,7 @@
 // React, ReactDOM, DS, and browser globals are accessible inside JSX.
 
 (function () {
-  const STAGING_VERSION = "0.6.1-staging";
+  const STAGING_VERSION = "0.6.2-staging";
   const ROOT_ID = "ds-logboek-staging-root";
   const STYLE_ID = "ds-logboek-staging-style";
   const GAS_URL = "https://script.google.com/a/macros/coolblue.nl/s/AKfycbxb-OwLCFGlDQ48qz3KnGnmsgnVLWxuOjvEr7UG3M3z0WzO0kVsTKGd_8mZjtvHvPHnEg/exec";
@@ -180,7 +180,7 @@
     if (p==='televisie'||p.includes('tv')||p.includes('televisie')||p.match(/(oled|qled|inch)/)) return ['TV installeren','TV ophangen en installeren','Milieuretour / Pick-up ophalen','Schade / Defect'];
     if (p==='soundbar'||p.includes('soundbar')) return ['TV + Soundbar installeren','TV + Soundbar ophangen en installeren','Milieuretour / Pick-up ophalen','Schade / Defect'];
     if (p==='oven'||p==='magnetron'||p.includes('oven')||p.includes('magnetron')||p.includes('kookplaat')||p.includes('afzuigkap')||p.includes('wasemkap')) return ['Apparaat inbouwen (Keuken)','Milieuretour / Pick-up ophalen','Aansluiting controleren','Schade / Defect'];
-    if (p==='fornuis'||p.includes('fornuis')) return [];
+    if (p==='fornuis'||p.includes('fornuis')) return ['Milieuretour / Pick-up ophalen','Schade / Defect'];
     if (p.includes('inbouw')) return ['Apparaat inbouwen (Keuken)','Milieuretour / Pick-up ophalen','Aansluiting controleren','Deur omdraaien'];
     if (p.includes('wasmachine')||p.includes('wasdroog')) return ['Trekschakelaar aansluiten','Plaatsen / Naar boven tillen','Stapelkit plaatsen','Milieuretour / Pick-up ophalen','Aansluiting controleren'];
     if (p.includes('droger')) return ['Trekschakelaar aansluiten','Plaatsen / Naar boven tillen','Stapelkit plaatsen','Deur omdraaien','Milieuretour / Pick-up ophalen','Aansluiting controleren'];
