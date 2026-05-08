@@ -184,6 +184,7 @@ parseToTourAlias(input)         // parseert routetekst → 'netwerk-depot-nr' (b
 parkeerSessie() / herstelSessie(staat) // sessie pauzeren/hervatten via localStorage (PARK_KEY per order)
 detecteerType(naam)             // detecteert merk + producttype via prefixTabel (voor coolbluebezorgt variant)
 artikelsoortNaarProduct(soort)  // converteert artikelsoort-tekst (uit Basic tabel) naar widget-productnaam
+LEGACY_LABEL_ALIASES            // mapping van oude → nieuwe label-waarden; toegepast in herstelSessie() om geparkeerde sessies te migreren na hernoemen van keuze-opties
 ```
 
 **serviceTypeId mapping** (in `kopieerNaarKlembord()`): bepaalt welke DireXtion service geselecteerd wordt voor same-day/pick-up. Meeste services hebben één ID voor zowel Nazorg als Extra dienst (geen aparte Extra dienst variant beschikbaar). Uitzonderingen:
@@ -202,6 +203,7 @@ Eerste keuze in de flow (`bellerType` in `callData`). Bepaalt de rest van de vra
 | `CBB` | Coolblue Bezorgt (eigen bezorger) | hoofdknop "CBB belt" |
 | `CBF` | Coolblue Fiets | hoofdknop "CBF belt" |
 | `Teamleider` | Teamleider van een depot belt — eigen korte flow (reden + uitkomst) | hoofdknop "Teamleider belt" |
+| `Interne leveringen` | Bezorger van interne leveringen belt — eigen korte flow (`intern_reden`). `locatie` auto-gezet op `'Interne leveringen'` | hoofdknop "Interne leveringen — Bezorger belt" |
 | `Anders` | Externe bezorgpartner (Technische Dienst / Yeply / G4S) — valt in "Andere bellers ▾" dropdown, eigen locatie-keuze | "Andere bellers ▾" → locatie-keuze |
 | `Andere beller` | Beller gaat niet over een bezorging (bv. klantenservice, winkel) — submit screen toont info-box dat probleem-log niet nodig is | "Andere bellers ▾" → "Andere beller" |
 | `Algemeen` | **Auto-gezet** als geen orderdata gescrapet kon worden (`isAlgemeen`) | n.v.t. — activeert aparte flow |
@@ -212,13 +214,16 @@ De "Andere bellers ▾" dropdown heette vóór v1.13.0 "Externe partner ▾".
 
 ## CBF flow — locatie-keuzes
 
-Drie locaties: `'Onderweg'` (zelfde flow als CBB), `'Bij de klant'`, `'Vraag voor het depot'`.
+Vier locaties: `'Onderweg'` (zelfde flow als CBB), `'Bij de klant'`, `'Stop aanpassen / verwijderen'`, `'Depot / Hub vraag'`.
 
 **Bij de klant** → `cbf_pakket_reden`:
 - `'Pakket niet meegenomen (manco)'` / `'Pakket verkeerd / beschadigd'` / `'Overige vraag over pakket'` → uitkomsten: `'Klant geïnformeerd, manco geregistreerd'` / `'Klant geïnformeerd, held regelt verder'` / `'Nee, geen oplossing door DS'`
 - `'Pakje niet ingeladen'` → uitkomsten: `'Pakje wordt later afgeleverd (afleverbewijs)'` / `'Niet opgelost — instructie gegeven in Jerney'`. Bij "Niet opgelost" toont het submit-scherm een info-blokje met Jerney-instructie.
+- `'Spullen achtergelaten bij klant'` → uitkomst-keuze: `'Same day gepland'` / `'Next day gepland'` / `'Helden lossen het zelf op (geen DS-visit gepland)'`
 
-**Vraag voor het depot** → `cbf_depot_reden`: `'Ziekmelding'` / `'Fiets kapot / incident'` / `'Informeren waar de vracht is'` / `'Anders'`. Bij `'Anders'` vrij tekstveld `cbf_depot_toelichting`.
+**Stop aanpassen / verwijderen** → `cbf_stop_uitkomst`: `'Stop verwijderd — bevestigd'` / `'Stop doorgepland naar andere route'` / `'Aanpassing niet mogelijk'`. `'Aanpassing niet mogelijk'` valt in categorie `'Geen oplossing'`.
+
+**Depot / Hub vraag** → `cbf_depot_reden`: `'Ziekmelding'` / `'Fiets kapot / incident'` / `'Informeren waar de vracht is'` / `'Alarm / sleutelkastje hub'` / `'Andere vraag'`. Bij `'Andere vraag'` vrij tekstveld `cbf_depot_toelichting`.
 
 ---
 
@@ -232,6 +237,16 @@ Korte flow, toegevoegd v1.18.0. Twee vragen:
    - Andere vraag → `'Vraag beantwoord'` of `'Geen oplossing'`
 
 Categorie: `Advies gegeven` bij positieve uitkomst, `Geen oplossing` bij `'Niet mogelijk'` of `'Geen oplossing'`. Uitkomst-string in log: `tl_uitkomst || tl_reden || 'Teamleider belt'`.
+
+---
+
+## Interne leveringen flow (bellerType = 'Interne leveringen')
+
+Korte flow, toegevoegd v1.23.0. Eén vraag:
+
+1. `intern_reden` — "Waar gaat de vraag over?": `'Bezorger meldt ETA / is bijna er'` of `'Hub niet gevonden'`
+
+Geen vervolgvraag. Uitkomst: `'ETA melding ontvangen'` of `'Hub niet gevonden — advies gegeven'`. Categorie: altijd `Advies gegeven`. Log: `'Interne levering: ' + intern_reden`.
 
 ---
 
@@ -251,6 +266,24 @@ De flow slaat `bellerType` / `probleem` / `uitkomst` / adres-velden over. Loggin
 
 ---
 
+## CBB Bij de klant — bijzondere probleem-gevallen
+
+Enkele `probleem`-waarden bij CBB `'Bij de klant'` resulteren in een directe submit zonder stop te plannen:
+
+| Probleem | Gedrag |
+|---|---|
+| `'Product past niet op gewenste plek'` | Direct log, submit-scherm toont Jerney-afmelding instructie |
+| `'Nazorg niet gelukt / swap aanvragen'` | Direct log, submit-scherm toont instructie om notitie te maken en swap via KS aan te vragen |
+| Milieuretour Pick-up → `pick_up_status='Pick-up niet gelukt — swap nodig'` | Direct log, categorie `Geen oplossing` |
+
+Vóór v1.21.0 heetten sommige van deze problemen anders (`'Niet bereikbaar'` → `'Product past niet op gewenste plek'`, `'Nazorg niet gelukt'` → `'Nazorg niet gelukt / swap aanvragen'`); de `LEGACY_LABEL_ALIASES` map verzorgt de migratie van geparkeerde sessies.
+
+**KS/Winkel: Tijdslot aanpassing / stop aanpassen** → `ks_tijdslot_uitkomst`: `'Aanpassing doorgegeven aan held'` / `'Aanpassing niet mogelijk'`. Altijd gevolgd door `product_mee_terug`: `'Nee'` / `'Ja'`.
+
+**Fornuis / Kookplaat — log-only**: Als `effectiefProduct()` `'Fornuis'` of `'Kookplaat'` is, toont de widget een rode waarschuwing ("DS voert geen service-visits uit") zowel in de productkiezer als op het submit-scherm. Loggen is mogelijk, maar er wordt geen stop gepland en er zijn geen sjablonen voor.
+
+---
+
 ## Gespreksflow — dienstType en tvNetwerk vragen
 
 **dienstType** wordt gevraagd na:
@@ -258,6 +291,10 @@ De flow slaat `bellerType` / `probleem` / `uitkomst` / adres-velden over. Loggin
 - "Same day gepland" → na `geplandeRoute` (toegevoegd v1.12.14)
 
 Wordt **overgeslagen** (`skipDienstType()`) bij: deur omdraaien + koelkast/vriezer-types (alleen Extra dienst sjabloon beschikbaar voor die combinatie).
+
+**Sjabloon-workarounds (paste-bookmarklet):**
+- **Deur omdraaien + Nazorg**: geen eigen Nazorg-sjabloon beschikbaar → paste-bookmarklet gebruikt het Extra dienst-sjabloon. Submit-scherm toont rode waarschuwing. Controleer de geplaste stop in DireXtion.
+- **Inbouw koelkast/vriezer + Aansluiting**: `kopieerNaarKlembord()` stuurt `probleem='inbouwen'` door naar de paste-bookmarklet zodat het Inbouwen-sjabloon wordt gebruikt (betere sjabloonmatch dan Aansluiting voor inbouw koelkast).
 
 **tvNetwerk** wordt gevraagd na dienstType (of na skipDienstType) bij next-day + TV-installatie-probleem + `formaatTV !== 'Ja (>= 55 inch)'`:
 - Opties: `'Built in (BI)'` of `'1X'`
@@ -275,8 +312,8 @@ Elke uitkomst wordt automatisch ingedeeld in één van zes vaste categorieën vi
 | `Same day gepland` | Bezoek/oplossing voor vandaag ingepland |
 | `Next day gepland` | Bezoek/oplossing voor een andere dag ingepland |
 | `Onderweg opgelost` | Held geholpen terwijl onderweg (`locatie='Onderweg'`): adres gevonden, route, tel.nr., stop uitgesteld, etc. |
-| `Advies gegeven` | Advies of info verstrekt zonder bezoek in te plannen: KS/Winkel geholpen, externe partners (TD/Yeply/G4S), CBF depot/pakket, geen actie nodig, visit verwijderd, algemeen gesprek afgerond |
-| `Geen oplossing` | DS kon geen oplossing bieden, of klant ziet af van service |
+| `Advies gegeven` | Advies of info verstrekt zonder bezoek in te plannen: KS/Winkel geholpen, externe partners (TD/Yeply/G4S), CBF depot/pakket, Interne leveringen, geen actie nodig, visit verwijderd, algemeen gesprek afgerond |
+| `Geen oplossing` | DS kon geen oplossing bieden, of klant ziet af van service. Ook: CBF stop `'Aanpassing niet mogelijk'`, pick-up `'Pick-up niet gelukt — swap nodig'` |
 | `Buiten DS scope` | `locatie='Afhandeling buiten DS'` of `bellerType='Andere beller'` (beller buiten DS-context) |
 
 Bij het toevoegen van een nieuwe uitkomst: controleer of `berekenCategorie()` de nieuwe waarde correct afvangt op basis van de bestaande logica, of voeg een expliciete check toe.
