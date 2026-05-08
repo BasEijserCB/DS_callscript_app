@@ -289,6 +289,10 @@
 
   function herstelSessie(staat) {
     Object.assign(callData, staat.callData);
+    // Migreer verouderde label-waarden naar de huidige equivalenten
+    Object.keys(callData).forEach(function(k) {
+      if (LEGACY_LABEL_ALIASES[callData[k]]) callData[k] = LEGACY_LABEL_ALIASES[callData[k]];
+    });
     answeredKeys = staat.answeredKeys || [];
     autoFilledKeys = staat.autoFilledKeys || [];
     isProductAutoGuessed = staat.isProductAutoGuessed || false;
@@ -328,6 +332,14 @@
 
   var meerdereProducten = alleGescrapteProducten.length > 1;
   var isProductAutoGuessed = false;
+
+  // Mapping van oude naar nieuwe label-waarden — voor migratie van geparkeerde sessies
+  // en als referentie voor Google Sheets rapportage-filters op historische log-entries.
+  var LEGACY_LABEL_ALIASES = {
+    'Helden teruggebeld, rijden terug zonder visit': 'Helden lossen het zelf op (geen DS-visit gepland)',
+    'Klant moet KS bellen': 'Buiten DS-scope: klant moet zelf KS bellen',
+    'Klant ziet af van service (meerkosten)': 'Klant ziet af van service'
+  };
 
   var callData = {
     user: (bFname && bLname) ? (bFname+' '+bLname) : '',
@@ -710,7 +722,7 @@
           if (callData.cbf_pakket_reden==='Pakje niet ingeladen') {
             s.push({key:'cbf_pakket_uitkomst',label:'Wat was de uitkomst?',type:'ux-select',opties:['Pakje wordt later afgeleverd (afleverbewijs)','Niet opgelost — instructie gegeven in Jerney']});
           } else if (callData.cbf_pakket_reden==='Spullen achtergelaten bij klant') {
-            s.push({key:'uitkomst',label:'Wat was de uitkomst?',type:'ux-select',opties:['Same day gepland','Next day gepland','Helden teruggebeld, rijden terug zonder visit']});
+            s.push({key:'uitkomst',label:'Wat was de uitkomst?',type:'ux-select',opties:['Same day gepland','Next day gepland','Helden lossen het zelf op (geen DS-visit gepland)']});
             if (answeredKeys.includes('uitkomst')) {
               if (callData.uitkomst==='Same day gepland') s.push({key:'geplandeRoute',label:'Op welke route gepland?',type:'route-input'});
               else if (callData.uitkomst==='Next day gepland') {
@@ -723,7 +735,7 @@
           }
         }
       } else if (callData.locatie === 'Stop aanpassen / verwijderen') {
-        s.push({key:'cbf_stop_uitkomst',label:'Wat was de uitkomst?',type:'ux-select',opties:['Stop verwijderd — bevestigd','Stop doorgepland naar andere route']});
+        s.push({key:'cbf_stop_uitkomst',label:'Wat was de uitkomst?',type:'ux-select',opties:['Stop verwijderd — bevestigd','Stop doorgepland naar andere route','Aanpassing niet mogelijk']});
       } else if (callData.locatie === 'Depot / Hub vraag') {
         s.push({key:'cbf_depot_reden',label:'Waar gaat de vraag over?',type:'ux-select',opties:['Ziekmelding','Fiets kapot / incident','Informeren waar de vracht is','Alarm / sleutelkastje hub','Andere vraag']});
         if (answeredKeys.includes('cbf_depot_reden') && callData.cbf_depot_reden==='Andere vraag') {
@@ -767,14 +779,14 @@
         // Geen verdere vragen — direct loggen
       } else if (callData.probleem==='Product niet aanwezig') {
         // Geen verdere vragen — direct loggen
-      } else if (callData.probleem==='Klant moet KS bellen') {
+      } else if (callData.probleem==='Buiten DS-scope: klant moet zelf KS bellen') {
         // Geen verdere vragen — direct loggen
       } else if (callData.probleem==='Product past niet op gewenste plek') {
         if (!autoFilledKeys.includes('uitkomst')) { callData.uitkomst='Geen oplossing gepland'; autoFilledKeys.push('uitkomst'); }
       } else if (callData.probleem==='Nazorg niet gelukt / swap aanvragen') {
         // Geen verdere vragen — directe log
       } else if (callData.probleem==='Spullen achtergelaten bij klant') {
-        s.push({key:'uitkomst',label:'Wat was de uitkomst?',type:'ux-select',opties:['Same day gepland','Next day gepland','Helden teruggebeld, rijden terug zonder visit']});
+        s.push({key:'uitkomst',label:'Wat was de uitkomst?',type:'ux-select',opties:['Same day gepland','Next day gepland','Helden lossen het zelf op (geen DS-visit gepland)']});
         if (callData.uitkomst==='Same day gepland') s.push({key:'geplandeRoute',label:'Op welke route gepland?',type:'route-input'});
         else if (callData.uitkomst==='Next day gepland') {
           if (!skipDienstType()) s.push({key:'dienstType',label:'Is dit Nazorg of een Extra dienst?',type:'dienst-select'});
@@ -824,7 +836,7 @@
         if (prodKlaar&&milKlaar) {
           // Advies gegeven alleen als escape op uitkomststap als probleem zelf geen concreet probleem is
           var uitkomstType = callData.probleem === 'Advies gegeven' ? 'ux-select' : 'uitkomst-select';
-          s.push({key:'uitkomst',label:'Wat was de uitkomst?',type:uitkomstType,opties:['Same day gepland','Next day gepland','Klant ziet af van service (meerkosten)','Geen oplossing gepland']});
+          s.push({key:'uitkomst',label:'Wat was de uitkomst?',type:uitkomstType,opties:['Same day gepland','Next day gepland','Klant ziet af van service','Geen oplossing gepland']});
           if (answeredKeys.includes('uitkomst')) {
             if (callData.uitkomst==='Same day gepland') {
               s.push({key:'geplandeRoute',label:'Op welke route gepland?',type:'route-input'});
@@ -876,7 +888,7 @@
       var isWinkel = callData.locatie==='Winkel';
       var ksLabel = isWinkel ? 'Wat is de reden van het winkelbelletje?' : 'Wat is de reden van het KS-belletje?';
       var ksOpties = isWinkel
-        ? ['Nazorg nodig','Winkel vraagt om held terug te sturen','Advies gegeven aan Winkel','Informatie over vracht','Witgoed Demo Wissel','Spullen achtergelaten bij klant','Tijdslot aanpassing / stop aanpassen']
+        ? ['Nazorg nodig','Winkel vraagt om held terug te sturen','Advies gegeven aan Winkel','Informatie over vracht','Witgoed Demo Wissel','Spullen achtergelaten bij klant','Bezorgadres/telefoonnummer klant doorgeven aan held','Tijdslot aanpassing / stop aanpassen']
         : ['Nazorg nodig','KS vraagt om held terug te sturen','Advies gegeven aan KS','Spullen achtergelaten bij klant','Bezorgadres/telefoonnummer klant doorgeven aan held','Tijdslot aanpassing / stop aanpassen'];
       s.push({key:'ks_reden',label:ksLabel,type:'ux-select',opties:ksOpties});
       if (answeredKeys.includes('ks_reden')) {
@@ -920,7 +932,7 @@
             var prodKlaar2 = answeredKeys.includes('product')&&(callData.product!=='Televisie'||answeredKeys.includes('formaatTV')||isTVInstallatie2);
             var milKlaar2  = callData.probleem!=='Milieuretour / Pick-up ophalen'||answeredKeys.includes('milieuretour_type');
             if (prodKlaar2&&milKlaar2) {
-              s.push({key:'uitkomst',label:'Wat was de uitkomst?',type:'uitkomst-select',opties:['Same day gepland','Klant ziet af van service (meerkosten)','Geen same day mogelijk']});
+              s.push({key:'uitkomst',label:'Wat was de uitkomst?',type:'uitkomst-select',opties:['Same day gepland','Klant ziet af van service','Geen same day mogelijk']});
               if (answeredKeys.includes('uitkomst')) {
                 if (callData.uitkomst==='Same day gepland') s.push({key:'geplandeRoute',label:'Op welke route gepland?',type:'route-input'});
                 else if (callData.uitkomst==='KS advies gegeven') s.push({key:'ks_advies_uitkomst',label:'Wat was het advies?',type:'ux-select',opties:['Geen same day optie, KS plant zelf oplossing','DS adviseert andere oplossing aan KS']});
@@ -941,7 +953,7 @@
         } else if (callData.ks_reden==='Witgoed Demo Wissel') {
           s.push({key:'ks_uitkomst',label:'Wat was de uitkomst?',type:'ux-select',opties:['Geplande visit verwijderd (niet nodig)','Geen actie nodig']});
         } else if (callData.ks_reden==='Spullen achtergelaten bij klant') {
-          s.push({key:'uitkomst',label:'Wat was de uitkomst?',type:'ux-select',opties:['Same day gepland','Next day gepland','Helden teruggebeld, rijden terug zonder visit']});
+          s.push({key:'uitkomst',label:'Wat was de uitkomst?',type:'ux-select',opties:['Same day gepland','Next day gepland','Helden lossen het zelf op (geen DS-visit gepland)']});
           if (answeredKeys.includes('uitkomst')) {
             if (callData.uitkomst==='Same day gepland') s.push({key:'geplandeRoute',label:'Op welke route gepland?',type:'route-input'});
             else if (callData.uitkomst==='Next day gepland') {
@@ -1018,6 +1030,7 @@
       if (callData.ks_reden==='Informatie over vracht') return 'Advies gegeven aan Winkel — depot doorverwezen';
       if (callData.ks_reden==='Advies gegeven aan Winkel') return 'Advies gegeven aan Winkel';
       if (callData.ks_reden==='Witgoed Demo Wissel') return callData.ks_uitkomst || 'Witgoed Demo Wissel';
+      if (callData.ks_reden==='Bezorgadres/telefoonnummer klant doorgeven aan held') return 'Bezorgadres/telefoonnummer klant doorgegeven aan held';
       if (callData.ks_reden==='Winkel vraagt om held terug te sturen') {
         if (callData.ks_uitkomst==='Same day gepland') return 'Ja stop gepland (same day)';
         if (callData.ks_uitkomst==='Next day gepland')  return 'Ja stop gepland (next day)';
@@ -1039,10 +1052,10 @@
       if (callData.ks_reden==='Spullen achtergelaten bij klant') {
         if (callData.uitkomst==='Same day gepland') return 'Spullen achtergelaten — same day stop gepland';
         if (callData.uitkomst==='Next day gepland') return 'Spullen achtergelaten — next day stop gepland';
-        if (callData.uitkomst==='Helden teruggebeld, rijden terug zonder visit') return 'Spullen achtergelaten — helden teruggebeld';
+        if (callData.uitkomst==='Helden lossen het zelf op (geen DS-visit gepland)') return 'Spullen achtergelaten — helden teruggebeld';
       }
       if (callData.uitkomst==='Same day gepland') return 'Ja stop gepland (same day)';
-      if (callData.uitkomst==='Klant ziet af van service (meerkosten)') return 'Klant ziet af van service vanwege meerkosten';
+      if (callData.uitkomst==='Klant ziet af van service') return 'Klant ziet af van service vanwege meerkosten';
       if (callData.uitkomst==='Geen same day mogelijk') return 'Geen same day mogelijk — KS regelt next day nazorg';
       if (callData.uitkomst==='KS advies gegeven') return callData.ks_advies_uitkomst||'KS advies gegeven';
       return 'Nee, geen oplossing door DS';
@@ -1050,11 +1063,11 @@
       if (callData.probleem==='Verkeerd gelabeld product') return 'Verkeerd gelabeld product — instructie gegeven aan Held';
       if (callData.probleem==='Onverwacht retour') return 'Onverwacht retour doorgegeven';
       if (callData.probleem==='Product niet aanwezig') return 'Product niet aanwezig bij de klant — held geïnformeerd voor Jerney-afmelding';
-      if (callData.probleem==='Klant moet KS bellen') return 'Klant doorverwezen naar KS — held geïnformeerd';
+      if (callData.probleem==='Buiten DS-scope: klant moet zelf KS bellen') return 'Klant doorverwezen naar KS — held geïnformeerd';
       if (callData.probleem==='Spullen achtergelaten bij klant') {
         if (callData.uitkomst==='Same day gepland') return 'Spullen achtergelaten — same day stop gepland';
         if (callData.uitkomst==='Next day gepland') return 'Spullen achtergelaten — next day stop gepland';
-        if (callData.uitkomst==='Helden teruggebeld, rijden terug zonder visit') return 'Spullen achtergelaten — helden teruggebeld';
+        if (callData.uitkomst==='Helden lossen het zelf op (geen DS-visit gepland)') return 'Spullen achtergelaten — helden teruggebeld';
         return 'Spullen achtergelaten bij klant';
       }
       if (callData.probleem==='Milieuretour past niet in bus') {
@@ -1072,7 +1085,7 @@
       if (isAdv) return callData.advies_gelukt==='Ja, service uitgevoerd' ? 'Advies gegeven aan held waardoor service uitgevoerd is' : 'Nee, geen oplossing door DS';
       if (callData.uitkomst==='Same day gepland')    return 'Ja stop gepland (same day)';
       if (callData.uitkomst==='Next day gepland')    return 'Ja stop gepland (next day)';
-      if (callData.uitkomst==='Klant ziet af van service (meerkosten)') return 'Klant ziet af van service vanwege meerkosten';
+      if (callData.uitkomst==='Klant ziet af van service') return 'Klant ziet af van service vanwege meerkosten';
       if (callData.uitkomst==='Geen oplossing gepland') return 'Geen oplossing gepland door DS';
       return 'Nee, geen oplossing door DS';
     } else if (callData.locatie==='Vraag over depot / hub') {
@@ -1153,7 +1166,7 @@
             '<span style="font-size:11px;color:'+(geenOrderMode?'#ff6600':'#aaa')+';">'+(geenOrderMode?'Gegevens gewist':'Geen order')+'</span>' +
           '</div>' : '') +
         '</div></div>' +
-        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.21.2</div>' +
+        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.22.0</div>' +
       '</div>';
 
     idoc.getElementById('btn-close').onclick = function(){ wrapper.remove(); };
@@ -1740,7 +1753,7 @@
       ['Advies gegeven','Spullen achtergelaten bij klant','Onverwacht retour',
        'Nazorg niet gelukt / swap aanvragen','Product past niet op gewenste plek',
        'Blijverkoop vergeten','Verkeerd gelabeld product',
-       'Product niet aanwezig','Klant moet KS bellen'
+       'Product niet aanwezig','Buiten DS-scope: klant moet zelf KS bellen'
       ].forEach(function(item){
         var b=idoc.createElement('button'); b.className='ux-btn'; b.style.marginBottom='4px'; b.innerText=item;
         b.onclick=(function(val){ return function(){
@@ -1940,11 +1953,11 @@
     var ondU = callData.onderweg_uitkomst     || '';
     var advG = callData.advies_gelukt         || '';
     var cbfP = callData.cbf_pakket_uitkomst   || '';
-    if (u==='Same day gepland'||u==='Same day visit gepland'||u==='Helden teruggebeld, rijden terug zonder visit'||ksU==='Teamleider stuurt helden terug')
+    if (u==='Same day gepland'||u==='Same day visit gepland'||u==='Helden lossen het zelf op (geen DS-visit gepland)'||ksU==='Teamleider stuurt helden terug')
       return 'Same day gepland';
     if (u==='Next day gepland'||u==='Next day visit gepland'||ksU==='Next day gepland')
       return 'Next day gepland';
-    if (u==='Geen oplossing gepland'||u==='Klant ziet af van service (meerkosten)'||ksU==='Teamleider stuurt helden niet terug'||ksU==='DS vindt terugsturen niet de juiste oplossing'||ondU==='Nee, geen oplossing door DS'||advG==='Nee, geen oplossing door DS'||cbfP==='Nee, geen oplossing door DS'||cbfP==='Niet opgelost — instructie gegeven in Jerney'||callData.tl_uitkomst==='Niet mogelijk'||callData.tl_uitkomst==='Geen oplossing'||callData.pick_up_status==='Pick-up niet gelukt — swap nodig')
+    if (u==='Geen oplossing gepland'||u==='Klant ziet af van service'||ksU==='Teamleider stuurt helden niet terug'||ksU==='DS vindt terugsturen niet de juiste oplossing'||ondU==='Nee, geen oplossing door DS'||advG==='Nee, geen oplossing door DS'||cbfP==='Nee, geen oplossing door DS'||cbfP==='Niet opgelost — instructie gegeven in Jerney'||callData.tl_uitkomst==='Niet mogelijk'||callData.tl_uitkomst==='Geen oplossing'||callData.pick_up_status==='Pick-up niet gelukt — swap nodig'||callData.cbf_stop_uitkomst==='Aanpassing niet mogelijk')
       return 'Geen oplossing';
     if (l==='Afhandeling buiten DS'||callData.bellerType==='Andere beller')
       return 'Buiten DS scope';
