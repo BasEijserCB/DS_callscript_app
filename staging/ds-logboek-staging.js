@@ -6,7 +6,7 @@
 // React, ReactDOM, DS, and browser globals are accessible inside JSX.
 
 (function () {
-  const STAGING_VERSION = "0.5.6-staging";
+  const STAGING_VERSION = "0.6.0-staging";
   const ROOT_ID = "ds-logboek-staging-root";
   const STYLE_ID = "ds-logboek-staging-style";
   const GAS_URL = "https://script.google.com/a/macros/coolblue.nl/s/AKfycbxb-OwLCFGlDQ48qz3KnGnmsgnVLWxuOjvEr7UG3M3z0WzO0kVsTKGd_8mZjtvHvPHnEg/exec";
@@ -289,9 +289,9 @@
           else if (cd.onderweg_type==='Vraag over service') s.push({key:'onderweg_uitkomst',label:'Wat was de uitkomst?',type:'ux-select',opties:['Vraag beantwoord, held kan verder','Nee, geen oplossing door DS']});
         }
       } else if (cd.locatie==='Bij de klant') {
-        s.push({key:'cbf_pakket_reden',label:'Wat is de vraag?',type:'ux-select',opties:['Pakket niet meegenomen (manco)','Pakket verkeerd / beschadigd','Pakje niet ingeladen','Spullen achtergelaten bij klant','Overige vraag over pakket']});
+        s.push({key:'cbf_pakket_reden',label:'Wat is de vraag?',type:'ux-select',opties:['Pakket niet meegenomen / niet ingeladen','Pakket verkeerd / beschadigd','Spullen achtergelaten bij klant','Overige vraag over pakket']});
         if (ak.includes('cbf_pakket_reden')) {
-          if (cd.cbf_pakket_reden==='Pakje niet ingeladen') s.push({key:'cbf_pakket_uitkomst',label:'Wat was de uitkomst?',type:'ux-select',opties:['Pakje wordt later afgeleverd (afleverbewijs)','Niet opgelost — instructie gegeven in Jerney']});
+          if (cd.cbf_pakket_reden==='Pakket niet meegenomen / niet ingeladen') s.push({key:'cbf_pakket_uitkomst',label:'Wat was de uitkomst?',type:'ux-select',opties:['Klant geïnformeerd, manco geregistreerd','Pakje wordt later afgeleverd (afleverbewijs)','Niet opgelost — instructie gegeven in Jerney']});
           else if (cd.cbf_pakket_reden==='Spullen achtergelaten bij klant') {
             s.push({key:'uitkomst',label:'Wat was de uitkomst?',type:'ux-select',opties:['Same day gepland','Next day gepland','Helden teruggebeld, rijden terug zonder visit']});
             if (ak.includes('uitkomst')) {
@@ -1048,6 +1048,7 @@ function App(){
           {cd.pick_up_status==='Pick-up niet gelukt — swap nodig'&&<div className="ds-note is-info"><div><strong>Instructie voor de Held</strong><br/>Meld de pick-up af in Jerney. Kies "Swap aanvragen" als reden.</div></div>}
           {cd.onderweg_type==='Adres klopt niet'&&<div className="ds-note is-info"><div><strong>Instructie voor de Held</strong><br/>Geef aan in Jerney dat het adres niet klopt. Noteer het correcte adres in het opmerkingenveld.{sc.adresQuery&&<span style={{display:'block',marginTop:8}}><strong>🔍 Zoek het adres op:</strong>{adresLand==='NL'&&<a href={'https://bagviewer.kadaster.nl/lvbag/bag-viewer/?searchQuery='+sc.adresQuery+'&zoomlevel=15'} target="_blank" rel="noreferrer" style={{color:'#0090e3',display:'block',marginTop:4}}>🇳🇱 Bagviewer (Kadaster)</a>}{adresLand==='BE'&&<a href={'https://www.geopunt.be/kaart?zoomLevel=14&locationSearch='+sc.adresQuery} target="_blank" rel="noreferrer" style={{color:'#0090e3',display:'block',marginTop:4}}>🇧🇪 Geopunt</a>}<a href={'https://www.google.com/maps/search/'+sc.adresQuery} target="_blank" rel="noreferrer" style={{color:'#0090e3',display:'block',marginTop:4}}>🗺 Google Maps</a><a href={'https://www.bing.com/maps?q='+sc.adresQuery} target="_blank" rel="noreferrer" style={{color:'#0090e3',display:'block',marginTop:4}}>🗺 Bing Maps</a></span>}</div></div>}
           {cd.onderweg_type==='Klant niet thuis'&&<div className="ds-note is-info"><div><strong>Check of de held deze stappen heeft doorlopen:</strong><br/>\u{1f514} Aangebeld · \u{1f4de} Klant gebeld · \u{1f550} Binnen tijdvak<br/><strong>Afmelden in Jerney:</strong> kies "Klant niet thuis", maak foto van de voordeur.</div></div>}
+          {cd.cbf_pakket_reden==='Pakket niet meegenomen / niet ingeladen'&&cd.cbf_pakket_uitkomst==='Niet opgelost — instructie gegeven in Jerney'&&<div className="ds-note is-info"><div><strong>Instructie voor de fietser</strong><br/>Verwerk het missende pakje in Jerney — kies de optie "Pakket ontbreekt" of vergelijkbaar.</div></div>}
           {cd.bellerType==='Andere beller'&&<div className="ds-note is-info"><div><strong>Andere beller</strong><br/>Dit gesprek gaat niet over een bezorging. Loggen is voldoende.</div></div>}
           {(cd.probleem||'').toLowerCase().includes('deur omdraaien')&&cd.dienstType==='Nazorg (gratis)'&&<div className="ds-note is-warn"><div><strong>⚠️ Let op: geen nazorg-sjabloon beschikbaar voor Deur omdraaien.</strong><br/>De tool gebruikt noodgedwongen het extra-dienst sjabloon voor het klembord. Controleer de geplaste stop in DireXtion.</div></div>}
           {isLogOnly&&<div className="ds-note is-warn" style={{background:'#FFE6E6',borderColor:'#E63946',color:'#C1121F'}}><div><strong>⚠️ DS voert geen service-visits uit voor Fornuis / Kookplaat!</strong><br/>Loggen is mogelijk, maar er wordt geen stop gepland.</div></div>}

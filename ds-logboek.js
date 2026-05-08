@@ -338,7 +338,9 @@
   var LEGACY_LABEL_ALIASES = {
     'Helden teruggebeld, rijden terug zonder visit': 'Helden lossen het zelf op (geen DS-visit gepland)',
     'Klant moet KS bellen': 'Buiten DS-scope: klant moet zelf KS bellen',
-    'Klant ziet af van service (meerkosten)': 'Klant ziet af van service'
+    'Klant ziet af van service (meerkosten)': 'Klant ziet af van service',
+    'Pakket niet meegenomen (manco)': 'Pakket niet meegenomen / niet ingeladen',
+    'Pakje niet ingeladen': 'Pakket niet meegenomen / niet ingeladen'
   };
 
   var callData = {
@@ -729,10 +731,10 @@
           }
         }
       } else if (callData.locatie === 'Bij de klant') {
-        s.push({key:'cbf_pakket_reden',label:'Wat is de vraag?',type:'ux-select',opties:['Pakket niet meegenomen (manco)','Pakket verkeerd / beschadigd','Pakje niet ingeladen','Spullen achtergelaten bij klant','Overige vraag over pakket']});
+        s.push({key:'cbf_pakket_reden',label:'Wat is de vraag?',type:'ux-select',opties:['Pakket niet meegenomen / niet ingeladen','Pakket verkeerd / beschadigd','Spullen achtergelaten bij klant','Overige vraag over pakket']});
         if (answeredKeys.includes('cbf_pakket_reden')) {
-          if (callData.cbf_pakket_reden==='Pakje niet ingeladen') {
-            s.push({key:'cbf_pakket_uitkomst',label:'Wat was de uitkomst?',type:'ux-select',opties:['Pakje wordt later afgeleverd (afleverbewijs)','Niet opgelost — instructie gegeven in Jerney']});
+          if (callData.cbf_pakket_reden==='Pakket niet meegenomen / niet ingeladen') {
+            s.push({key:'cbf_pakket_uitkomst',label:'Wat was de uitkomst?',type:'ux-select',opties:['Klant geïnformeerd, manco geregistreerd','Pakje wordt later afgeleverd (afleverbewijs)','Niet opgelost — instructie gegeven in Jerney']});
           } else if (callData.cbf_pakket_reden==='Spullen achtergelaten bij klant') {
             s.push({key:'uitkomst',label:'Wat was de uitkomst?',type:'ux-select',opties:['Same day gepland','Next day gepland','Helden lossen het zelf op (geen DS-visit gepland)']});
             if (answeredKeys.includes('uitkomst')) {
@@ -1182,7 +1184,7 @@
             '<span style="font-size:11px;color:'+(geenOrderMode?'#ff6600':'#aaa')+';">'+(geenOrderMode?'Gegevens gewist':'Geen order')+'</span>' +
           '</div>' : '') +
         '</div></div>' +
-        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.23.2</div>' +
+        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.24.0</div>' +
       '</div>';
 
     idoc.getElementById('btn-close').onclick = function(){ wrapper.remove(); };
@@ -1455,7 +1457,7 @@
           '</div>';
       }
       // Info blokje voor CBF pakje niet ingeladen + niet opgelost — Jerney instructie
-      if (callData.cbf_pakket_reden==='Pakje niet ingeladen' && callData.cbf_pakket_uitkomst==='Niet opgelost — instructie gegeven in Jerney') {
+      if (callData.cbf_pakket_reden==='Pakket niet meegenomen / niet ingeladen' && callData.cbf_pakket_uitkomst==='Niet opgelost — instructie gegeven in Jerney') {
         submitHtml += '<div class="info-box">ℹ️ <b>Instructie voor de fietser:</b><br>Verwerk het missende pakje in Jerney — kies de optie "Pakket ontbreekt" of vergelijkbaar voor dit soort situaties.</div>';
       }
       // Info blokje voor andere bellers (niet over bezorging)
