@@ -6,7 +6,7 @@
 // React, ReactDOM, DS, and browser globals are accessible inside JSX.
 
 (function () {
-  const STAGING_VERSION = "0.5.4-staging";
+  const STAGING_VERSION = "0.5.5-staging";
   const ROOT_ID = "ds-logboek-staging-root";
   const STYLE_ID = "ds-logboek-staging-style";
   const GAS_URL = "https://script.google.com/a/macros/coolblue.nl/s/AKfycbxb-OwLCFGlDQ48qz3KnGnmsgnVLWxuOjvEr7UG3M3z0WzO0kVsTKGd_8mZjtvHvPHnEg/exec";
@@ -271,10 +271,7 @@
 
     // ── INTERNE LEVERINGEN FLOW ──────────────────────────────────
     if (cd.bellerType==='Interne leveringen') {
-      s.push({key:'intern_reden',label:'Waar gaat de vraag over?',type:'ux-select',opties:['Bezorger meldt ETA / is bijna er','Vraag over de hub']});
-      if (ak.includes('intern_reden') && cd.intern_reden==='Vraag over de hub') {
-        s.push({key:'intern_toelichting',label:'Wat is de vraag?',type:'text'});
-      }
+      s.push({key:'intern_reden',label:'Waar gaat de vraag over?',type:'ux-select',opties:['Bezorger meldt ETA / is bijna er','Hub niet gevonden']});
       return s;
     }
 
@@ -488,7 +485,7 @@
     if (cd.bellerType==='Teamleider') return cd.tl_uitkomst||cd.tl_reden||'Teamleider belt';
     if (cd.bellerType==='Interne leveringen') {
       if (cd.intern_reden==='Bezorger meldt ETA / is bijna er') return 'ETA melding ontvangen';
-      return 'Vraag over de hub'+(cd.intern_toelichting?': '+cd.intern_toelichting:'');
+      return 'Hub niet gevonden';
     }
     if (cd.bellerType==='CBF') {
       if (cd.locatie==='Depot / Hub vraag') return 'Advies gegeven (CBF doorverwezen naar depot) — '+(cd.cbf_depot_reden||'reden onbekend')+(cd.cbf_depot_toelichting?': '+cd.cbf_depot_toelichting:'');
@@ -553,7 +550,7 @@
     if (cd.bellerType==='Teamleider') {
       probLog=cd.tl_reden+(cd.tl_uitkomst?' — '+cd.tl_uitkomst:''); logD1=''; logD2='';
     } else if (cd.bellerType==='Interne leveringen') {
-      probLog='Interne levering: '+(cd.intern_reden||'')+(cd.intern_toelichting?' — '+cd.intern_toelichting:'');
+      probLog='Interne levering: '+(cd.intern_reden||'');
       redenGeenOplossing=''; redenNextDay=''; routeLog=''; orderOplLog='';
       logD1=''; logD2='';
     } else if (cd.bellerType==='CBF') {

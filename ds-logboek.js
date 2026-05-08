@@ -701,10 +701,7 @@
 
     // ── INTERNE LEVERINGEN FLOW ──────────────────────────────────
     if (callData.bellerType === 'Interne leveringen') {
-      s.push({key:'intern_reden',label:'Waar gaat de vraag over?',type:'ux-select',opties:['Bezorger meldt ETA / is bijna er','Vraag over de hub']});
-      if (answeredKeys.includes('intern_reden') && callData.intern_reden === 'Vraag over de hub') {
-        s.push({key:'intern_toelichting',label:'Wat is de vraag?',type:'text'});
-      }
+      s.push({key:'intern_reden',label:'Waar gaat de vraag over?',type:'ux-select',opties:['Bezorger meldt ETA / is bijna er','Hub niet gevonden']});
       return s;
     }
 
@@ -1024,7 +1021,7 @@
     }
     if (callData.bellerType === 'Interne leveringen') {
       if (callData.intern_reden === 'Bezorger meldt ETA / is bijna er') return 'ETA melding ontvangen';
-      return 'Vraag over de hub' + (callData.intern_toelichting ? ': ' + callData.intern_toelichting : '');
+      return 'Hub niet gevonden';
     }
     if (callData.bellerType === 'CBF') {
       if (callData.locatie === 'Vraag voor het depot') {
@@ -1185,7 +1182,7 @@
             '<span style="font-size:11px;color:'+(geenOrderMode?'#ff6600':'#aaa')+';">'+(geenOrderMode?'Gegevens gewist':'Geen order')+'</span>' +
           '</div>' : '') +
         '</div></div>' +
-        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.23.0</div>' +
+        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.23.1</div>' +
       '</div>';
 
     idoc.getElementById('btn-close').onclick = function(){ wrapper.remove(); };
@@ -2010,7 +2007,7 @@
       redenGeenOplossing = ''; redenNextDay = ''; routeLog = ''; orderOplLog = '';
       logDriver1 = ''; logDriver2 = '';
     } else if (callData.bellerType === 'Interne leveringen') {
-      probLog            = 'Interne levering: ' + (callData.intern_reden||'') + (callData.intern_toelichting ? ' — ' + callData.intern_toelichting : '');
+      probLog            = 'Interne levering: ' + (callData.intern_reden||'');
       redenGeenOplossing = ''; redenNextDay = ''; routeLog = ''; orderOplLog = '';
       logDriver1 = ''; logDriver2 = '';
     } else if (callData.bellerType === 'CBF') {
