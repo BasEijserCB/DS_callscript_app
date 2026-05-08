@@ -6,7 +6,7 @@
 // React, ReactDOM, DS, and browser globals are accessible inside JSX.
 
 (function () {
-  const STAGING_VERSION = "0.6.2-staging";
+  const STAGING_VERSION = "0.6.3-staging";
   const ROOT_ID = "ds-logboek-staging-root";
   const STYLE_ID = "ds-logboek-staging-style";
   const GAS_URL = "https://script.google.com/a/macros/coolblue.nl/s/AKfycbxb-OwLCFGlDQ48qz3KnGnmsgnVLWxuOjvEr7UG3M3z0WzO0kVsTKGd_8mZjtvHvPHnEg/exec";
@@ -937,10 +937,11 @@ function App(){
   var _cd=useState(false),logDone=_cd[0],setLogDone=_cd[1];
   var _ct=useState(''),textVal=_ct[0],setTextVal=_ct[1];
   var _cm=useState([]),multiSel=_cm[0],setMultiSel=_cm[1];
+  var _pt=useState('taak'),probleemTab=_pt[0],setProbleemTab=_pt[1];
   var cd=conv.cd,ak=conv.ak,afk=conv.afk,isAG=conv.isAG;
   var inputRef=useRef(null);
 
-  useEffect(function(){if(inputRef.current)inputRef.current.focus();},[ak.length]);
+  useEffect(function(){if(inputRef.current)inputRef.current.focus();setProbleemTab('taak');},[ak.length]);
 
   var steps=DS.bepaalStappen(cd,ak,afk,alleProds);
   var stap=steps.find(function(s){return !ak.includes(s.key);});
@@ -1206,19 +1207,17 @@ function App(){
     var bijzonderItems=['Advies gegeven','Spullen achtergelaten bij klant','Onverwacht retour','Nazorg niet gelukt / swap aanvragen','Product past niet op gewenste plek','Blijverkoop vergeten','Verkeerd gelabeld product','Product niet aanwezig','Klant moet KS bellen'];
     var fkProd=(function(){var p=cd.productVerfijnd||cd.product||'';return p.toLowerCase();})();
     var isFKProd=fkProd==='fornuis'||fkProd==='kookplaat';
+    var tabStyle=function(active){return {flex:1,padding:'6px 8px',fontSize:12,fontWeight:600,border:'1px solid var(--line)',background:active?'var(--cb-blue)':'#fff',color:active?'#fff':'var(--ink-2)',cursor:'pointer',transition:'background .12s,color .12s'};};
     stepBody=(
       <div className="ds-stack">
         {isFKProd&&<div className="ds-note is-warn"><div><strong>⚠️ DS voert geen service-visits uit voor Fornuis / Kookplaat.</strong><br/>Je kunt het gesprek loggen, maar er kan geen stop gepland worden.</div></div>}
-        {(stap.opties||[]).map(function(o){return <button key={o} className="ds-opt" onClick={function(){handleSelect(o);}}><span className="ds-opt__label">{o}</span></button>;})}
-        <details className="ds-disclose ds-disclose--bijzonder" onToggle={function(e){if(e.target.open)e.target.scrollIntoView({behavior:'smooth',block:'nearest'});}}><summary>✦ Andere opties ▾</summary>
-          <div className="ds-stack" style={{paddingTop:8}}>
-            {bijzonderItems.map(function(o){return(
-              <button key={o} className="ds-opt" onClick={function(){handleSelect(o);}}>
-                <span className="ds-opt__label">{o}</span>
-              </button>
-            );})}
-          </div>
-        </details>
+        <div style={{display:'flex',borderRadius:'var(--r-md)',overflow:'hidden',border:'1px solid var(--line)',marginBottom:2}}>
+          <button style={Object.assign(tabStyle(probleemTab==='taak'),{borderRadius:0,border:'none',borderRight:'1px solid var(--line)'})} onClick={function(){setProbleemTab('taak');}}>Taak bij klant</button>
+          <button style={Object.assign(tabStyle(probleemTab==='anders'),{borderRadius:0,border:'none'})} onClick={function(){setProbleemTab('anders');}}>Andere situaties</button>
+        </div>
+        {probleemTab==='taak'
+          ? (stap.opties||[]).map(function(o){return <button key={o} className="ds-opt" onClick={function(){handleSelect(o);}}><span className="ds-opt__label">{o}</span></button>;})
+          : bijzonderItems.map(function(o){return <button key={o} className="ds-opt" onClick={function(){handleSelect(o);}}><span className="ds-opt__label">{o}</span></button>;})}
       </div>
     );
   }else{
