@@ -359,6 +359,7 @@
     cbf_pakket_reden:'', cbf_pakket_uitkomst:'',
     cbb_hub_reden:'', cbb_hub_toelichting:'',
     tl_reden:'', tl_uitkomst:'',
+    intern_reden:'', intern_toelichting:'',
     winkel_reden:'', ks_advies_uitkomst:'',
     orderOplossing:'', dsWaarde:'',
     tijdvak: scrapedTijdvak||'', aankomsttijd: scrapedAankomsttijd||'',
@@ -670,6 +671,11 @@
            prod==='koelkast / vriezer';
   }
 
+  function isLogOnlyProduct() {
+    var p = effectiefProduct().toLowerCase();
+    return p === 'fornuis' || p === 'kookplaat';
+  }
+
   // ── FLOW ENGINE ───────────────────────────────────────────────
   function bepaalStappen() {
     var s=[];
@@ -689,6 +695,15 @@
         } else {
           s.push({key:'tl_uitkomst',label:'Wat was de uitkomst?',type:'ux-select',opties:['Vraag beantwoord','Geen oplossing']});
         }
+      }
+      return s;
+    }
+
+    // ── INTERNE LEVERINGEN FLOW ──────────────────────────────────
+    if (callData.bellerType === 'Interne leveringen') {
+      s.push({key:'intern_reden',label:'Waar gaat de vraag over?',type:'ux-select',opties:['Bezorger meldt ETA / is bijna er','Vraag over de hub']});
+      if (answeredKeys.includes('intern_reden') && callData.intern_reden === 'Vraag over de hub') {
+        s.push({key:'intern_toelichting',label:'Wat is de vraag?',type:'text'});
       }
       return s;
     }
@@ -838,10 +853,10 @@
           var uitkomstType = callData.probleem === 'Advies gegeven' ? 'ux-select' : 'uitkomst-select';
           s.push({key:'uitkomst',label:'Wat was de uitkomst?',type:uitkomstType,opties:['Same day gepland','Next day gepland','Klant ziet af van service','Geen oplossing gepland']});
           if (answeredKeys.includes('uitkomst')) {
-            if (callData.uitkomst==='Same day gepland') {
+            if (callData.uitkomst==='Same day gepland' && !isLogOnlyProduct()) {
               s.push({key:'geplandeRoute',label:'Op welke route gepland?',type:'route-input'});
               if (answeredKeys.includes('geplandeRoute')&&!skipDienstType()) s.push({key:'dienstType',label:'Is dit Nazorg of een Extra dienst?',type:'dienst-select'});
-            } else if (callData.uitkomst==='Next day gepland') {
+            } else if (callData.uitkomst==='Next day gepland' && !isLogOnlyProduct()) {
               if (!skipDienstType()) s.push({key:'dienstType',label:'Is dit Nazorg of een Extra dienst?',type:'dienst-select'});
               if ((answeredKeys.includes('dienstType')||skipDienstType())&&isTVInstallatie&&callData.formaatTV!=='Ja (>= 55 inch)') {
                 if (!answeredKeys.includes('tvNetwerk')) {
@@ -1007,6 +1022,10 @@
     if (callData.bellerType === 'Teamleider') {
       return callData.tl_uitkomst || callData.tl_reden || 'Teamleider belt';
     }
+    if (callData.bellerType === 'Interne leveringen') {
+      if (callData.intern_reden === 'Bezorger meldt ETA / is bijna er') return 'ETA melding ontvangen';
+      return 'Vraag over de hub' + (callData.intern_toelichting ? ': ' + callData.intern_toelichting : '');
+    }
     if (callData.bellerType === 'CBF') {
       if (callData.locatie === 'Vraag voor het depot') {
         return 'Advies gegeven (CBF doorverwezen naar depot) — ' + (callData.cbf_depot_reden||'reden onbekend') + (callData.cbf_depot_toelichting ? ': ' + callData.cbf_depot_toelichting : '');
@@ -1166,7 +1185,7 @@
             '<span style="font-size:11px;color:'+(geenOrderMode?'#ff6600':'#aaa')+';">'+(geenOrderMode?'Gegevens gewist':'Geen order')+'</span>' +
           '</div>' : '') +
         '</div></div>' +
-        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.22.0</div>' +
+        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.23.0</div>' +
       '</div>';
 
     idoc.getElementById('btn-close').onclick = function(){ wrapper.remove(); };
@@ -1388,6 +1407,7 @@
     // SAMENVATTING
     if (!stap) {
       var isGepland=callData.uitkomst==='Same day gepland'||callData.uitkomst==='Next day gepland'||callData.uitkomst==='Same day visit gepland'||callData.uitkomst==='Next day visit gepland'||callData.ks_uitkomst==='Same day gepland'||callData.ks_uitkomst==='Next day gepland';
+      var isLogOnly = isLogOnlyProduct();
       var submitHtml = productChip;
 
       // Blauw info paneeltje voor CBF depot / hub vraag
@@ -1445,9 +1465,13 @@
       if (callData.bellerType==='Andere beller') {
         submitHtml += '<div class="info-box">ℹ️ <b>Andere beller</b><br>Dit gesprek gaat niet over een bezorging. Je hoeft niet aan te geven wat het probleem was — gewoon loggen is voldoende.</div>';
       }
-      // Rode warning voor fornuis
-      if (callData.product==='Fornuis') {
-        submitHtml += '<div class="info-box" style="background:#FFE6E6;border-color:#E63946;color:#C1121F;">⚠️ <b>DS serveert geen fornuizen!</b><br>Deze bestelling kan niet via DS geplaatst worden. Kies "Niet uitvoerbaar" of "Afhandeling buiten DS" voor verdere afhandeling.</div>';
+      // Warning voor deur omdraaien + nazorg (geen eigen nazorg-sjabloon beschikbaar)
+      if ((callData.probleem||'').toLowerCase().includes('deur omdraaien') && callData.dienstType === 'Nazorg (gratis)') {
+        submitHtml += '<div class="warning-box">⚠️ <b>Let op: geen nazorg-sjabloon beschikbaar voor Deur omdraaien.</b><br>De tool gebruikt noodgedwongen het extra-dienst sjabloon voor het klembord. Controleer de geplaste stop in DireXtion.</div>';
+      }
+      // Warning voor fornuis of kookplaat (geen service-visits)
+      if (effectiefProduct()==='Fornuis' || effectiefProduct()==='Kookplaat') {
+        submitHtml += '<div class="info-box" style="background:#FFE6E6;border-color:#E63946;color:#C1121F;">⚠️ <b>DS voert geen service-visits uit voor Fornuis / Kookplaat!</b><br>Loggen is mogelijk, maar er wordt geen stop gepland.</div>';
       }
 
       var direxUrl = '';
@@ -1467,14 +1491,14 @@
           '<div class="controle-item" style="margin-top:8px;padding-top:8px;border-top:1px solid #DDDDDD;">📝 Vergeet niet een opmerking te plaatsen op de originele order in DireXtion' + (isBasicPage ? '.' : ' — deze wordt automatisch in een nieuw tabblad geopend na loggen.') + '</div>' +
           '</div>';
       }
-      if (isGepland) {
+      if (isGepland && !isLogOnly) {
         submitHtml += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:10px;"><button id="btn-clipboard" class="action-btn submit-btn">📋 Klembord</button><button id="btn-loggen" class="action-btn submit-btn">✓ Loggen</button><button id="btn-both" class="action-btn submit-btn">Loggen + Klembord</button></div>';
       } else {
         submitHtml += '<button id="btn-loggen" class="action-btn submit-btn">✓ Loggen</button>';
       }
       container.innerHTML = submitHtml;
       var openDirex = function() { if (direxUrl) window.open(direxUrl, '_blank'); };
-      if (isGepland) {
+      if (isGepland && !isLogOnly) {
         idoc.getElementById('btn-clipboard').onclick = function() { kopieerNaarKlembord(); };
         idoc.getElementById('btn-loggen').onclick = function() { if (!isBasicPage) openDirex(); verstuurAlleen(); };
         idoc.getElementById('btn-both').onclick = function() { if (!isBasicPage) openDirex(); verstuurEnKopieer(); };
@@ -1596,7 +1620,7 @@
 
     // PRODUCT TYPE KEUZE — bij onherkend type
     } else if (stap.type==='product-type-keuze') {
-      ['Wasmachine','Wasdroogcombinatie','Droger','Koelkast / Vriezer','Vaatwasser','Oven','Televisie','Soundbar','Overig'].forEach(function(o) {
+      ['Wasmachine','Wasdroogcombinatie','Droger','Koelkast / Vriezer','Vaatwasser','Oven','Fornuis','Kookplaat','Televisie','Soundbar','Overig'].forEach(function(o) {
         var b=idoc.createElement('button'); b.className='ux-btn'; b.innerText=o;
         b.onclick=function(){
           callData[stap.key]=o;
@@ -1609,6 +1633,13 @@
 
     // PROBLEEM GESECTEERD — per producttype in twee kolommen
     } else if (stap.type==='probleem-grouped') {
+      var fkProd = effectiefProduct().toLowerCase();
+      if (fkProd === 'fornuis' || fkProd === 'kookplaat') {
+        var fkWarn = idoc.createElement('div');
+        fkWarn.className = 'warning-box';
+        fkWarn.innerHTML = '⚠️ <b>DS voert geen service-visits uit voor Fornuis / Kookplaat.</b><br>Je kunt het gesprek loggen, maar er kan geen stop gepland worden.';
+        container.appendChild(fkWarn);
+      }
       var pgSections = buildProbleemSections();
       var pgAutoExpand = pgSections.length === 1;
 
@@ -1806,6 +1837,9 @@
       var tlBtn=idoc.createElement('button'); tlBtn.className='ux-btn advies-btn'; tlBtn.innerText='Teamleider belt';
       tlBtn.onclick=function(){ callData.bellerType='Teamleider'; answeredKeys.push('bellerType'); renderApp(); };
       container.appendChild(tlBtn);
+      var internBtn=idoc.createElement('button'); internBtn.className='ux-btn advies-btn'; internBtn.innerText='Interne leveringen — Bezorger belt';
+      internBtn.onclick=function(){ callData.bellerType='Interne leveringen'; callData.locatie='Interne leveringen'; answeredKeys.push('bellerType'); answeredKeys.push('locatie'); renderApp(); };
+      container.appendChild(internBtn);
       var extToggle=idoc.createElement('button'); extToggle.className='ux-btn advies-btn'; extToggle.innerText='Andere bellers ▾';
       var extExpand=idoc.createElement('div'); extExpand.style.cssText='display:none;margin-top:5px;';
       ['Technische Dienst belt','Yeply belt','G4S belt'].forEach(function(o){
@@ -1975,6 +2009,10 @@
       probLog            = callData.tl_reden + (callData.tl_uitkomst ? ' — ' + callData.tl_uitkomst : '');
       redenGeenOplossing = ''; redenNextDay = ''; routeLog = ''; orderOplLog = '';
       logDriver1 = ''; logDriver2 = '';
+    } else if (callData.bellerType === 'Interne leveringen') {
+      probLog            = 'Interne levering: ' + (callData.intern_reden||'') + (callData.intern_toelichting ? ' — ' + callData.intern_toelichting : '');
+      redenGeenOplossing = ''; redenNextDay = ''; routeLog = ''; orderOplLog = '';
+      logDriver1 = ''; logDriver2 = '';
     } else if (callData.bellerType === 'CBF') {
       if (callData.locatie === 'Depot / Hub vraag') {
         probLog = 'Depot / Hub vraag: ' + (callData.cbf_depot_reden||'') + (callData.cbf_depot_toelichting ? ' — ' + callData.cbf_depot_toelichting : '');
@@ -2107,7 +2145,18 @@
     else if (prob.includes('tv + soundbar ophang')) serviceTypeId=490317;
     else if (prob.includes('tv + soundbar')) serviceTypeId=490316;
     var pickupProbleem = callData.milieuretour_type ? (callData.milieuretour_type==='Pick-up' ? 'Pick-up (handmatig gepland)' : 'Milieuretour ophalen') : callData.probleem;
-    var payload={orderNr:callData.orderBron+'-DS',name:name,phone:ph,email:email,zip:cleanPC,city:city,address:address,detectedCountry:country,detectedLanguage:lang,product:effectiefProduct(),probleem:pickupProbleem,dienstType:callData.dienstType,formaatTV:callData.formaatTV,tvNetwerk:callData.tvNetwerk,uitkomst:callData.uitkomst||callData.ks_uitkomst||'',geplandeRoute:callData.geplandeRoute||'',serviceTypeId:serviceTypeId,time:Date.now()};
+    // Inbouw koelkast/vriezer + aansluitcontrole → gebruik inbouwen sjabloon voor betere sjabloonmatch
+    var payloadProbleem = pickupProbleem;
+    var effProdLower = effectiefProduct().toLowerCase();
+    if (effProdLower.includes('inbouw') && (effProdLower.includes('koelkast') || effProdLower.includes('vriezer')) && (callData.probleem||'').toLowerCase().includes('aansluiting')) {
+      payloadProbleem = 'Apparaat inbouwen (Keuken)';
+    }
+    // Deur omdraaien met nazorg → gebruik extra-dienst sjabloon (geen eigen nazorg-sjabloon beschikbaar)
+    var payloadDienstType = callData.dienstType;
+    if (prob.includes('deur omdraaien') && callData.dienstType === 'Nazorg (gratis)') {
+      payloadDienstType = 'Extra dienst (betaald)';
+    }
+    var payload={orderNr:callData.orderBron+'-DS',name:name,phone:ph,email:email,zip:cleanPC,city:city,address:address,detectedCountry:country,detectedLanguage:lang,product:effectiefProduct(),probleem:payloadProbleem,dienstType:payloadDienstType,formaatTV:callData.formaatTV,tvNetwerk:callData.tvNetwerk,uitkomst:callData.uitkomst||callData.ks_uitkomst||'',geplandeRoute:callData.geplandeRoute||'',serviceTypeId:serviceTypeId,time:Date.now()};
     if ((prob.includes('plaatsen')||prob.includes('tillen'))&&callData.product_keuze) {
       payload.products=callData.product_keuze.split(', ');
     }

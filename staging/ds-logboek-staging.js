@@ -6,7 +6,7 @@
 // React, ReactDOM, DS, and browser globals are accessible inside JSX.
 
 (function () {
-  const STAGING_VERSION = "0.5.3-staging";
+  const STAGING_VERSION = "0.5.4-staging";
   const ROOT_ID = "ds-logboek-staging-root";
   const STYLE_ID = "ds-logboek-staging-style";
   const GAS_URL = "https://script.google.com/a/macros/coolblue.nl/s/AKfycbxb-OwLCFGlDQ48qz3KnGnmsgnVLWxuOjvEr7UG3M3z0WzO0kVsTKGd_8mZjtvHvPHnEg/exec";
@@ -227,12 +227,18 @@
     return getProductVerfijningOpties(cd.product)!==null;
   }
 
+  function isLogOnlyProduct(cd) {
+    var p = effectiefProduct(cd).toLowerCase();
+    return p === 'fornuis' || p === 'kookplaat';
+  }
+
   // ── FLOW ENGINE ──────────────────────────────────────────────
   function bepaalStappenPure(cd, ak, afk, alleProds) {
     var meerdereProducten = (alleProds||[]).length > 1;
     function pnv() { return productNeedsVerfijning(cd, ak); }
     function eprod() { return effectiefProduct(cd); }
     function skipDT() { return skipDienstType(cd); }
+    function logOnly() { return isLogOnlyProduct(cd); }
     function getProbleemOpties() {
       if (ak.includes('product_keuze') && cd.model) {
         var namen = cd.model.split(', ');
@@ -259,6 +265,15 @@
       if (ak.includes('tl_reden')) {
         if (cd.tl_reden==='Vraag om aanpassingen in rit') s.push({key:'tl_uitkomst',label:'Wat was de uitkomst?',type:'ux-select',opties:['Aanpassing doorgegeven / bevestigd','Niet mogelijk']});
         else s.push({key:'tl_uitkomst',label:'Wat was de uitkomst?',type:'ux-select',opties:['Vraag beantwoord','Geen oplossing']});
+      }
+      return s;
+    }
+
+    // ── INTERNE LEVERINGEN FLOW ──────────────────────────────────
+    if (cd.bellerType==='Interne leveringen') {
+      s.push({key:'intern_reden',label:'Waar gaat de vraag over?',type:'ux-select',opties:['Bezorger meldt ETA / is bijna er','Vraag over de hub']});
+      if (ak.includes('intern_reden') && cd.intern_reden==='Vraag over de hub') {
+        s.push({key:'intern_toelichting',label:'Wat is de vraag?',type:'text'});
       }
       return s;
     }
@@ -373,10 +388,10 @@
         if (prodKlaar&&milKlaar) {
           s.push({key:'uitkomst',label:'Wat was de uitkomst?',type:'uitkomst-select',opties:['Same day gepland','Next day gepland','Klant ziet af van service (meerkosten)','Geen oplossing gepland']});
           if (ak.includes('uitkomst')) {
-            if (cd.uitkomst==='Same day gepland') {
+            if (cd.uitkomst==='Same day gepland' && !logOnly()) {
               s.push({key:'geplandeRoute',label:'Op welke route gepland?',type:'route-input'});
               if (ak.includes('geplandeRoute')&&!skipDT()) s.push({key:'dienstType',label:'Is dit Nazorg of een Extra dienst?',type:'dienst-select'});
-            } else if (cd.uitkomst==='Next day gepland') {
+            } else if (cd.uitkomst==='Next day gepland' && !logOnly()) {
               if (!skipDT()) s.push({key:'dienstType',label:'Is dit Nazorg of een Extra dienst?',type:'dienst-select'});
               if ((ak.includes('dienstType')||skipDT())&&isTVI&&cd.formaatTV!=='Ja (>= 55 inch)') {
                 if (!ak.includes('tvNetwerk')) {
@@ -471,6 +486,10 @@
   // ── DS WAARDE ─────────────────────────────────────────────────
   function berekenDsWaarde(cd) {
     if (cd.bellerType==='Teamleider') return cd.tl_uitkomst||cd.tl_reden||'Teamleider belt';
+    if (cd.bellerType==='Interne leveringen') {
+      if (cd.intern_reden==='Bezorger meldt ETA / is bijna er') return 'ETA melding ontvangen';
+      return 'Vraag over de hub'+(cd.intern_toelichting?': '+cd.intern_toelichting:'');
+    }
     if (cd.bellerType==='CBF') {
       if (cd.locatie==='Depot / Hub vraag') return 'Advies gegeven (CBF doorverwezen naar depot) — '+(cd.cbf_depot_reden||'reden onbekend')+(cd.cbf_depot_toelichting?': '+cd.cbf_depot_toelichting:'');
       if (cd.locatie==='Stop aanpassen / verwijderen') return 'CBF stop aanpassen — '+(cd.cbf_stop_uitkomst||'');
@@ -533,6 +552,10 @@
     var skipRF=false;
     if (cd.bellerType==='Teamleider') {
       probLog=cd.tl_reden+(cd.tl_uitkomst?' — '+cd.tl_uitkomst:''); logD1=''; logD2='';
+    } else if (cd.bellerType==='Interne leveringen') {
+      probLog='Interne levering: '+(cd.intern_reden||'')+(cd.intern_toelichting?' — '+cd.intern_toelichting:'');
+      redenGeenOplossing=''; redenNextDay=''; routeLog=''; orderOplLog='';
+      logD1=''; logD2='';
     } else if (cd.bellerType==='CBF') {
       if (cd.locatie==='Depot / Hub vraag') { probLog='Depot / Hub vraag: '+(cd.cbf_depot_reden||'')+(cd.cbf_depot_toelichting?' — '+cd.cbf_depot_toelichting:''); logD1=''; logD2=''; logOB=''; }
       else if (cd.locatie==='Stop aanpassen / verwijderen') { probLog='CBF stop aanpassen — '+(cd.cbf_stop_uitkomst||''); logD1=''; logD2=''; logOB=''; }
@@ -636,7 +659,16 @@
     else if (prob.includes('tv + soundbar ophang')) serviceTypeId=490317;
     else if (prob.includes('tv + soundbar')) serviceTypeId=490316;
     var pickupProbleem=cd.milieuretour_type?(cd.milieuretour_type==='Pick-up'?'Pick-up (handmatig gepland)':'Milieuretour ophalen'):cd.probleem;
-    var payload={orderNr:cd.orderBron+'-DS',name:name,phone:ph,email:email,zip:cleanPC,city:city,address:address,detectedCountry:country,detectedLanguage:lang,product:effectiefProduct(cd),probleem:pickupProbleem,dienstType:cd.dienstType,formaatTV:cd.formaatTV,tvNetwerk:cd.tvNetwerk,uitkomst:cd.uitkomst||cd.ks_uitkomst||'',geplandeRoute:cd.geplandeRoute||'',serviceTypeId:serviceTypeId,time:Date.now()};
+    var payloadProbleem=pickupProbleem;
+    var effProdLower=effectiefProduct(cd).toLowerCase();
+    if (effProdLower.includes('inbouw')&&(effProdLower.includes('koelkast')||effProdLower.includes('vriezer'))&&(cd.probleem||'').toLowerCase().includes('aansluiting')) {
+      payloadProbleem='Apparaat inbouwen (Keuken)';
+    }
+    var payloadDienstType=cd.dienstType;
+    if (prob.includes('deur omdraaien')&&cd.dienstType==='Nazorg (gratis)') {
+      payloadDienstType='Extra dienst (betaald)';
+    }
+    var payload={orderNr:cd.orderBron+'-DS',name:name,phone:ph,email:email,zip:cleanPC,city:city,address:address,detectedCountry:country,detectedLanguage:lang,product:effectiefProduct(cd),probleem:payloadProbleem,dienstType:payloadDienstType,formaatTV:cd.formaatTV,tvNetwerk:cd.tvNetwerk,uitkomst:cd.uitkomst||cd.ks_uitkomst||'',geplandeRoute:cd.geplandeRoute||'',serviceTypeId:serviceTypeId,time:Date.now()};
     if ((prob.includes('plaatsen')||prob.includes('tillen'))&&cd.product_keuze) payload.products=cd.product_keuze.split(', ');
     navigator.clipboard.writeText(JSON.stringify(payload));
   }
@@ -853,6 +885,7 @@
       detecteerType: detecteerType,
       maakProductLabel: maakProductLabel,
       artikelsoortNaarProduct: artikelsoortNaarProduct,
+      isLogOnlyProduct: isLogOnlyProduct,
       version: STAGING_VERSION,
     };
 
@@ -865,7 +898,7 @@ function artikelsoortNaarProd(soort){
 }
 
 function initConv(sc){
-  var cd={user:'',fname:'',lname:'',route:sc.route||'',orderBron:sc.orderNr||'',driver1:sc.driver1||'',driver2:sc.driver2||'',depot:'Onbekend',model:sc.model||'',bellerType:'',locatie:'',probleem:'',milieuretour_type:'',pick_up_status:'',product:'',formaatTV:'',productVerfijnd:'',tvNetwerk:'',uitkomst:'',geplandeRoute:'',next_day_reden:'',geen_oplossing_reden:'',advies_gelukt:'',onderweg_type:'',onderweg_uitkomst:'',ks_reden:'',ks_uitkomst:'',ks_tijdslot_uitkomst:'',product_mee_terug:'',ks_advies_uitkomst:'',afwijkend_reden:'',afwijkend_toelichting:'',cbf_depot_reden:'',cbf_depot_toelichting:'',cbf_pakket_reden:'',cbf_pakket_uitkomst:'',cbf_stop_uitkomst:'',cbb_hub_reden:'',cbb_hub_toelichting:'',tl_reden:'',tl_uitkomst:'',winkel_reden:'',orderOplossing:'',dsWaarde:'',tijdvak:sc.tijdvak||'',aankomsttijd:sc.aankomsttijd||'',dienstType:'',product_keuze:''};
+  var cd={user:'',fname:'',lname:'',route:sc.route||'',orderBron:sc.orderNr||'',driver1:sc.driver1||'',driver2:sc.driver2||'',depot:'Onbekend',model:sc.model||'',bellerType:'',locatie:'',probleem:'',milieuretour_type:'',pick_up_status:'',product:'',formaatTV:'',productVerfijnd:'',tvNetwerk:'',uitkomst:'',geplandeRoute:'',next_day_reden:'',geen_oplossing_reden:'',advies_gelukt:'',onderweg_type:'',onderweg_uitkomst:'',ks_reden:'',ks_uitkomst:'',ks_tijdslot_uitkomst:'',product_mee_terug:'',ks_advies_uitkomst:'',afwijkend_reden:'',afwijkend_toelichting:'',cbf_depot_reden:'',cbf_depot_toelichting:'',cbf_pakket_reden:'',cbf_pakket_uitkomst:'',cbf_stop_uitkomst:'',cbb_hub_reden:'',cbb_hub_toelichting:'',tl_reden:'',tl_uitkomst:'',intern_reden:'',intern_toelichting:'',winkel_reden:'',orderOplossing:'',dsWaarde:'',tijdvak:sc.tijdvak||'',aankomsttijd:sc.aankomsttijd||'',dienstType:'',product_keuze:''};
   var ak=[],afk=[],isAG=false;
   var fn=localStorage.getItem('ds_fname')||'',ln=localStorage.getItem('ds_lname')||'';
   if(fn){cd.fname=fn;ak.push('fname');afk.push('fname');}
@@ -1003,6 +1036,7 @@ function App(){
   // SUBMIT SCREEN
   if(!stap){
     var isGep=cd.uitkomst==='Same day gepland'||cd.uitkomst==='Next day gepland'||cd.uitkomst==='Same day visit gepland'||cd.uitkomst==='Next day visit gepland'||cd.ks_uitkomst==='Same day gepland'||cd.ks_uitkomst==='Next day gepland';
+    var isLogOnly=DS.isLogOnlyProduct(cd);
     var cat=DS.berekenCategorie(cd);
     return (
       <div style={{display:'flex',flexDirection:'column',height:'100%'}}>
@@ -1018,6 +1052,8 @@ function App(){
           {cd.onderweg_type==='Adres klopt niet'&&<div className="ds-note is-info"><div><strong>Instructie voor de Held</strong><br/>Geef aan in Jerney dat het adres niet klopt. Noteer het correcte adres in het opmerkingenveld.{sc.adresQuery&&<span style={{display:'block',marginTop:8}}><strong>🔍 Zoek het adres op:</strong>{adresLand==='NL'&&<a href={'https://bagviewer.kadaster.nl/lvbag/bag-viewer/?searchQuery='+sc.adresQuery+'&zoomlevel=15'} target="_blank" rel="noreferrer" style={{color:'#0090e3',display:'block',marginTop:4}}>🇳🇱 Bagviewer (Kadaster)</a>}{adresLand==='BE'&&<a href={'https://www.geopunt.be/kaart?zoomLevel=14&locationSearch='+sc.adresQuery} target="_blank" rel="noreferrer" style={{color:'#0090e3',display:'block',marginTop:4}}>🇧🇪 Geopunt</a>}<a href={'https://www.google.com/maps/search/'+sc.adresQuery} target="_blank" rel="noreferrer" style={{color:'#0090e3',display:'block',marginTop:4}}>🗺 Google Maps</a><a href={'https://www.bing.com/maps?q='+sc.adresQuery} target="_blank" rel="noreferrer" style={{color:'#0090e3',display:'block',marginTop:4}}>🗺 Bing Maps</a></span>}</div></div>}
           {cd.onderweg_type==='Klant niet thuis'&&<div className="ds-note is-info"><div><strong>Check of de held deze stappen heeft doorlopen:</strong><br/>\u{1f514} Aangebeld · \u{1f4de} Klant gebeld · \u{1f550} Binnen tijdvak<br/><strong>Afmelden in Jerney:</strong> kies "Klant niet thuis", maak foto van de voordeur.</div></div>}
           {cd.bellerType==='Andere beller'&&<div className="ds-note is-info"><div><strong>Andere beller</strong><br/>Dit gesprek gaat niet over een bezorging. Loggen is voldoende.</div></div>}
+          {(cd.probleem||'').toLowerCase().includes('deur omdraaien')&&cd.dienstType==='Nazorg (gratis)'&&<div className="ds-note is-warn"><div><strong>⚠️ Let op: geen nazorg-sjabloon beschikbaar voor Deur omdraaien.</strong><br/>De tool gebruikt noodgedwongen het extra-dienst sjabloon voor het klembord. Controleer de geplaste stop in DireXtion.</div></div>}
+          {isLogOnly&&<div className="ds-note is-warn" style={{background:'#FFE6E6',borderColor:'#E63946',color:'#C1121F'}}><div><strong>⚠️ DS voert geen service-visits uit voor Fornuis / Kookplaat!</strong><br/>Loggen is mogelijk, maar er wordt geen stop gepland.</div></div>}
           {isGep&&<div className="ds-note is-info"><div><strong>✓ Check voor het plannen</strong><br/>\u{1f4e6} Kan het product bij de klant blijven?{cd.uitkomst==='Same day gepland'&&<span><br/>\u{1f3e0} Is de klant later vandaag nog thuis?</span>}</div></div>}
           <div className="ds-summary">
             <div className="ds-summary__head"><div className="ds-summary__cat">{cat}</div><div className="ds-pill is-ok">✓ Klaar</div></div>
@@ -1029,7 +1065,7 @@ function App(){
           </div>
           {logDone?<div className="ds-note is-ok"><div><strong>✓ Gelogd!</strong><br/>Het gesprek is opgeslagen in het logboek.</div></div>:(
             <div className="ds-actions">
-              {isGep?(
+              {isGep&&!isLogOnly?(
                 <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:6}}>
                   <button className="ds-btn ds-btn--lg" onClick={function(){DS.kopieerNaarKlembord(cd);}}>Klembord</button>
                   <button className="ds-btn ds-btn--secondary ds-btn--lg" onClick={function(){fetch(DS.GAS_URL+DS.bouwLogParams(cd)).catch(function(){});setLogDone(true);}}>Loggen</button>
@@ -1057,6 +1093,7 @@ function App(){
         <button className="ds-opt" onClick={function(){ans('bellerType','Anders',{locatie:'Klantenservice'},['locatie']);}}><div className="ds-opt__icon">\u{1f3a7}</div><span className="ds-opt__label">Klantenservice belt</span></button>
         <button className="ds-opt" onClick={function(){ans('bellerType','Anders',{locatie:'Winkel'},['locatie']);}}><div className="ds-opt__icon">\u{1f3ea}</div><span className="ds-opt__label">Winkel belt</span></button>
         <button className="ds-opt" onClick={function(){ans('bellerType','Teamleider');}}><div className="ds-opt__icon">\u{1f454}</div><span className="ds-opt__label">Teamleider belt</span></button>
+        <button className="ds-opt" onClick={function(){ans('bellerType','Interne leveringen',{locatie:'Interne leveringen'},['locatie']);}}><div className="ds-opt__icon">\u{1f3ed}</div><span className="ds-opt__label">Interne leveringen — Bezorger belt</span></button>
         <details className="ds-disclose" onToggle={function(e){if(e.target.open)e.target.scrollIntoView({behavior:'smooth',block:'nearest'});}}><summary>Andere bellers ▾</summary>
           <div className="ds-stack" style={{paddingTop:8}}>
             {['Technische Dienst','Yeply','G4S'].map(function(loc){return(
@@ -1159,7 +1196,7 @@ function App(){
       </div>
     );
   }else if(stap.type==='product-type-keuze'){
-    var ptOpties=['Wasmachine','Wasdroogcombinatie','Droger','Koelkast / Vriezer','Vaatwasser','Oven / Magnetron','Kookplaat','Televisie','Soundbar','Overig'];
+    var ptOpties=['Wasmachine','Wasdroogcombinatie','Droger','Koelkast / Vriezer','Vaatwasser','Oven / Magnetron','Fornuis','Kookplaat','Televisie','Soundbar','Overig'];
     stepBody=(
       <div className="ds-stack">
         {cd.model&&<div className="ds-note is-info"><div><strong>Gescand model:</strong> {cd.model}</div></div>}
@@ -1170,8 +1207,11 @@ function App(){
     );
   }else if(stap.type==='probleem-grouped'){
     var bijzonderItems=['Advies gegeven','Spullen achtergelaten bij klant','Onverwacht retour','Nazorg niet gelukt / swap aanvragen','Product past niet op gewenste plek','Blijverkoop vergeten','Verkeerd gelabeld product','Product niet aanwezig','Klant moet KS bellen'];
+    var fkProd=(function(){var p=cd.productVerfijnd||cd.product||'';return p.toLowerCase();})();
+    var isFKProd=fkProd==='fornuis'||fkProd==='kookplaat';
     stepBody=(
       <div className="ds-stack">
+        {isFKProd&&<div className="ds-note is-warn"><div><strong>⚠️ DS voert geen service-visits uit voor Fornuis / Kookplaat.</strong><br/>Je kunt het gesprek loggen, maar er kan geen stop gepland worden.</div></div>}
         {(stap.opties||[]).map(function(o){return <button key={o} className="ds-opt" onClick={function(){handleSelect(o);}}><span className="ds-opt__label">{o}</span></button>;})}
         <details className="ds-disclose ds-disclose--bijzonder" onToggle={function(e){if(e.target.open)e.target.scrollIntoView({behavior:'smooth',block:'nearest'});}}><summary>✦ Andere opties ▾</summary>
           <div className="ds-stack" style={{paddingTop:8}}>
