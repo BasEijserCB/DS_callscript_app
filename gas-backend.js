@@ -6,6 +6,8 @@ function doGet(e) {
     var timestamp = new Date();
     var datum = Utilities.formatDate(timestamp, Session.getScriptTimeZone(), "dd-MM-yyyy");
     var tijd  = Utilities.formatDate(timestamp, Session.getScriptTimeZone(), "HH:mm");
+    var uur = parseInt(Utilities.formatDate(timestamp, Session.getScriptTimeZone(), "H"), 10);
+    var tijdBlok = ("0" + uur).slice(-2) + ":00 - " + ("0" + uur).slice(-2) + ":59";
 
     sheet.appendRow([
       datum,                        // Kolom A: Datum
@@ -28,7 +30,8 @@ function doGet(e) {
       p.aankomsttijd,               // Kolom R: Aankomsttijd
       p.extra_info,                 // Kolom S: Extra info (toelichting afwijkend)
       p.extra_dienst,               // Kolom T: Extra dienst nodig? (Ja / leeg)
-      p.categorie                   // Kolom U: Categorie (Same day gepland / Next day gepland / Onderweg opgelost / Advies gegeven / Geen oplossing / Buiten DS scope)
+      p.categorie,                  // Kolom U: Categorie (Same day gepland / Next day gepland / Onderweg opgelost / Advies gegeven / Geen oplossing / Buiten DS scope)
+      tijdBlok                      // Kolom V: Tijdblok (bijv. "08:00 - 08:59")
     ]);
 
     return ContentService
