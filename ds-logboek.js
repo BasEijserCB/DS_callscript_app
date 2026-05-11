@@ -968,12 +968,47 @@
         } else if (callData.ks_reden==='KS vraagt om held terug te sturen' || callData.ks_reden==='Winkel vraagt om held terug te sturen') {
           s.push({key:'ks_uitkomst',label:'Wat was de uitkomst?',type:'uitkomst-select',opties:['Teamleider stuurt helden terug','Teamleider stuurt helden niet terug','Same day gepland','Next day gepland','DS vindt terugsturen niet de juiste oplossing']});
           if (answeredKeys.includes('ks_uitkomst')) {
-            if (callData.ks_uitkomst==='Same day gepland') {
-              s.push({key:'geplandeRoute',label:'Op welke route gepland?',type:'route-input'});
-              if (answeredKeys.includes('geplandeRoute')&&!skipDienstType()) s.push({key:'dienstType',label:'Is dit Nazorg of een Extra dienst?',type:'dienst-select'});
-            } else if (callData.ks_uitkomst==='Next day gepland') {
-              if (!skipDienstType()) s.push({key:'dienstType',label:'Is dit Nazorg of een Extra dienst?',type:'dienst-select'});
-              if (answeredKeys.includes('dienstType')||skipDienstType()) s.push({key:'next_day_reden',label:'Waarom niet same day?',type:'ux-select',opties:nextDayRedenen});
+            if (callData.ks_uitkomst==='Same day gepland' || callData.ks_uitkomst==='Next day gepland') {
+              if (!meerdereProducten && !answeredKeys.includes('product')) {
+                s.push({key:'product',label:'Om welk apparaat gaat het?',type:'product-type-keuze'});
+                if (!answeredKeys.includes('product')) return s;
+              }
+              if (answeredKeys.includes('product') && productNeedsVerfijning()) {
+                s.push({key:'productVerfijnd',label:'Welk type product precies?',type:'ux-select',opties:getProductVerfijningOpties(callData.product)});
+                if (!answeredKeys.includes('productVerfijnd')) return s;
+              }
+              s.push({key:'probleem',label:'Wat moet er gebeuren bij de klant?',type:'probleem-grouped',opties:getProbleemOpties()});
+              if (answeredKeys.includes('probleem')) {
+                var isTVInstallatieKS = callData.probleem.includes('TV') || callData.probleem.includes('Soundbar');
+                if (!answeredKeys.includes('product') && !isTVInstallatieKS) {
+                  if (callData.probleem==='Apparaat inbouwen (Keuken)') {
+                    s.push({key:'product',label:'Wat wordt er ingebouwd?',type:'ux-select',opties:['Inbouw vaatwasser','Inbouw koelkast','Oven / Magnetron','Kookplaat','Overig']});
+                  } else {
+                    s.push({key:'product',label:'Welk product betreft het?',type:'ux-select',opties:['Wasmachine','Wasdroger','Koelkast / Vriezer','Vaatwasser','Televisie','Overig']});
+                  }
+                }
+                if (answeredKeys.includes('product') && productNeedsVerfijning()) {
+                  s.push({key:'productVerfijnd',label:'Welk type product precies?',type:'ux-select',opties:getProductVerfijningOpties(callData.product)});
+                  if (!answeredKeys.includes('productVerfijnd')) return s;
+                }
+                if (answeredKeys.includes('product') && callData.product==='Televisie' && !answeredKeys.includes('formaatTV') && !isTVInstallatieKS) {
+                  s.push({key:'formaatTV',label:'Is de TV 55 inch of groter?',type:'ux-select',opties:['Ja (>= 55 inch)','Nee (< 55 inch)']});
+                }
+                if (callData.probleem==='Milieuretour / Pick-up ophalen' && answeredKeys.includes('product') && !answeredKeys.includes('milieuretour_type')) {
+                  s.push({key:'milieuretour_type',label:'Specificeer het type ophaling:',type:'ux-select',opties:['Milieuretour','Pick-up']});
+                }
+                var ksTerugProdKlaar = answeredKeys.includes('product') && (callData.product!=='Televisie' || answeredKeys.includes('formaatTV') || isTVInstallatieKS);
+                var ksTerugMilKlaar = callData.probleem!=='Milieuretour / Pick-up ophalen' || answeredKeys.includes('milieuretour_type');
+                if (ksTerugProdKlaar && ksTerugMilKlaar) {
+                  if (callData.ks_uitkomst==='Same day gepland') {
+                    s.push({key:'geplandeRoute',label:'Op welke route gepland?',type:'route-input'});
+                    if (answeredKeys.includes('geplandeRoute') && !skipDienstType()) s.push({key:'dienstType',label:'Is dit Nazorg of een Extra dienst?',type:'dienst-select'});
+                  } else if (callData.ks_uitkomst==='Next day gepland') {
+                    if (!skipDienstType()) s.push({key:'dienstType',label:'Is dit Nazorg of een Extra dienst?',type:'dienst-select'});
+                    if (answeredKeys.includes('dienstType') || skipDienstType()) s.push({key:'next_day_reden',label:'Waarom niet same day?',type:'ux-select',opties:nextDayRedenen});
+                  }
+                }
+              }
             }
           }
         } else if (callData.ks_reden==='Witgoed Demo Wissel') {
@@ -1196,7 +1231,7 @@
             '<span style="font-size:11px;color:'+(geenOrderMode?'#ff6600':'#aaa')+';">'+(geenOrderMode?'Gegevens gewist':'Geen order')+'</span>' +
           '</div>' : '') +
         '</div></div>' +
-        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.25.0</div>' +
+        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.26.0</div>' +
       '</div>';
 
     idoc.getElementById('btn-close').onclick = function(){ wrapper.remove(); };

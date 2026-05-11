@@ -47,6 +47,76 @@ localStorage.removeItem('ds_app_prod_cache')
 
 ---
 
+## Versiegeschiedenis
+
+Nieuwste bovenaan. Alleen `ds-logboek.js` versies (productie).
+
+| Versie | Wijziging |
+|---|---|
+| v1.26.0 | Feat: KS/Winkel "held terug sturen" → Same day/Next day vraagt nu product + "Wat moet er gebeuren bij de klant?" voor correcte service-configuratie |
+| v1.25.0 | Fix: product-selectie logica verfijnd (multi-product flow) |
+| v1.24.1 | Add: `'Pick-up niet nodig'` als derde `pick_up_status` optie |
+| v1.24.0 | Fix: CBF pakket-opties samengevoegd tot `'Pakket niet meegenomen / niet ingeladen'`; LEGACY_LABEL_ALIASES uitgebreid |
+| v1.23.2 | Fix: terugmeldteksten interne leveringen aangescherpt |
+| v1.23.1 | Add: `'Hub niet gevonden'` optie in interne leveringen flow; vrij tekstveld verwijderd |
+| v1.23.0 | Add: Interne leveringen beller-type; Fornuis/Kookplaat log-only modus; deur-omdraaien sjabloon-fix; inbouw koelkast aansluiting → inbouwen sjabloon |
+| v1.22.0 | Fix: drie label-hernamingen; CBF stop `'Aanpassing niet mogelijk'`; Winkel bezorgadres optie |
+| v1.21.2 | Fix: probleem-afhandeling en gebruikersinstructies verfijnd |
+| v1.21.1 | Fix: secties labels verduidelijkt |
+| v1.21.0 | Add: zes nieuwe flow-paden; vindbaarheid verbeterd |
+| v1.20.6 | Fix: Miele WEC prefix toegevoegd (wasmachine) |
+| v1.20.5 | Fix: BK-routes loggen als `Fietshub [stad]` i.p.v. regulier depot |
+| v1.20.4 | Fix: `isAlgemeen` → `scrapedOrder` (variabele bestond niet meer) |
+| v1.20.3 | Refactor: Parkeer-knop vervangen door `geenOrderMode` pill-toggle in footer |
+| v1.20.2 | Fix: geen-order toggle als pill-switch |
+| v1.20.1 | Fix: geen-order knop als kleine tekstlink onderaan beller-select |
+| v1.20.0 | Add: Blijverkoop vergeten; depot/hub vraag (CBB+CBF alarm/sleutelkastje) |
+| v1.19.0 | Refactor: `build.py` synchroniseert nu `PASTE_VERSION` in `paste-bookmarklet.js` (vervangt `-min.txt` generatie) |
+| v1.18.1 | Fix: Pick-up `serviceTypeId` (427807) ingevuld; Pick-up shipper landafhankelijk |
+| v1.18.0 | Add: Teamleider belt; CBF pakje niet ingeladen; Basic no-auto-open; multi-product scraper |
+| v1.17.2 | Fix: straat nogmaals invullen na country-load op Basic |
+| v1.17.1 | Fix: straatnaam dubbel invullen na DireXtion autocomplete |
+| v1.17.0 | Add: `tvNetwerk` vraag (Built in/1X) voor TV-services; auto-selectie bij bekende route |
+| v1.16.16 | Fix: uitkomst `'Straat afgesloten of onvoldoende EV-rijkwijdte'` |
+| v1.16.15 | Update: onderweg adresflow samengevoegd; `'Adres klopt niet'` toegevoegd |
+| v1.16.14 | Fix: categorie `'Advies gegeven'` (was `'Advies / Info gegeven'` — `%2F` brak GAS kolom) |
+| v1.16.13 | Add: uitkomst-categorieën kolom (kolom U) in Google Sheets logging |
+| v1.16.11 | Fix: updatemelding toast blauw met sluitknop (definitieve versie) |
+| v1.16.7–v1.16.10 | Iteraties updatebanner (amber/toast/polling) — zie commits |
+| v1.16.6 | Fix: Wisberg prefixlijst volledig herschreven |
+| v1.16.5 | Fix: Wisberg WBTTKK als koelkast |
+| v1.16.4 | Add: info-paneel bij route-invoer |
+| v1.16.3 | Fix: artikelsoort-veld op Basic vóór prefix-detectie gebruiken |
+| v1.16.2 | Fix: verzameldoos filteren op coolbluebezorgt variant |
+| v1.16.0–v1.16.1 | Add: DireXtion-order auto-open na loggen; product-rijen alleen bij same-day |
+| v1.15.4 | Fix: strip leading postcode uit city-scrape (BE/DE) |
+| v1.15.3 | Fix: DireXtion email-filter sleutel `EmailAddress` + datumvelden |
+| v1.15.2 | Update: DireXtion link filtert op email i.p.v. ordernummer |
+| v1.15.1 | Add: derde uitkomst "Helden stellen stop uit" bij klant niet thuis |
+| v1.15.0 | Add: onderweg-optie `'Klant niet thuis'` met Jerney-instructie |
+| v1.14.2 | Fix: dubbele onderweg-uitkomst verwijderd |
+| v1.14.1 | Fix: `built-in` key in `parseToTourAlias` |
+| v1.13.2 | Add: info-box voor andere bellers op submit-scherm |
+| v1.13.1 | Fix: versienummer footer |
+| v1.13.0 | Fix: `bellerType` hernoemd van `'Externe partner'` naar `'Andere beller'`; knop hernoemd naar "Andere bellers ▾" |
+| v1.12.19 | Fix: adresveld 400ms vertraagd na postcode om DireXtion autocomplete te voorkomen |
+| v1.12.17 | Fix: article-rij klikken voor 1e product; `articleTypeId`+`services` na `channelId` instellen |
+| v1.12.16 | Add: meerdere producten bij plaatsen service (`products` array in payload) |
+| v1.12.15 | Fix: plaatsen Extra dienst mapping terug naar Nazorg default (51072) |
+| v1.12.14 | Add: `dienstType` vraag ook in same-day flow |
+| v1.12.13–v1.12.12 | Fix: service/kanaal volgorde en timing |
+| v1.12.11 | Fix: dxTagBox instance opzoeken via DOM-boom |
+| v1.12.9 | Fix: telefoonnummer cleanup generiek (elk landnummer) |
+| v1.12.8 | Add: kanaal/netwerk/service autofill voor same-day |
+| v1.12.5 | Add: same-day shipper/depot autofill |
+| v1.12.4 | Add: Polen (+48/0048) in telefoonnummer normalisatie |
+| v1.12.0 | Add: product-verfijning opties; service-type selectie |
+| v1.11.0–v1.11.26 | Iteraties witgoed-flow, product-herkenning, layout-verbeteringen |
+| v1.10.0–v1.10.4 | Add: KS advies-flow; CBF pakket-opties uitgebreid; AEG prefix-fixes |
+| v1.9.2–v1.9.8 | Initiële opzet: scraping, DOM-detectie, ordernummer-extractie, GAS logging |
+
+---
+
 ## Staging — wat het is en hoe het werkt
 
 De staging build (`staging/ds-logboek-staging.js`) is een volledig werkende alternatieve versie van de widget bedoeld om nieuwe UI-ontwerpen te testen zonder de productieversie te raken. De data-laag (scraping, flow engine, `bouwLogParams`, `kopieerNaarKlembord`, GAS logging) is identiek aan `ds-logboek.js` en wordt samen bijgehouden. De UI is volledig herschreven in React+Babel (via CDN) en draait als side-panel in de browser.
@@ -93,6 +163,33 @@ ds-logboek.js  (scrapet DOM → gespreksflow → twee outputs)
 - `coolblue.dirextion.nl/Basic` — `.details-field` CSS klassen; producttype via `artikelsoort`-kolom in tabel (gebruikt `artikelsoortNaarProduct`), prefix-detectie als fallback
 
 **GAS backend** moet deployment staan op toegang "Iedereen" (niet "Iedereen binnen Coolblue") anders blokkeert CORS.
+
+**GAS backend kolommen** (`doGet` → `appendRow`):
+
+| Kolom | Parameter | Inhoud |
+|---|---|---|
+| A | datum | dd-MM-yyyy |
+| B | tijd | HH:mm |
+| C | user | DS medewerker |
+| D | route | route (bezorger) |
+| E | depot | depotlocatie |
+| F | driver1 | chauffeur 1 |
+| G | driver2 | bijrijder |
+| H | orderBron | ordernummer (bron) |
+| I | product | product / formaat |
+| J | probleem | taak / klacht |
+| K | redenGeenOplossing | waarom geen opl? |
+| L | redenNextDay | waarom next day? |
+| M | orderOplossing | ordernummer-DS |
+| N | geplandeRoute | nieuwe route |
+| O | dsWaarde | DS waarde (uitkomst) |
+| P | bellerType | wie belde er? |
+| Q | tijdvak | gecommuniceerd tijdvak |
+| R | aankomsttijd | aankomsttijd |
+| S | extra_info | toelichting afwijkend |
+| T | extra_dienst | extra dienst nodig? (Ja / leeg) |
+| U | categorie | uitkomstcategorie |
+| V | tijdBlok | uurblok, bijv. `"08:00 - 08:59"` (server-side berekend) |
 
 ---
 
@@ -151,8 +248,6 @@ Service moet als laatste worden ingesteld voor normale services (timing — ande
 
 ---
 
-## DevExtreme widget helpers (paste-bookmarklet.js)
-
 ## DireXtion DOM eigenaardigheden
 
 | Situatie | Oplossing |
@@ -184,7 +279,8 @@ parseToTourAlias(input)         // parseert routetekst → 'netwerk-depot-nr' (b
 parkeerSessie() / herstelSessie(staat) // sessie pauzeren/hervatten via localStorage (PARK_KEY per order)
 detecteerType(naam)             // detecteert merk + producttype via prefixTabel (voor coolbluebezorgt variant)
 artikelsoortNaarProduct(soort)  // converteert artikelsoort-tekst (uit Basic tabel) naar widget-productnaam
-LEGACY_LABEL_ALIASES            // mapping van oude → nieuwe label-waarden; toegepast in herstelSessie() om geparkeerde sessies te migreren na hernoemen van keuze-opties
+isLogOnlyProduct()              // true als effectiefProduct() 'Fornuis' of 'Kookplaat' is — geen stop plannen
+LEGACY_LABEL_ALIASES            // mapping van oude → nieuwe label-waarden; toegepast in herstelSessie() om geparkeerde sessies te migreren na hernoemen van keuze-opties. Huidig: 'Pakket niet meegenomen (manco)' + 'Pakje niet ingeladen' → 'Pakket niet meegenomen / niet ingeladen', plus eerder hernoemde uitkomsten
 ```
 
 **serviceTypeId mapping** (in `kopieerNaarKlembord()`): bepaalt welke DireXtion service geselecteerd wordt voor same-day/pick-up. Meeste services hebben één ID voor zowel Nazorg als Extra dienst (geen aparte Extra dienst variant beschikbaar). Uitzonderingen:
@@ -204,11 +300,10 @@ Eerste keuze in de flow (`bellerType` in `callData`). Bepaalt de rest van de vra
 | `CBF` | Coolblue Fiets | hoofdknop "CBF belt" |
 | `Teamleider` | Teamleider van een depot belt — eigen korte flow (reden + uitkomst) | hoofdknop "Teamleider belt" |
 | `Interne leveringen` | Bezorger van interne leveringen belt — eigen korte flow (`intern_reden`). `locatie` auto-gezet op `'Interne leveringen'` | hoofdknop "Interne leveringen — Bezorger belt" |
-| `Anders` | Externe bezorgpartner (Technische Dienst / Yeply / G4S) — valt in "Andere bellers ▾" dropdown, eigen locatie-keuze | "Andere bellers ▾" → locatie-keuze |
-| `Andere beller` | Beller gaat niet over een bezorging (bv. klantenservice, winkel) — submit screen toont info-box dat probleem-log niet nodig is | "Andere bellers ▾" → "Andere beller" |
-| `Algemeen` | **Auto-gezet** als geen orderdata gescrapet kon worden (`isAlgemeen`) | n.v.t. — activeert aparte flow |
+| `Anders` | Klantenservice of Winkel belt. `locatie` direct meegezet (`'Klantenservice'` resp. `'Winkel'`). Knoppen staan in de "Anders" sectie van de beller-select. | "Anders" → "Klantenservice belt" / "Winkel belt" |
+| `Andere beller` | Externe bezorgpartner (Technische Dienst / Yeply / G4S) belt. `locatie` wordt direct meegezet. Submit-scherm toont info-box dat probleem-log niet nodig is. | "Andere bellers ▾" → "Technische Dienst belt" / "Yeply belt" / "G4S belt" |
 
-De "Andere bellers ▾" dropdown heette vóór v1.13.0 "Externe partner ▾".
+De "Andere bellers ▾" dropdown heette vóór v1.13.0 "Externe partner ▾". Bevat uitsluitend TD/Yeply/G4S (→ `bellerType='Andere beller'`). KS en Winkel staan als losse knoppen direct in de "Anders" sectie (→ `bellerType='Anders'`).
 
 ---
 
@@ -217,9 +312,11 @@ De "Andere bellers ▾" dropdown heette vóór v1.13.0 "Externe partner ▾".
 Vier locaties: `'Onderweg'` (zelfde flow als CBB), `'Bij de klant'`, `'Stop aanpassen / verwijderen'`, `'Depot / Hub vraag'`.
 
 **Bij de klant** → `cbf_pakket_reden`:
-- `'Pakket niet meegenomen (manco)'` / `'Pakket verkeerd / beschadigd'` / `'Overige vraag over pakket'` → uitkomsten: `'Klant geïnformeerd, manco geregistreerd'` / `'Klant geïnformeerd, held regelt verder'` / `'Nee, geen oplossing door DS'`
-- `'Pakje niet ingeladen'` → uitkomsten: `'Pakje wordt later afgeleverd (afleverbewijs)'` / `'Niet opgelost — instructie gegeven in Jerney'`. Bij "Niet opgelost" toont het submit-scherm een info-blokje met Jerney-instructie.
+- `'Pakket niet meegenomen / niet ingeladen'` → uitkomsten: `'Klant geïnformeerd, manco geregistreerd'` / `'Pakje wordt later afgeleverd (afleverbewijs)'` / `'Niet opgelost — instructie gegeven in Jerney'`. Bij "Niet opgelost" toont het submit-scherm een info-blokje met Jerney-instructie.
+- `'Pakket verkeerd / beschadigd'` / `'Overige vraag over pakket'` → uitkomsten: `'Klant geïnformeerd, manco geregistreerd'` / `'Klant geïnformeerd, held regelt verder'` / `'Nee, geen oplossing door DS'`
 - `'Spullen achtergelaten bij klant'` → uitkomst-keuze: `'Same day gepland'` / `'Next day gepland'` / `'Helden lossen het zelf op (geen DS-visit gepland)'`
+
+Vóór v1.24.0 bestonden `'Pakket niet meegenomen (manco)'` en `'Pakje niet ingeladen'` als aparte opties — beide zijn samengevoegd tot `'Pakket niet meegenomen / niet ingeladen'`. `LEGACY_LABEL_ALIASES` migreert geparkeerde sessies.
 
 **Stop aanpassen / verwijderen** → `cbf_stop_uitkomst`: `'Stop verwijderd — bevestigd'` / `'Stop doorgepland naar andere route'` / `'Aanpassing niet mogelijk'`. `'Aanpassing niet mogelijk'` valt in categorie `'Geen oplossing'`.
 
@@ -250,19 +347,13 @@ Geen vervolgvraag. Uitkomst: `'ETA melding ontvangen'` of `'Hub niet gevonden �
 
 ---
 
-## Algemeen gesprek (geen orderdata)
+## Geen-order modus
 
-Wanneer `ds-logboek.js` wordt geladen op een pagina zonder ordernummer (`!scrapedOrder`), schakelt de widget over op een kortere flow:
+Wanneer `scrapedOrder` aanwezig is, toont de widget-footer een **"Geen order"** toggle (pill-schakelaar). Activeren wist alle order-gebonden velden (`route`, `orderBron`, `driver1/2`, `model`, `tijdvak`, `aankomsttijd`, `product`, `formaatTV`, `productVerfijnd`) en reset `answeredKeys` (behoudt naam). De widget gaat daarna door de normale gespreksflow zonder ordercontext.
 
-1. Voornaam / achternaam
-2. `algemeen-blocks` stap met twee blokken:
-   - **Advies gegeven** → `Ja, service uitgevoerd` / `Nee, geen oplossing door DS` (zet `advies_gelukt` + `locatie='Bij de klant'`)
-   - **Afhandeling buiten DS** (afwijkend_reden) → keuzes + optioneel `afwijkend_toelichting` bij `Overig`
-3. Submit
+De toggle is **niet** zichtbaar als er geen ordernummer gevonden is (`!scrapedOrder`) — in dat geval start de widget direct zonder orderdata en is een aparte modus niet nodig.
 
-Bovenin het blok staat een oranje waarschuwing: *"Geen orderdata gevonden — log bij voorkeur altijd op een order, gebruik deze modus alleen zonder ordernummer/referentie."*
-
-De flow slaat `bellerType` / `probleem` / `uitkomst` / adres-velden over. Logging gebeurt via `bouwLogParams()` zoals normaal, maar met beperkte data.
+Vóór v1.20.x bestond een `bellerType='Algemeen'`-flow met een `algemeen-blocks`-stap. Die is vervangen door de huidige `geenOrderMode` toggle in v1.20.1–v1.20.4.
 
 ---
 
@@ -275,6 +366,7 @@ Enkele `probleem`-waarden bij CBB `'Bij de klant'` resulteren in een directe sub
 | `'Product past niet op gewenste plek'` | Direct log, submit-scherm toont Jerney-afmelding instructie |
 | `'Nazorg niet gelukt / swap aanvragen'` | Direct log, submit-scherm toont instructie om notitie te maken en swap via KS aan te vragen |
 | Milieuretour Pick-up → `pick_up_status='Pick-up niet gelukt — swap nodig'` | Direct log, categorie `Geen oplossing` |
+| Milieuretour Pick-up → `pick_up_status='Pick-up niet nodig'` | Direct log, categorie `Advies gegeven`; log: `'Pick-up niet nodig — held geïnformeerd'` |
 
 Vóór v1.21.0 heetten sommige van deze problemen anders (`'Niet bereikbaar'` → `'Product past niet op gewenste plek'`, `'Nazorg niet gelukt'` → `'Nazorg niet gelukt / swap aanvragen'`); de `LEGACY_LABEL_ALIASES` map verzorgt de migratie van geparkeerde sessies.
 
@@ -312,8 +404,8 @@ Elke uitkomst wordt automatisch ingedeeld in één van zes vaste categorieën vi
 | `Same day gepland` | Bezoek/oplossing voor vandaag ingepland |
 | `Next day gepland` | Bezoek/oplossing voor een andere dag ingepland |
 | `Onderweg opgelost` | Held geholpen terwijl onderweg (`locatie='Onderweg'`): adres gevonden, route, tel.nr., stop uitgesteld, etc. |
-| `Advies gegeven` | Advies of info verstrekt zonder bezoek in te plannen: KS/Winkel geholpen, externe partners (TD/Yeply/G4S), CBF depot/pakket, Interne leveringen, geen actie nodig, visit verwijderd, algemeen gesprek afgerond |
+| `Advies gegeven` | Advies of info verstrekt zonder bezoek in te plannen: KS/Winkel geholpen, Teamleider, Interne leveringen, CBF depot/pakket, geen actie nodig, visit verwijderd, Pick-up niet nodig |
 | `Geen oplossing` | DS kon geen oplossing bieden, of klant ziet af van service. Ook: CBF stop `'Aanpassing niet mogelijk'`, pick-up `'Pick-up niet gelukt — swap nodig'` |
-| `Buiten DS scope` | `locatie='Afhandeling buiten DS'` of `bellerType='Andere beller'` (beller buiten DS-context) |
+| `Buiten DS scope` | `locatie='Afhandeling buiten DS'` of `bellerType='Andere beller'` (TD/Yeply/G4S — externe bezorgpartner) |
 
 Bij het toevoegen van een nieuwe uitkomst: controleer of `berekenCategorie()` de nieuwe waarde correct afvangt op basis van de bestaande logica, of voeg een expliciete check toe.

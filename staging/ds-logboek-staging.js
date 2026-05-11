@@ -1,4 +1,4 @@
-// ds-logboek-staging.js  v0.5.0-staging
+// ds-logboek-staging.js  v0.6.5-staging
 // Staging build — new side-panel design with real data layer.
 // Scraping, flow engine, and logging ported from ds-logboek.js.
 // UI: React+Babel from CDN, mounted in #ds-logboek-staging-root.
@@ -6,7 +6,7 @@
 // React, ReactDOM, DS, and browser globals are accessible inside JSX.
 
 (function () {
-  const STAGING_VERSION = "0.6.4-staging";
+  const STAGING_VERSION = "0.6.5-staging";
   const ROOT_ID = "ds-logboek-staging-root";
   const STYLE_ID = "ds-logboek-staging-style";
   const GAS_URL = "https://script.google.com/a/macros/coolblue.nl/s/AKfycbxb-OwLCFGlDQ48qz3KnGnmsgnVLWxuOjvEr7UG3M3z0WzO0kVsTKGd_8mZjtvHvPHnEg/exec";
@@ -446,8 +446,24 @@
         } else if (cd.ks_reden==='KS vraagt om held terug te sturen'||cd.ks_reden==='Winkel vraagt om held terug te sturen') {
           s.push({key:'ks_uitkomst',label:'Wat was de uitkomst?',type:'uitkomst-select',opties:['Teamleider stuurt helden terug','Teamleider stuurt helden niet terug','Same day gepland','Next day gepland','DS vindt terugsturen niet de juiste oplossing']});
           if (ak.includes('ks_uitkomst')) {
-            if (cd.ks_uitkomst==='Same day gepland') { s.push({key:'geplandeRoute',label:'Op welke route gepland?',type:'route-input'}); if (ak.includes('geplandeRoute')&&!skipDT()) s.push({key:'dienstType',label:'Is dit Nazorg of een Extra dienst?',type:'dienst-select'}); }
-            else if (cd.ks_uitkomst==='Next day gepland') { if (!skipDT()) s.push({key:'dienstType',label:'Is dit Nazorg of een Extra dienst?',type:'dienst-select'}); if (ak.includes('dienstType')||skipDT()) s.push({key:'next_day_reden',label:'Waarom niet same day?',type:'ux-select',opties:nextDayRedenen}); }
+            if (cd.ks_uitkomst==='Same day gepland'||cd.ks_uitkomst==='Next day gepland') {
+              if (!meerdereProducten&&!ak.includes('product')) { s.push({key:'product',label:'Om welk apparaat gaat het?',type:'product-type-keuze'}); if (!ak.includes('product')) return s; }
+              if (ak.includes('product')&&pnv()) { s.push({key:'productVerfijnd',label:'Welk type product precies?',type:'ux-select',opties:getProductVerfijningOpties(cd.product)}); if (!ak.includes('productVerfijnd')) return s; }
+              s.push({key:'probleem',label:'Wat moet er gebeuren bij de klant?',type:'probleem-grouped',opties:getProbleemOpties()});
+              if (ak.includes('probleem')) {
+                var isTVIKS=cd.probleem.includes('TV')||cd.probleem.includes('Soundbar');
+                if (!ak.includes('product')&&!isTVIKS) { if (cd.probleem==='Apparaat inbouwen (Keuken)') s.push({key:'product',label:'Wat wordt er ingebouwd?',type:'ux-select',opties:['Inbouw vaatwasser','Inbouw koelkast','Oven / Magnetron','Kookplaat','Overig']}); else s.push({key:'product',label:'Welk product betreft het?',type:'ux-select',opties:['Wasmachine','Wasdroger','Koelkast / Vriezer','Vaatwasser','Televisie','Overig']}); }
+                if (ak.includes('product')&&pnv()) { s.push({key:'productVerfijnd',label:'Welk type product precies?',type:'ux-select',opties:getProductVerfijningOpties(cd.product)}); if (!ak.includes('productVerfijnd')) return s; }
+                if (ak.includes('product')&&cd.product==='Televisie'&&!ak.includes('formaatTV')&&!isTVIKS) s.push({key:'formaatTV',label:'Is de TV 55 inch of groter?',type:'ux-select',opties:['Ja (>= 55 inch)','Nee (< 55 inch)']});
+                if (cd.probleem==='Milieuretour / Pick-up ophalen'&&ak.includes('product')&&!ak.includes('milieuretour_type')) s.push({key:'milieuretour_type',label:'Specificeer het type ophaling:',type:'ux-select',opties:['Milieuretour','Pick-up']});
+                var ksTerugPK=ak.includes('product')&&(cd.product!=='Televisie'||ak.includes('formaatTV')||isTVIKS);
+                var ksTerugMK=cd.probleem!=='Milieuretour / Pick-up ophalen'||ak.includes('milieuretour_type');
+                if (ksTerugPK&&ksTerugMK) {
+                  if (cd.ks_uitkomst==='Same day gepland') { s.push({key:'geplandeRoute',label:'Op welke route gepland?',type:'route-input'}); if (ak.includes('geplandeRoute')&&!skipDT()) s.push({key:'dienstType',label:'Is dit Nazorg of een Extra dienst?',type:'dienst-select'}); }
+                  else if (cd.ks_uitkomst==='Next day gepland') { if (!skipDT()) s.push({key:'dienstType',label:'Is dit Nazorg of een Extra dienst?',type:'dienst-select'}); if (ak.includes('dienstType')||skipDT()) s.push({key:'next_day_reden',label:'Waarom niet same day?',type:'ux-select',opties:nextDayRedenen}); }
+                }
+              }
+            }
           }
         } else if (cd.ks_reden==='Witgoed Demo Wissel') {
           s.push({key:'ks_uitkomst',label:'Wat was de uitkomst?',type:'ux-select',opties:['Geplande visit verwijderd (niet nodig)','Geen actie nodig']});
