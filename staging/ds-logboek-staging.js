@@ -6,7 +6,7 @@
 // React, ReactDOM, DS, and browser globals are accessible inside JSX.
 
 (function () {
-  const STAGING_VERSION = "0.6.3-staging";
+  const STAGING_VERSION = "0.6.4-staging";
   const ROOT_ID = "ds-logboek-staging-root";
   const STYLE_ID = "ds-logboek-staging-style";
   const GAS_URL = "https://script.google.com/a/macros/coolblue.nl/s/AKfycbxb-OwLCFGlDQ48qz3KnGnmsgnVLWxuOjvEr7UG3M3z0WzO0kVsTKGd_8mZjtvHvPHnEg/exec";
@@ -374,14 +374,17 @@
         if (ak.includes('product')&&cd.product==='Televisie'&&!ak.includes('formaatTV')&&!isTVI) s.push({key:'formaatTV',label:'Is de TV 55 inch of groter?',type:'ux-select',opties:['Ja (>= 55 inch)','Nee (< 55 inch)']});
         if (cd.probleem==='Milieuretour / Pick-up ophalen'&&ak.includes('product')&&!ak.includes('milieuretour_type')) s.push({key:'milieuretour_type',label:'Specificeer het type ophaling:',type:'ux-select',opties:['Milieuretour','Pick-up']});
         if (cd.probleem==='Milieuretour / Pick-up ophalen'&&ak.includes('milieuretour_type')&&cd.milieuretour_type==='Pick-up'&&!ak.includes('pick_up_status'))
-          s.push({key:'pick_up_status',label:'Status pick-up?',type:'ux-select',opties:['Pick-up plannen (handmatig)','Pick-up niet gelukt — swap nodig']});
+          s.push({key:'pick_up_status',label:'Status pick-up?',type:'ux-select',opties:['Pick-up plannen (handmatig)','Pick-up niet nodig','Pick-up niet gelukt — swap nodig']});
         if (cd.pick_up_status==='Pick-up niet gelukt — swap nodig'&&!afk.includes('uitkomst')) {
           cd.uitkomst='Geen oplossing gepland'; afk.push('uitkomst');
+        }
+        if (cd.pick_up_status==='Pick-up niet nodig'&&!afk.includes('uitkomst')) {
+          cd.uitkomst='Advies gegeven'; afk.push('uitkomst');
         }
         var prodKlaar=ak.includes('product')&&(cd.product!=='Televisie'||ak.includes('formaatTV')||isTVI);
         var milKlaar=cd.probleem!=='Milieuretour / Pick-up ophalen'
           ||(ak.includes('milieuretour_type')&&(cd.milieuretour_type!=='Pick-up'
-             ||(ak.includes('pick_up_status')&&cd.pick_up_status!=='Pick-up niet gelukt — swap nodig')));
+             ||(ak.includes('pick_up_status')&&cd.pick_up_status!=='Pick-up niet gelukt — swap nodig'&&cd.pick_up_status!=='Pick-up niet nodig')));
         if (prodKlaar&&milKlaar) {
           s.push({key:'uitkomst',label:'Wat was de uitkomst?',type:'uitkomst-select',opties:['Same day gepland','Next day gepland','Klant ziet af van service (meerkosten)','Geen oplossing gepland']});
           if (ak.includes('uitkomst')) {
@@ -527,6 +530,7 @@
       if (cd.probleem==='Product past niet op gewenste plek') return 'Product past niet op gewenste plek — held geïnformeerd voor Jerney-afmelding';
       if (cd.probleem==='Nazorg niet gelukt / swap aanvragen') return 'Nazorg niet gelukt — opmerking gemaakt, swap via KS aanvragen';
       if (cd.pick_up_status==='Pick-up niet gelukt — swap nodig') return 'Pick-up niet gelukt — held instructie gegeven voor Jerney (swap aanvragen)';
+      if (cd.pick_up_status==='Pick-up niet nodig') return 'Pick-up niet nodig — held geïnformeerd';
       var isAdv=cd.probleem==='Advies gegeven'||cd.uitkomst==='Advies gegeven';
       if (isAdv) return cd.advies_gelukt==='Ja, service uitgevoerd'?'Advies gegeven aan held waardoor service uitgevoerd is':'Nee, geen oplossing door DS';
       if (cd.uitkomst==='Same day gepland') return 'Ja stop gepland (same day)';
@@ -587,9 +591,12 @@
       probLog='Vraag over depot/hub: '+(cd.cbb_hub_reden||'')+(cd.cbb_hub_toelichting?' — '+cd.cbb_hub_toelichting:''); logD1=''; logD2='';
     } else if (cd.locatie==='Bij de klant') {
       var pickupNietGelukt=cd.pick_up_status==='Pick-up niet gelukt — swap nodig';
+      var pickupNietNodig=cd.pick_up_status==='Pick-up niet nodig';
       probLog=pickupNietGelukt
         ?'Pick-up niet gelukt — held instructie gegeven voor Jerney (swap aanvragen)'
-        :cd.milieuretour_type
+        :pickupNietNodig
+          ?'Pick-up niet nodig — held geïnformeerd'
+          :cd.milieuretour_type
           ?(cd.milieuretour_type==='Pick-up'?'Pick-up (handmatig gepland)':'Milieuretour ophalen')
           :cd.probleem==='Nazorg niet gelukt / swap aanvragen'
             ?'Nazorg niet gelukt — opmerking gemaakt, swap via KS aanvragen'

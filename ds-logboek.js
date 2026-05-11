@@ -838,15 +838,18 @@
           s.push({key:'milieuretour_type',label:'Specificeer het type ophaling:',type:'ux-select',opties:['Milieuretour','Pick-up']});
         }
         if (callData.milieuretour_type==='Pick-up'&&answeredKeys.includes('milieuretour_type')&&!answeredKeys.includes('pick_up_status')) {
-          s.push({key:'pick_up_status',label:'Status pick-up?',type:'ux-select',opties:['Pick-up plannen (handmatig)','Pick-up niet gelukt — swap nodig']});
+          s.push({key:'pick_up_status',label:'Status pick-up?',type:'ux-select',opties:['Pick-up plannen (handmatig)','Pick-up niet nodig','Pick-up niet gelukt — swap nodig']});
         }
         if (callData.pick_up_status==='Pick-up niet gelukt — swap nodig'&&!autoFilledKeys.includes('uitkomst')) {
           callData.uitkomst='Geen oplossing gepland'; autoFilledKeys.push('uitkomst');
         }
+        if (callData.pick_up_status==='Pick-up niet nodig'&&!autoFilledKeys.includes('uitkomst')) {
+          callData.uitkomst='Advies gegeven'; autoFilledKeys.push('uitkomst');
+        }
         var prodKlaar = answeredKeys.includes('product')&&(callData.product!=='Televisie'||answeredKeys.includes('formaatTV')||isTVInstallatie);
         var milKlaar  = callData.probleem!=='Milieuretour / Pick-up ophalen'
           ||(answeredKeys.includes('milieuretour_type')&&(callData.milieuretour_type!=='Pick-up'
-             ||(answeredKeys.includes('pick_up_status')&&callData.pick_up_status!=='Pick-up niet gelukt — swap nodig')));
+             ||(answeredKeys.includes('pick_up_status')&&callData.pick_up_status!=='Pick-up niet gelukt — swap nodig'&&callData.pick_up_status!=='Pick-up niet nodig')));
         if (prodKlaar&&milKlaar) {
           // Advies gegeven alleen als escape op uitkomststap als probleem zelf geen concreet probleem is
           var uitkomstType = callData.probleem === 'Advies gegeven' ? 'ux-select' : 'uitkomst-select';
@@ -1184,7 +1187,7 @@
             '<span style="font-size:11px;color:'+(geenOrderMode?'#ff6600':'#aaa')+';">'+(geenOrderMode?'Gegevens gewist':'Geen order')+'</span>' +
           '</div>' : '') +
         '</div></div>' +
-        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.24.0</div>' +
+        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.24.1</div>' +
       '</div>';
 
     idoc.getElementById('btn-close').onclick = function(){ wrapper.remove(); };
@@ -2067,9 +2070,12 @@
       logDriver1 = ''; logDriver2 = '';
     } else if (callData.locatie==='Bij de klant') {
       var pickupNietGelukt = callData.pick_up_status === 'Pick-up niet gelukt — swap nodig';
+      var pickupNietNodig  = callData.pick_up_status === 'Pick-up niet nodig';
       probLog = pickupNietGelukt
         ? 'Pick-up niet gelukt — held instructie gegeven voor Jerney (swap aanvragen)'
-        : callData.milieuretour_type
+        : pickupNietNodig
+          ? 'Pick-up niet nodig — held geïnformeerd'
+          : callData.milieuretour_type
           ? (callData.milieuretour_type==='Pick-up' ? 'Pick-up (handmatig gepland)' : 'Milieuretour ophalen')
           : callData.probleem==='Nazorg niet gelukt / swap aanvragen'
             ? 'Nazorg niet gelukt — opmerking gemaakt, swap via KS aanvragen'
