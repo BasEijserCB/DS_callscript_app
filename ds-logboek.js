@@ -601,9 +601,19 @@
   }
 
   function buildProbleemSections() {
+    // Wanneer product_keuze al beantwoord is, alleen geselecteerde producten tonen
+    var prodsVoorSections = alleGescrapteProducten;
+    if (callData.product_keuze) {
+      var geselecteerdeLabels = callData.product_keuze.split(', ');
+      var gefilterd = alleGescrapteProducten.filter(function(naam) {
+        return geselecteerdeLabels.some(function(sel) { return maakProductLabel(naam) === sel; });
+      });
+      if (gefilterd.length > 0) prodsVoorSections = gefilterd;
+    }
+
     // Detecteer TV+Soundbar combinatie
-    var heeftTV = alleGescrapteProducten.some(function(n){ return isTV(n); });
-    var heeftSoundbar = alleGescrapteProducten.some(function(n){ return isSoundbar(n); });
+    var heeftTV = prodsVoorSections.some(function(n){ return isTV(n); });
+    var heeftSoundbar = prodsVoorSections.some(function(n){ return isSoundbar(n); });
     var tvSoundbarCombo = heeftTV && heeftSoundbar;
 
     if (!meerdereProducten) {
@@ -616,7 +626,7 @@
 
     // Meerdere producten — groepeer per type
     var secMap = {}, secOrder = [];
-    alleGescrapteProducten.forEach(function(naam) {
+    prodsVoorSections.forEach(function(naam) {
       var det = detecteerType(naam);
       var type = det && det.typeGuess ? det.typeGuess : (isTV(naam) ? 'televisie' : (isSoundbar(naam) ? 'soundbar' : null));
       if (!type) return;
@@ -761,8 +771,8 @@
 
     // ── CBB FLOW (en Anders) ──────────────────────────────────────
 
-    // Bij meerdere producten: keuze NA probleem
-    if (meerdereProducten && !answeredKeys.includes('product_keuze') && answeredKeys.includes('probleem') && callData.probleem !== 'Advies gegeven') {
+    // Bij meerdere producten: expliciete productkeuze vóór locatie
+    if (meerdereProducten && !answeredKeys.includes('product_keuze')) {
       s.push({key:'product_keuze',label:'Over welk product gaat het?',type:'product-multi',opties:alleGescrapteProducten.map(maakProductLabel)});
       if (!answeredKeys.includes('product_keuze')) return s;
     }
@@ -783,7 +793,6 @@
       }
       s.push({key:'probleem',label:'Wat is de klacht of taak?',type:'probleem-grouped',opties:getProbleemOpties()});
       if (!answeredKeys.includes('probleem')) return s;
-      // product(_keuze) wordt afgehandeld door de probleem-grouped renderer
 
       if (callData.probleem==='Advies gegeven') {
         s.push({key:'advies_gelukt',label:'Is de service na het advies uitgevoerd?',type:'info-select',opties:['Ja, service uitgevoerd','Nee, geen oplossing door DS']});
@@ -1187,7 +1196,7 @@
             '<span style="font-size:11px;color:'+(geenOrderMode?'#ff6600':'#aaa')+';">'+(geenOrderMode?'Gegevens gewist':'Geen order')+'</span>' +
           '</div>' : '') +
         '</div></div>' +
-        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.24.1</div>' +
+        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.25.0</div>' +
       '</div>';
 
     idoc.getElementById('btn-close').onclick = function(){ wrapper.remove(); };
@@ -1273,7 +1282,7 @@
     function maakAfwijkendKnop(opt) {
       var b=idoc.createElement('button'); b.className='ux-btn afwijkend-knop'; b.style.marginBottom='4px'; b.innerText=opt;
       b.onclick=function(){
-        ['probleem','product','formaatTV','milieuretour_type','uitkomst','geplandeRoute','next_day_reden','geen_oplossing_reden','advies_gelukt','product_keuze'].forEach(function(k){
+        ['probleem','product','formaatTV','milieuretour_type','uitkomst','geplandeRoute','next_day_reden','geen_oplossing_reden','advies_gelukt'].forEach(function(k){
           callData[k]=''; var ix=answeredKeys.indexOf(k); if(ix>-1) answeredKeys.splice(ix,1); var ax=autoFilledKeys.indexOf(k); if(ax>-1) autoFilledKeys.splice(ax,1);
         });
         callData.locatie='Afhandeling buiten DS'; callData.afwijkend_reden=opt;
@@ -1680,8 +1689,9 @@
             btn.onclick = (function(disp, log, s, si){ return function(){
               callData.probleem = log;
               if (!answeredKeys.includes('probleem')) answeredKeys.push('probleem');
-              // product instellen vanuit sectie
-              if (!answeredKeys.includes('product')) { callData.product=s.typeLabel; answeredKeys.push('product'); autoFilledKeys.push('product'); }
+              // product instellen vanuit sectie (altijd overschrijven — sectie-klik bepaalt welk product)
+              callData.product=s.typeLabel;
+              if (!answeredKeys.includes('product')) { answeredKeys.push('product'); autoFilledKeys.push('product'); }
               if (s.origNaam) callData.model=s.origNaam;
               // TV formaatcheck
               if ((s.typeKey==='televisie'||s.typeKey==='televisie+soundbar')&&!answeredKeys.includes('formaatTV')) {
@@ -1746,7 +1756,8 @@
               btn2.onclick=(function(disp2,log2,s2,si2){ return function(){
                 callData.probleem=log2;
                 if(!answeredKeys.includes('probleem')) answeredKeys.push('probleem');
-                if(!answeredKeys.includes('product')){ callData.product=s2.typeLabel; answeredKeys.push('product'); autoFilledKeys.push('product'); }
+                callData.product=s2.typeLabel;
+                if(!answeredKeys.includes('product')){ answeredKeys.push('product'); autoFilledKeys.push('product'); }
                 if(s2.origNaam) callData.model=s2.origNaam;
                 if(!answeredKeys.includes('product_keuze')){ callData.product_keuze=s2.typeLabel; answeredKeys.push('product_keuze'); }
                 renderApp();
@@ -1894,7 +1905,7 @@
       ['Held moet dit bij afmelden regelen met TL','Overig'].forEach(function(opt){
         var b=idoc.createElement('button'); b.className='ux-btn'; b.style.marginBottom='4px'; b.innerText=opt;
         b.onclick=function(){
-          ['probleem','product','formaatTV','milieuretour_type','uitkomst','geplandeRoute','next_day_reden','geen_oplossing_reden','advies_gelukt','product_keuze'].forEach(function(k){
+          ['probleem','product','formaatTV','milieuretour_type','uitkomst','geplandeRoute','next_day_reden','geen_oplossing_reden','advies_gelukt'].forEach(function(k){
             callData[k]='';
             var ix=answeredKeys.indexOf(k); if(ix>-1) answeredKeys.splice(ix,1);
             var ax=autoFilledKeys.indexOf(k); if(ax>-1) autoFilledKeys.splice(ax,1);

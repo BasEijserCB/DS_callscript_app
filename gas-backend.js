@@ -15,7 +15,7 @@ function doGet(e) {
       p.user,                       // Kolom C: DS Medewerker
       p.route,                      // Kolom D: Route (Bezorger)
       p.depot,                      // Kolom E: Depot
-      p.driver1,                    // Kolom F: Chauffeur 1
+      p.driver1,                    // Kolom F: Chauffeur 1 
       p.driver2,                    // Kolom G: Bijrijder
       p.orderBron,                  // Kolom H: Ordernummer (Bron)
       p.product,                    // Kolom I: Product / Formaat
