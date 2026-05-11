@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git -C \"/Users/bas.eijsermans/Documents/Callscript app/DS_callscript_app\" log 13cc99dbd8ac3fb113164cb6dcec55e572589ce7..HEAD --oneline)"
+    ]
+  }
+}
