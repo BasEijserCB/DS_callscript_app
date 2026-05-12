@@ -1231,7 +1231,7 @@
             '<span style="font-size:11px;color:'+(geenOrderMode?'#ff6600':'#aaa')+';">'+(geenOrderMode?'Gegevens gewist':'Geen order')+'</span>' +
           '</div>' : '') +
         '</div></div>' +
-        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.26.0</div>' +
+        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.26.1</div>' +
       '</div>';
 
     idoc.getElementById('btn-close').onclick = function(){ wrapper.remove(); };
@@ -1687,7 +1687,7 @@
         container.appendChild(fkWarn);
       }
       var pgSections = buildProbleemSections();
-      var pgAutoExpand = pgSections.length === 1;
+      var pgAutoExpand = pgSections.length <= 2;
 
       // Controlevraag bovenaan als die al gezet is (bij meerdere producten)
       var existCQ2 = idoc.getElementById('pg-cq');
