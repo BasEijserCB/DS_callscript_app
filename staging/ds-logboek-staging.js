@@ -1,4 +1,4 @@
-// ds-logboek-staging.js  v0.6.5-staging
+// ds-logboek-staging.js  v0.6.6-staging
 // Staging build — new side-panel design with real data layer.
 // Scraping, flow engine, and logging ported from ds-logboek.js.
 // UI: React+Babel from CDN, mounted in #ds-logboek-staging-root.
@@ -6,7 +6,7 @@
 // React, ReactDOM, DS, and browser globals are accessible inside JSX.
 
 (function () {
-  const STAGING_VERSION = "0.6.5-staging";
+  const STAGING_VERSION = "0.6.6-staging";
   const ROOT_ID = "ds-logboek-staging-root";
   const STYLE_ID = "ds-logboek-staging-style";
   const GAS_URL = "https://script.google.com/a/macros/coolblue.nl/s/AKfycbxb-OwLCFGlDQ48qz3KnGnmsgnVLWxuOjvEr7UG3M3z0WzO0kVsTKGd_8mZjtvHvPHnEg/exec";
@@ -107,7 +107,7 @@
     'samsung':  [['WD','wasdroogcombinatie'],['WW','wasmachine'],['WF','wasmachine'],['DV','droger'],['DW','inbouw vaatwasser'],['RB','koelkast'],['RL','koelkast'],['RF','koelkast'],['RR','koelkast'],['RS','koelkast'],['RZ','vriezer'],['NV','oven'],['MS','magnetron'],['MC','magnetron'],['MG','magnetron'],['NX','fornuis'],['NZ','kookplaat'],['HW','soundbar'],['QE','televisie'],['UE','televisie']],
     'siemens':  [['WD','wasdroogcombinatie'],['WM','wasmachine'],['WG','wasmachine'],['WS','wasmachine'],['WN','wasdroogcombinatie'],['WP','wasmachine'],['WT','droger'],['WQ','droger'],['WR','droger'],['SN63','vaatwasser'],['SN','inbouw vaatwasser'],['SR','vaatwasser'],['SX','inbouw vaatwasser'],['KI','inbouw koelkast'],['KS','koelkast'],['KG','koelkast'],['GI','inbouw vriezer'],['GS','vriezer'],['HB','oven'],['HS','oven'],['HM','magnetron'],['HX','fornuis'],['HR','fornuis'],['BE','magnetron'],['BF','magnetron'],['HF','magnetron'],['EX','kookplaat'],['ET','kookplaat'],['EU','kookplaat'],['EH','kookplaat'],['ER','kookplaat']],
     'veripart': [['VPW','wasmachine'],['VPT','droger'],['VPK','koelkast'],['VPVR','vriezer']],
-    'whirlpool':[['FWDG','wasdroogcombinatie'],['FFB','wasmachine'],['FSCR','wasmachine'],['W6','wasmachine'],['W7','wasmachine'],['W8','wasmachine'],['FS','wasmachine'],['HS','wasmachine'],['AW','wasmachine'],['FT','droger'],['FFT','droger'],['HSCX','droger'],['W6D','droger'],['W7D','droger'],['CWD','droger'],['WIC','inbouw vaatwasser'],['WIO','inbouw vaatwasser'],['WFC','vaatwasser'],['WKIC','inbouw vaatwasser'],['WFO','vaatwasser'],['FF','vaatwasser'],['WB','koelkast'],['ARG','koelkast'],['ART','koelkast'],['ARZ','koelkast'],['WME','koelkast'],['SW','inbouw koelkast'],['UW','vriezer'],['WV','vriezer'],['AFG','vriezer'],['AKZ','oven'],['W7OS','oven'],['W9OS','oven'],['W11OS','oven'],['MWP','magnetron'],['W6MW','magnetron'],['W7MW','magnetron'],['AMW','magnetron'],['AKT','kookplaat'],['WLC','kookplaat'],['WLG','kookplaat'],['SMP','kookplaat']],
+    'whirlpool':[['FWDG','wasdroogcombinatie'],['FFWDB','wasdroogcombinatie'],['FFB','wasmachine'],['FSCR','wasmachine'],['W6','wasmachine'],['W7','wasmachine'],['W8','wasmachine'],['FS','wasmachine'],['HS','wasmachine'],['AW','wasmachine'],['FT','droger'],['FFT','droger'],['HSCX','droger'],['W6D','droger'],['W7D','droger'],['CWD','droger'],['WIC','inbouw vaatwasser'],['WIO','inbouw vaatwasser'],['WFC','vaatwasser'],['WKIC','inbouw vaatwasser'],['WFO','vaatwasser'],['FF','vaatwasser'],['WB','koelkast'],['ARG','koelkast'],['ART','koelkast'],['ARZ','koelkast'],['WME','koelkast'],['SW','inbouw koelkast'],['UW','vriezer'],['WV','vriezer'],['AFG','vriezer'],['AKZ','oven'],['W7OS','oven'],['W9OS','oven'],['W11OS','oven'],['MWP','magnetron'],['W6MW','magnetron'],['W7MW','magnetron'],['AMW','magnetron'],['AKT','kookplaat'],['WLC','kookplaat'],['WLG','kookplaat'],['SMP','kookplaat']],
     'wisberg':  [['WBWM','wasmachine'],['WBDR','droger'],['WBDW','vaatwasser'],['WBBI','inbouw vaatwasser'],['WBKVC','koel-vries combo'],['WBKK','koelkast'],['WBKV','vriezer'],['WBVR','vriezer'],['WBCF','vriezer'],['WBCDND','koel-vries combo'],['WBSBSW','koelkast'],['WBSBS','koelkast'],['WBTM','koelkast'],['WBTT','koelkast'],['WBMKK','koelkast'],['WBMVR','vriezer']],
     'zanussi':  [['ZWF','wasmachine'],['ZW','wasmachine'],['ZDT','inbouw vaatwasser'],['ZDTS','inbouw vaatwasser'],['ZP','droger'],['ZD','droger'],['ZOB','oven'],['ZOPNA','oven']],
     'miele':    [['WCA','wasmachine'],['WCB','wasmachine'],['WCE','wasmachine'],['WEC','wasmachine'],['WCI','wasdroogcombinatie'],['WWG','wasmachine'],['WWH','wasmachine'],['WTD','wasdroogcombinatie'],['TCE','droger'],['TCJ','droger'],['TCI','droger'],['TCR','droger'],['TWF','droger'],['TWI','droger'],['TWR','droger'],['TKG','droger'],['G','vaatwasser'],['KFN','koelkast'],['KD','koelkast'],['KS','koelkast'],['K','koelkast'],['FN','vriezer'],['F','vriezer'],['H','oven'],['M','magnetron'],['KM','kookplaat']],
