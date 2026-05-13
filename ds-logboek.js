@@ -272,6 +272,7 @@
   function clampHeight(h) { return Math.min(h, maxViewportHeight()); }
   var answeredKeys = [], autoFilledKeys = [];
   var geenOrderMode = false;
+  var nameEditConfirm = false;
 
   // Apply initial sizing
   dsHeight = clampHeight(dsHeight);
@@ -1231,8 +1232,8 @@
             '<span style="font-size:11px;color:'+(geenOrderMode?'#ff6600':'#aaa')+';">'+(geenOrderMode?'Gegevens gewist':'Geen order')+'</span>' +
           '</div>' : '') +
         '</div></div>' +
-        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.27.0' +
-          (callData.user ? ' · <span style="color:#999;">'+callData.user+'</span> <span id="btn-edit-name" title="Naam wijzigen" style="cursor:pointer;opacity:0.45;margin-left:1px;">✎</span>' : '') +
+        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.27.1' +
+          (callData.user ? ' · <span style="color:#999;">'+callData.user+'</span> ' + (nameEditConfirm ? '<span style="color:#666;margin-left:4px;">Naam wissen?</span> <span id="btn-edit-name-yes" style="cursor:pointer;color:#c00;font-weight:600;margin-left:4px;">Ja</span> <span id="btn-edit-name-no" style="cursor:pointer;color:#666;margin-left:4px;">Nee</span>' : '<span id="btn-edit-name" title="Naam wijzigen" style="cursor:pointer;opacity:0.45;margin-left:1px;">✎</span>') : '') +
         '</div>' +
       '</div>';
 
@@ -1254,7 +1255,11 @@
     };
     var editNameBtn = idoc.getElementById('btn-edit-name');
     if (editNameBtn) editNameBtn.onclick = function() {
-      if (!confirm('Weet je zeker dat je je naam wilt wijzigen?')) return;
+      nameEditConfirm = true;
+      renderApp();
+    };
+    var editNameYes = idoc.getElementById('btn-edit-name-yes');
+    if (editNameYes) editNameYes.onclick = function() {
       localStorage.removeItem('ds_fname'); localStorage.removeItem('ds_lname');
       bFname = ''; bLname = '';
       callData.fname = ''; callData.lname = ''; callData.user = '';
@@ -1262,6 +1267,12 @@
         var i = answeredKeys.indexOf(k); if (i > -1) answeredKeys.splice(i,1);
         var j = autoFilledKeys.indexOf(k); if (j > -1) autoFilledKeys.splice(j,1);
       });
+      nameEditConfirm = false;
+      renderApp();
+    };
+    var editNameNo = idoc.getElementById('btn-edit-name-no');
+    if (editNameNo) editNameNo.onclick = function() {
+      nameEditConfirm = false;
       renderApp();
     };
     if (canGoBack()) idoc.getElementById('btn-terug').onclick = goBack;

@@ -6,7 +6,7 @@
 // React, ReactDOM, DS, and browser globals are accessible inside JSX.
 
 (function () {
-  const STAGING_VERSION = "0.7.0-staging";
+  const STAGING_VERSION = "0.7.1-staging";
   const ROOT_ID = "ds-logboek-staging-root";
   const STYLE_ID = "ds-logboek-staging-style";
   const GAS_URL = "https://script.google.com/a/macros/coolblue.nl/s/AKfycbxb-OwLCFGlDQ48qz3KnGnmsgnVLWxuOjvEr7UG3M3z0WzO0kVsTKGd_8mZjtvHvPHnEg/exec";
@@ -961,6 +961,7 @@ function App(){
   var _ct=useState(''),textVal=_ct[0],setTextVal=_ct[1];
   var _cm=useState([]),multiSel=_cm[0],setMultiSel=_cm[1];
   var _pt=useState('taak'),probleemTab=_pt[0],setProbleemTab=_pt[1];
+  var _nc=useState(false),nameConfirm=_nc[0],setNameConfirm=_nc[1];
   var cd=conv.cd,ak=conv.ak,afk=conv.afk,isAG=conv.isAG;
   var inputRef=useRef(null);
 
@@ -986,8 +987,8 @@ function App(){
     upd(cdP,[key].concat(akExt||[]),afkExt||[],clr||null);
   }
 
-  function resetName(){
-    if(!window.confirm('Weet je zeker dat je je naam wilt wijzigen?'))return;
+  function resetName(){setNameConfirm(true);}
+  function confirmResetName(){
     localStorage.removeItem('ds_fname');localStorage.removeItem('ds_lname');
     setConv(function(prev){
       var newCd=Object.assign({},prev.cd,{fname:'',lname:'',user:''});
@@ -995,8 +996,9 @@ function App(){
       var newAfk=prev.afk.filter(function(k){return k!=='fname'&&k!=='lname';});
       return {cd:newCd,ak:newAk,afk:newAfk,isAG:prev.isAG};
     });
-    setTextVal('');setMultiSel([]);
+    setTextVal('');setMultiSel([]);setNameConfirm(false);
   }
+  function cancelResetName(){setNameConfirm(false);}
 
   function goBack(){
     setConv(function(prev){
@@ -1111,7 +1113,7 @@ function App(){
             </div>
           )}
         </div>
-        <div className="ds-footer">{canBack&&<button className="ds-btn ds-btn--ghost" onClick={goBack}>← Terug</button>}<span className="ds-hint">{DS.version}{cd.user&&<React.Fragment> · <span style={{color:'#8a99ab'}}>{cd.user}</span> <span onClick={resetName} title="Naam wijzigen" style={{cursor:'pointer',opacity:0.45,marginLeft:1}}>✎</span></React.Fragment>}</span></div>
+        <div className="ds-footer">{canBack&&<button className="ds-btn ds-btn--ghost" onClick={goBack}>← Terug</button>}<span className="ds-hint">{DS.version}{cd.user&&<React.Fragment> · <span style={{color:'#8a99ab'}}>{cd.user}</span> {nameConfirm?<React.Fragment><span style={{color:'#566879',marginLeft:4}}>Naam wissen?</span> <span onClick={confirmResetName} style={{cursor:'pointer',color:'#c0392b',fontWeight:600,marginLeft:4}}>Ja</span> <span onClick={cancelResetName} style={{cursor:'pointer',color:'#8a99ab',marginLeft:4}}>Nee</span></React.Fragment>:<span onClick={resetName} title="Naam wijzigen" style={{cursor:'pointer',opacity:0.45,marginLeft:1}}>✎</span>}</React.Fragment>}</span></div>
       </div>
     );
   }
@@ -1282,7 +1284,7 @@ function App(){
           {stepBody}
         </div>
       </div>
-      <div className="ds-footer">{canBack&&<button className="ds-btn ds-btn--ghost" onClick={goBack}>← Terug</button>}<span className="ds-hint">{DS.version}{cd.user&&<React.Fragment> · <span style={{color:'#8a99ab'}}>{cd.user}</span> <span onClick={resetName} title="Naam wijzigen" style={{cursor:'pointer',opacity:0.45,marginLeft:1}}>✎</span></React.Fragment>}</span></div>
+      <div className="ds-footer">{canBack&&<button className="ds-btn ds-btn--ghost" onClick={goBack}>← Terug</button>}<span className="ds-hint">{DS.version}{cd.user&&<React.Fragment> · <span style={{color:'#8a99ab'}}>{cd.user}</span> {nameConfirm?<React.Fragment><span style={{color:'#566879',marginLeft:4}}>Naam wissen?</span> <span onClick={confirmResetName} style={{cursor:'pointer',color:'#c0392b',fontWeight:600,marginLeft:4}}>Ja</span> <span onClick={cancelResetName} style={{cursor:'pointer',color:'#8a99ab',marginLeft:4}}>Nee</span></React.Fragment>:<span onClick={resetName} title="Naam wijzigen" style={{cursor:'pointer',opacity:0.45,marginLeft:1}}>✎</span>}</React.Fragment>}</span></div>
     </div>
   );
 }
