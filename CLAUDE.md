@@ -53,6 +53,7 @@ Nieuwste bovenaan. Alleen `ds-logboek.js` versies (productie).
 
 | Versie | Wijziging |
 |---|---|
+| v1.29.0 | Refactor: Beller-kolom (P) in Google Sheets log beperkt tot vier waarden: `CBB`, `CBF`, `Klantenservice`, `Overig`. Winkel, Teamleider, Interne leveringen, Technische Dienst, Yeply, G4S en Andere beller worden allemaal als `Overig` gelogd — minder datapunten, simpelere analyse. Ook in staging. |
 | v1.28.0 | Add: CBF "Pakket niet meegenomen / niet ingeladen" extra uitkomst `'Product is al afgeleverd'`. Fix: `'KS:'` en `'Winkel:'` prefixes uit probleem-kolom verwijderd (beller-kolom maakt onderscheid al — voorkomt dubbele data). Ook in staging. |
 | v1.27.1 | Fix: bevestiging bij naam wijzigen is nu inline in de widget (Ja/Nee in footer) i.p.v. browser `confirm()` popup. Ook in staging. |
 | v1.27.0 | Add: subtiel pencil-icoontje (✎) naast naam in footer — gebruiker kan opgeslagen naam wijzigen (clear `ds_fname`/`ds_lname` + flow stelt vraag opnieuw). Ook in staging build. |

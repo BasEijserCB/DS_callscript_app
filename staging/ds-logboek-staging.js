@@ -6,7 +6,7 @@
 // React, ReactDOM, DS, and browser globals are accessible inside JSX.
 
 (function () {
-  const STAGING_VERSION = "0.7.2-staging";
+  const STAGING_VERSION = "0.7.3-staging";
   const ROOT_ID = "ds-logboek-staging-root";
   const STYLE_ID = "ds-logboek-staging-style";
   const GAS_URL = "https://script.google.com/a/macros/coolblue.nl/s/AKfycbxb-OwLCFGlDQ48qz3KnGnmsgnVLWxuOjvEr7UG3M3z0WzO0kVsTKGd_8mZjtvHvPHnEg/exec";
@@ -624,7 +624,7 @@
       orderOplLog=(cd.uitkomst==='Same day gepland'||cd.uitkomst==='Next day gepland'||cd.uitkomst==='Same day visit gepland'||cd.uitkomst==='Next day visit gepland')?cd.orderBron+'-DS':'';
     } else { probLog=cd.onderweg_type; }
     var prodLog=skipRF?'':cd.product+(cd.formaatTV?' ('+cd.formaatTV+')':'');
-    var bellerLog=cd.locatie==='Klantenservice'?'Klantenservice':cd.locatie==='Winkel'?'Winkel':['Technische Dienst','Yeply','G4S'].includes(cd.locatie)?cd.locatie:cd.bellerType||'';
+    var bellerLog=!cd.bellerType?'':cd.bellerType==='CBB'?'CBB':cd.bellerType==='CBF'?'CBF':cd.locatie==='Klantenservice'?'Klantenservice':'Overig';
     var extraInfo=cd.locatie==='Afhandeling buiten DS'&&cd.afwijkend_reden==='Overig'?cd.afwijkend_toelichting:'';
     var extraDienst=(cd.locatie==='Klantenservice'||cd.locatie==='Winkel')&&cd.ks_reden==='Nazorg nodig'?'Ja':'';
     var cat=berekenCategorie(cd);
