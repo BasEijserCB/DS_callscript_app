@@ -6,7 +6,7 @@
 // React, ReactDOM, DS, and browser globals are accessible inside JSX.
 
 (function () {
-  const STAGING_VERSION = "0.7.1-staging";
+  const STAGING_VERSION = "0.7.2-staging";
   const ROOT_ID = "ds-logboek-staging-root";
   const STYLE_ID = "ds-logboek-staging-style";
   const GAS_URL = "https://script.google.com/a/macros/coolblue.nl/s/AKfycbxb-OwLCFGlDQ48qz3KnGnmsgnVLWxuOjvEr7UG3M3z0WzO0kVsTKGd_8mZjtvHvPHnEg/exec";
@@ -291,7 +291,7 @@
       } else if (cd.locatie==='Bij de klant') {
         s.push({key:'cbf_pakket_reden',label:'Wat is de vraag?',type:'ux-select',opties:['Pakket niet meegenomen / niet ingeladen','Pakket verkeerd / beschadigd','Spullen achtergelaten bij klant','Overige vraag over pakket']});
         if (ak.includes('cbf_pakket_reden')) {
-          if (cd.cbf_pakket_reden==='Pakket niet meegenomen / niet ingeladen') s.push({key:'cbf_pakket_uitkomst',label:'Wat was de uitkomst?',type:'ux-select',opties:['Klant geïnformeerd, manco geregistreerd','Pakje wordt later afgeleverd (afleverbewijs)','Niet opgelost — instructie gegeven in Jerney']});
+          if (cd.cbf_pakket_reden==='Pakket niet meegenomen / niet ingeladen') s.push({key:'cbf_pakket_uitkomst',label:'Wat was de uitkomst?',type:'ux-select',opties:['Klant geïnformeerd, manco geregistreerd','Pakje wordt later afgeleverd (afleverbewijs)','Product is al afgeleverd','Niet opgelost — instructie gegeven in Jerney']});
           else if (cd.cbf_pakket_reden==='Spullen achtergelaten bij klant') {
             s.push({key:'uitkomst',label:'Wat was de uitkomst?',type:'ux-select',opties:['Same day gepland','Next day gepland','Helden teruggebeld, rijden terug zonder visit']});
             if (ak.includes('uitkomst')) {
@@ -587,9 +587,9 @@
     } else if (cd.locatie==='Winkel') {
       var wOpl=cd.ks_reden==='Winkel vraagt om held terug te sturen'?cd.ks_uitkomst:cd.uitkomst;
       if (cd.ks_reden==='Tijdslot aanpassing / stop aanpassen') {
-        probLog='Winkel: Tijdslot aanpassing — '+(cd.ks_tijdslot_uitkomst||'')+'  — product mee terug: '+(cd.product_mee_terug||'?');
+        probLog='Tijdslot aanpassing — '+(cd.ks_tijdslot_uitkomst||'')+'  — product mee terug: '+(cd.product_mee_terug||'?');
       } else {
-        probLog='Winkel: '+cd.ks_reden+(cd.probleem?' — '+cd.probleem:'');
+        probLog=cd.ks_reden+(cd.probleem?' — '+cd.probleem:'');
       }
       redenGeenOplossing=cd.geen_oplossing_reden||''; redenNextDay=cd.next_day_reden||'';
       routeLog=(wOpl==='Next day gepland')?'Next Day':cd.geplandeRoute; orderOplLog=(wOpl==='Same day gepland'||wOpl==='Next day gepland')?cd.orderBron+'-DS':'';
@@ -597,9 +597,9 @@
     } else if (cd.locatie==='Klantenservice') {
       var kOpl=cd.ks_reden==='KS vraagt om held terug te sturen'?cd.ks_uitkomst:cd.uitkomst;
       if (cd.ks_reden==='Tijdslot aanpassing / stop aanpassen') {
-        probLog='KS: Tijdslot aanpassing — '+(cd.ks_tijdslot_uitkomst||'')+' — product mee terug: '+(cd.product_mee_terug||'?');
+        probLog='Tijdslot aanpassing — '+(cd.ks_tijdslot_uitkomst||'')+' — product mee terug: '+(cd.product_mee_terug||'?');
       } else {
-        probLog='KS: '+cd.ks_reden+(cd.probleem?' — '+cd.probleem:'');
+        probLog=cd.ks_reden+(cd.probleem?' — '+cd.probleem:'');
       }
       redenGeenOplossing=cd.geen_oplossing_reden||''; redenNextDay=cd.next_day_reden||'';
       routeLog=(kOpl==='Next day gepland')?'Next Day':cd.geplandeRoute; orderOplLog=(kOpl==='Same day gepland'||kOpl==='Next day gepland')?cd.orderBron+'-DS':'';

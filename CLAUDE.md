@@ -53,6 +53,7 @@ Nieuwste bovenaan. Alleen `ds-logboek.js` versies (productie).
 
 | Versie | Wijziging |
 |---|---|
+| v1.28.0 | Add: CBF "Pakket niet meegenomen / niet ingeladen" extra uitkomst `'Product is al afgeleverd'`. Fix: `'KS:'` en `'Winkel:'` prefixes uit probleem-kolom verwijderd (beller-kolom maakt onderscheid al — voorkomt dubbele data). Ook in staging. |
 | v1.27.1 | Fix: bevestiging bij naam wijzigen is nu inline in de widget (Ja/Nee in footer) i.p.v. browser `confirm()` popup. Ook in staging. |
 | v1.27.0 | Add: subtiel pencil-icoontje (✎) naast naam in footer — gebruiker kan opgeslagen naam wijzigen (clear `ds_fname`/`ds_lname` + flow stelt vraag opnieuw). Ook in staging build. |
 | v1.26.0 | Feat: KS/Winkel "held terug sturen" → Same day/Next day vraagt nu product + "Wat moet er gebeuren bij de klant?" voor correcte service-configuratie |
@@ -314,7 +315,7 @@ De "Andere bellers ▾" dropdown heette vóór v1.13.0 "Externe partner ▾". Be
 Vier locaties: `'Onderweg'` (zelfde flow als CBB), `'Bij de klant'`, `'Stop aanpassen / verwijderen'`, `'Depot / Hub vraag'`.
 
 **Bij de klant** → `cbf_pakket_reden`:
-- `'Pakket niet meegenomen / niet ingeladen'` → uitkomsten: `'Klant geïnformeerd, manco geregistreerd'` / `'Pakje wordt later afgeleverd (afleverbewijs)'` / `'Niet opgelost — instructie gegeven in Jerney'`. Bij "Niet opgelost" toont het submit-scherm een info-blokje met Jerney-instructie.
+- `'Pakket niet meegenomen / niet ingeladen'` → uitkomsten: `'Klant geïnformeerd, manco geregistreerd'` / `'Pakje wordt later afgeleverd (afleverbewijs)'` / `'Product is al afgeleverd'` / `'Niet opgelost — instructie gegeven in Jerney'`. Bij "Niet opgelost" toont het submit-scherm een info-blokje met Jerney-instructie.
 - `'Pakket verkeerd / beschadigd'` / `'Overige vraag over pakket'` → uitkomsten: `'Klant geïnformeerd, manco geregistreerd'` / `'Klant geïnformeerd, held regelt verder'` / `'Nee, geen oplossing door DS'`
 - `'Spullen achtergelaten bij klant'` → uitkomst-keuze: `'Same day gepland'` / `'Next day gepland'` / `'Helden lossen het zelf op (geen DS-visit gepland)'`
 

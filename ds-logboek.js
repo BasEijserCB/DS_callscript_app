@@ -745,7 +745,7 @@
         s.push({key:'cbf_pakket_reden',label:'Wat is de vraag?',type:'ux-select',opties:['Pakket niet meegenomen / niet ingeladen','Pakket verkeerd / beschadigd','Spullen achtergelaten bij klant','Overige vraag over pakket']});
         if (answeredKeys.includes('cbf_pakket_reden')) {
           if (callData.cbf_pakket_reden==='Pakket niet meegenomen / niet ingeladen') {
-            s.push({key:'cbf_pakket_uitkomst',label:'Wat was de uitkomst?',type:'ux-select',opties:['Klant geïnformeerd, manco geregistreerd','Pakje wordt later afgeleverd (afleverbewijs)','Niet opgelost — instructie gegeven in Jerney']});
+            s.push({key:'cbf_pakket_uitkomst',label:'Wat was de uitkomst?',type:'ux-select',opties:['Klant geïnformeerd, manco geregistreerd','Pakje wordt later afgeleverd (afleverbewijs)','Product is al afgeleverd','Niet opgelost — instructie gegeven in Jerney']});
           } else if (callData.cbf_pakket_reden==='Spullen achtergelaten bij klant') {
             s.push({key:'uitkomst',label:'Wat was de uitkomst?',type:'ux-select',opties:['Same day gepland','Next day gepland','Helden lossen het zelf op (geen DS-visit gepland)']});
             if (answeredKeys.includes('uitkomst')) {
@@ -1232,7 +1232,7 @@
             '<span style="font-size:11px;color:'+(geenOrderMode?'#ff6600':'#aaa')+';">'+(geenOrderMode?'Gegevens gewist':'Geen order')+'</span>' +
           '</div>' : '') +
         '</div></div>' +
-        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.27.1' +
+        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.28.0' +
           (callData.user ? ' · <span style="color:#999;">'+callData.user+'</span> ' + (nameEditConfirm ? '<span style="color:#666;margin-left:4px;">Naam wissen?</span> <span id="btn-edit-name-yes" style="cursor:pointer;color:#c00;font-weight:600;margin-left:4px;">Ja</span> <span id="btn-edit-name-no" style="cursor:pointer;color:#666;margin-left:4px;">Nee</span>' : '<span id="btn-edit-name" title="Naam wijzigen" style="cursor:pointer;opacity:0.45;margin-left:1px;">✎</span>') : '') +
         '</div>' +
       '</div>';
@@ -2112,9 +2112,9 @@
     } else if (callData.locatie==='Winkel') {
       var winkelOpl = callData.ks_reden==='Winkel vraagt om held terug te sturen' ? callData.ks_uitkomst : callData.uitkomst;
       if (callData.ks_reden==='Tijdslot aanpassing / stop aanpassen') {
-        probLog = 'Winkel: Tijdslot aanpassing — ' + (callData.ks_tijdslot_uitkomst||'') + ' — product mee terug: ' + (callData.product_mee_terug||'?');
+        probLog = 'Tijdslot aanpassing — ' + (callData.ks_tijdslot_uitkomst||'') + ' — product mee terug: ' + (callData.product_mee_terug||'?');
       } else {
-        probLog = 'Winkel: ' + callData.ks_reden + (callData.probleem ? ' — ' + callData.probleem : '');
+        probLog = callData.ks_reden + (callData.probleem ? ' — ' + callData.probleem : '');
       }
       redenGeenOplossing = callData.geen_oplossing_reden||'';
       redenNextDay       = callData.next_day_reden||'';
@@ -2127,9 +2127,9 @@
     } else if (callData.locatie==='Klantenservice') {
       var ksOpl = callData.ks_reden==='KS vraagt om held terug te sturen' ? callData.ks_uitkomst : callData.uitkomst;
       if (callData.ks_reden==='Tijdslot aanpassing / stop aanpassen') {
-        probLog = 'KS: Tijdslot aanpassing — ' + (callData.ks_tijdslot_uitkomst||'') + ' — product mee terug: ' + (callData.product_mee_terug||'?');
+        probLog = 'Tijdslot aanpassing — ' + (callData.ks_tijdslot_uitkomst||'') + ' — product mee terug: ' + (callData.product_mee_terug||'?');
       } else {
-        probLog = 'KS: ' + callData.ks_reden + (callData.probleem ? ' — ' + callData.probleem : '');
+        probLog = callData.ks_reden + (callData.probleem ? ' — ' + callData.probleem : '');
       }
       redenGeenOplossing = callData.geen_oplossing_reden||'';
       redenNextDay       = callData.next_day_reden||'';
