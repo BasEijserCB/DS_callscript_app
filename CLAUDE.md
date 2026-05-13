@@ -53,6 +53,7 @@ Nieuwste bovenaan. Alleen `ds-logboek.js` versies (productie).
 
 | Versie | Wijziging |
 |---|---|
+| v1.27.0 | Add: subtiel pencil-icoontje (✎) naast naam in footer — gebruiker kan opgeslagen naam wijzigen (clear `ds_fname`/`ds_lname` + flow stelt vraag opnieuw). Ook in staging build. |
 | v1.26.0 | Feat: KS/Winkel "held terug sturen" → Same day/Next day vraagt nu product + "Wat moet er gebeuren bij de klant?" voor correcte service-configuratie |
 | v1.25.0 | Fix: product-selectie logica verfijnd (multi-product flow) |
 | v1.24.1 | Add: `'Pick-up niet nodig'` als derde `pick_up_status` optie |
