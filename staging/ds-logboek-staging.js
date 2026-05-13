@@ -6,7 +6,7 @@
 // React, ReactDOM, DS, and browser globals are accessible inside JSX.
 
 (function () {
-  const STAGING_VERSION = "0.8.0-staging";
+  const STAGING_VERSION = "0.9.0-staging";
   const ROOT_ID = "ds-logboek-staging-root";
   const STYLE_ID = "ds-logboek-staging-style";
   const GAS_URL = "https://script.google.com/a/macros/coolblue.nl/s/AKfycbxb-OwLCFGlDQ48qz3KnGnmsgnVLWxuOjvEr7UG3M3z0WzO0kVsTKGd_8mZjtvHvPHnEg/exec";
@@ -354,8 +354,7 @@
           }
         }
       } else if (cd.probleem==='Blijverkoop vergeten') {
-        s.push({key:'uitkomst',label:'Wat was de uitkomst?',type:'ux-select',opties:['Same day gepland','Advies gegeven aan Held','Geen oplossing gepland']});
-        if (ak.includes('uitkomst')&&cd.uitkomst==='Same day gepland') s.push({key:'geplandeRoute',label:'Op welke route gepland?',type:'route-input'});
+        if (!afk.includes('uitkomst')) { cd.uitkomst='Administratie afgehandeld'; afk.push('uitkomst'); }
       } else if (cd.probleem==='Product past niet op gewenste plek') {
         if (!afk.includes('uitkomst')) { cd.uitkomst='Geen oplossing gepland'; afk.push('uitkomst'); }
       } else if (cd.probleem==='Nazorg niet gelukt / swap aanvragen') {
@@ -545,6 +544,7 @@
       if (cd.probleem==='Klant moet KS bellen') return 'Klant doorverwezen naar KS — held geïnformeerd';
       if (cd.probleem==='Product past niet op gewenste plek') return 'Product past niet op gewenste plek — held geïnformeerd voor Jerney-afmelding';
       if (cd.probleem==='Nazorg niet gelukt / swap aanvragen') return 'Nazorg niet gelukt — opmerking gemaakt, swap via KS aanvragen';
+      if (cd.probleem==='Blijverkoop vergeten') return 'Blijverkoop vergeten — administratie afgehandeld';
       if (cd.pick_up_status==='Pick-up niet gelukt — swap nodig') return 'Pick-up niet gelukt — held instructie gegeven voor Jerney (swap aanvragen)';
       if (cd.pick_up_status==='Pick-up niet nodig') return 'Pick-up niet nodig — held geïnformeerd';
       var isAdv=cd.probleem==='Advies gegeven'||cd.uitkomst==='Advies gegeven';
@@ -1083,6 +1083,7 @@ function App(){
           {cd.probleem==='Product niet aanwezig'&&<div className="ds-note is-info"><div><strong>Instructie voor de Held</strong><br/>Meld de stop af in Jerney als niet uitvoerbaar. Reden: product niet aanwezig bij de klant.</div></div>}
           {cd.probleem==='Product past niet op gewenste plek'&&<div className="ds-note is-info"><div><strong>Instructie voor de Held</strong><br/>Meld af in Jerney als "Niet uitvoerbaar". Reden: product past niet op de gewenste plek.</div></div>}
           {cd.probleem==='Nazorg niet gelukt / swap aanvragen'&&<div className="ds-note is-info"><div><strong>Actie DS</strong><br/>Plaats een opmerking op de originele order dat omruil nodig is. KS plant de swap.</div></div>}
+          {cd.probleem==='Blijverkoop vergeten'&&<div className="ds-note is-info"><div><strong>Administratie afgehandeld</strong><br/>De held kan zijn rit gewoon vervolgen. Geen visit of andere oplossing nodig — alleen loggen.</div></div>}
           {cd.pick_up_status==='Pick-up niet gelukt — swap nodig'&&<div className="ds-note is-info"><div><strong>Instructie voor de Held</strong><br/>Meld de pick-up af in Jerney. Kies "Swap aanvragen" als reden.</div></div>}
           {cd.onderweg_type==='Adres klopt niet'&&<div className="ds-note is-info"><div><strong>Instructie voor de Held</strong><br/>Geef aan in Jerney dat het adres niet klopt. Noteer het correcte adres in het opmerkingenveld.{sc.adresQuery&&<span style={{display:'block',marginTop:8}}><strong>🔍 Zoek het adres op:</strong>{adresLand==='NL'&&<a href={'https://bagviewer.kadaster.nl/lvbag/bag-viewer/?searchQuery='+sc.adresQuery+'&zoomlevel=15'} target="_blank" rel="noreferrer" style={{color:'#0090e3',display:'block',marginTop:4}}>🇳🇱 Bagviewer (Kadaster)</a>}{adresLand==='BE'&&<a href={'https://www.geopunt.be/kaart?zoomLevel=14&locationSearch='+sc.adresQuery} target="_blank" rel="noreferrer" style={{color:'#0090e3',display:'block',marginTop:4}}>🇧🇪 Geopunt</a>}<a href={'https://www.google.com/maps/search/'+sc.adresQuery} target="_blank" rel="noreferrer" style={{color:'#0090e3',display:'block',marginTop:4}}>🗺 Google Maps</a><a href={'https://www.bing.com/maps?q='+sc.adresQuery} target="_blank" rel="noreferrer" style={{color:'#0090e3',display:'block',marginTop:4}}>🗺 Bing Maps</a></span>}</div></div>}
           {cd.onderweg_type==='Klant niet thuis'&&<div className="ds-note is-info"><div><strong>Check of de held deze stappen heeft doorlopen:</strong><br/>\u{1f514} Aangebeld · \u{1f4de} Klant gebeld · \u{1f550} Binnen tijdvak<br/><strong>Afmelden in Jerney:</strong> kies "Klant niet thuis", maak foto van de voordeur.</div></div>}

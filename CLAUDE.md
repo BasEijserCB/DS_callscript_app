@@ -53,6 +53,7 @@ Nieuwste bovenaan. Alleen `ds-logboek.js` versies (productie).
 
 | Versie | Wijziging |
 |---|---|
+| v1.30.0 | Fix: "Blijverkoop vergeten" springt direct naar logging — geen uitkomstvraag meer. Held registreert administratie en gaat door; geen visit nodig. Uitkomst auto-gevuld als `'Administratie afgehandeld'`, dsWaarde altijd `'Blijverkoop vergeten — administratie afgehandeld'`, categorie `Advies gegeven`. Info-blokje op submit-scherm. Ook in staging. |
 | v1.29.0 | Refactor: Beller-kolom (P) in Google Sheets log beperkt tot vier waarden: `CBB`, `CBF`, `Klantenservice`, `Overig`. Winkel, Teamleider, Interne leveringen, Technische Dienst, Yeply, G4S en Andere beller worden allemaal als `Overig` gelogd — minder datapunten, simpelere analyse. Ook in staging. |
 | v1.28.0 | Add: CBF "Pakket niet meegenomen / niet ingeladen" extra uitkomst `'Product is al afgeleverd'`. Fix: `'KS:'` en `'Winkel:'` prefixes uit probleem-kolom verwijderd (beller-kolom maakt onderscheid al — voorkomt dubbele data). Ook in staging. |
 | v1.27.1 | Fix: bevestiging bij naam wijzigen is nu inline in de widget (Ja/Nee in footer) i.p.v. browser `confirm()` popup. Ook in staging. |
