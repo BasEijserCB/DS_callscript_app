@@ -6,7 +6,7 @@
 // React, ReactDOM, DS, and browser globals are accessible inside JSX.
 
 (function () {
-  const STAGING_VERSION = "0.7.3-staging";
+  const STAGING_VERSION = "0.8.0-staging";
   const ROOT_ID = "ds-logboek-staging-root";
   const STYLE_ID = "ds-logboek-staging-style";
   const GAS_URL = "https://script.google.com/a/macros/coolblue.nl/s/AKfycbxb-OwLCFGlDQ48qz3KnGnmsgnVLWxuOjvEr7UG3M3z0WzO0kVsTKGd_8mZjtvHvPHnEg/exec";
@@ -1095,8 +1095,30 @@ function App(){
             <div className="ds-summary__head"><div className="ds-summary__cat">{cat}</div><div className="ds-pill is-ok">✓ Klaar</div></div>
             {cd.bellerType&&<div className="ds-srow"><span>Beller</span><strong>{cd.bellerType}</strong></div>}
             {cd.locatie&&<div className="ds-srow"><span>Locatie</span><strong>{cd.locatie}</strong></div>}
+            {cd.afwijkend_reden&&<div className="ds-srow"><span>Reden</span><strong>{cd.afwijkend_reden}</strong></div>}
+            {cd.ks_reden&&<div className="ds-srow"><span>Reden</span><strong>{cd.ks_reden}</strong></div>}
+            {cd.cbf_pakket_reden&&<div className="ds-srow"><span>Pakket</span><strong>{cd.cbf_pakket_reden}</strong></div>}
+            {cd.cbf_depot_reden&&<div className="ds-srow"><span>Depot/Hub</span><strong>{cd.cbf_depot_reden}</strong></div>}
+            {cd.cbf_depot_toelichting&&<div className="ds-srow"><span>Toelichting</span><strong>{cd.cbf_depot_toelichting}</strong></div>}
+            {cd.cbb_hub_reden&&<div className="ds-srow"><span>Depot/Hub</span><strong>{cd.cbb_hub_reden}</strong></div>}
+            {cd.intern_reden&&<div className="ds-srow"><span>Reden</span><strong>{cd.intern_reden}</strong></div>}
+            {cd.onderweg_type&&<div className="ds-srow"><span>Onderweg</span><strong>{cd.onderweg_type}</strong></div>}
             {(cd.tl_reden||cd.probleem)&&<div className="ds-srow"><span>Taak</span><strong>{cd.tl_reden||cd.probleem}</strong></div>}
+            {(cd.productVerfijnd||cd.product)&&<div className="ds-srow"><span>Product</span><strong>{cd.productVerfijnd||cd.product}</strong></div>}
+            {cd.formaatTV&&<div className="ds-srow"><span>Formaat TV</span><strong>{cd.formaatTV}</strong></div>}
+            {cd.tvNetwerk&&<div className="ds-srow"><span>TV netwerk</span><strong>{cd.tvNetwerk}</strong></div>}
+            {cd.milieuretour_type&&<div className="ds-srow"><span>Type ophaling</span><strong>{cd.milieuretour_type}</strong></div>}
+            {cd.pick_up_status&&<div className="ds-srow"><span>Pick-up status</span><strong>{cd.pick_up_status}</strong></div>}
+            {cd.dienstType&&<div className="ds-srow"><span>Dienst</span><strong>{cd.dienstType}</strong></div>}
+            {cd.product_mee_terug&&<div className="ds-srow"><span>Product mee terug</span><strong>{cd.product_mee_terug}</strong></div>}
+            {cd.ks_tijdslot_uitkomst&&<div className="ds-srow"><span>Tijdslot</span><strong>{cd.ks_tijdslot_uitkomst}</strong></div>}
+            {cd.cbf_pakket_uitkomst&&<div className="ds-srow"><span>Pakket uitkomst</span><strong>{cd.cbf_pakket_uitkomst}</strong></div>}
+            {cd.cbf_stop_uitkomst&&<div className="ds-srow"><span>Stop uitkomst</span><strong>{cd.cbf_stop_uitkomst}</strong></div>}
+            {cd.onderweg_uitkomst&&<div className="ds-srow"><span>Onderweg uitkomst</span><strong>{cd.onderweg_uitkomst}</strong></div>}
             {(cd.uitkomst||cd.ks_uitkomst||cd.tl_uitkomst)&&<div className="ds-srow"><span>Uitkomst</span><strong>{cd.uitkomst||cd.ks_uitkomst||cd.tl_uitkomst}</strong></div>}
+            {cd.next_day_reden&&<div className="ds-srow"><span>Reden next day</span><strong>{cd.next_day_reden}</strong></div>}
+            {cd.geen_oplossing_reden&&<div className="ds-srow"><span>Geen oplossing</span><strong>{cd.geen_oplossing_reden}</strong></div>}
+            {cd.advies_gelukt&&<div className="ds-srow"><span>Advies</span><strong>{cd.advies_gelukt}</strong></div>}
             {cd.geplandeRoute&&<div className="ds-srow"><span>Route</span><strong>{cd.geplandeRoute}</strong></div>}
           </div>
           {logDone?<div className="ds-note is-ok"><div><strong>✓ Gelogd!</strong><br/>Het gesprek is opgeslagen in het logboek.</div></div>:(
@@ -1275,7 +1297,7 @@ function App(){
 
   return (
     <div style={{display:'flex',flexDirection:'column',height:'100%'}}>
-      <Header/><OrderCard/>
+      <Header/>
       <div className="ds-body">
         <ProductChip/>
         <StepHead/>
