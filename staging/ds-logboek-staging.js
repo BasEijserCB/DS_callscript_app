@@ -6,7 +6,7 @@
 // React, ReactDOM, DS, and browser globals are accessible inside JSX.
 
 (function () {
-  const STAGING_VERSION = "0.6.6-staging";
+  const STAGING_VERSION = "0.7.0-staging";
   const ROOT_ID = "ds-logboek-staging-root";
   const STYLE_ID = "ds-logboek-staging-style";
   const GAS_URL = "https://script.google.com/a/macros/coolblue.nl/s/AKfycbxb-OwLCFGlDQ48qz3KnGnmsgnVLWxuOjvEr7UG3M3z0WzO0kVsTKGd_8mZjtvHvPHnEg/exec";
@@ -986,6 +986,18 @@ function App(){
     upd(cdP,[key].concat(akExt||[]),afkExt||[],clr||null);
   }
 
+  function resetName(){
+    if(!window.confirm('Weet je zeker dat je je naam wilt wijzigen?'))return;
+    localStorage.removeItem('ds_fname');localStorage.removeItem('ds_lname');
+    setConv(function(prev){
+      var newCd=Object.assign({},prev.cd,{fname:'',lname:'',user:''});
+      var newAk=prev.ak.filter(function(k){return k!=='fname'&&k!=='lname';});
+      var newAfk=prev.afk.filter(function(k){return k!=='fname'&&k!=='lname';});
+      return {cd:newCd,ak:newAk,afk:newAfk,isAG:prev.isAG};
+    });
+    setTextVal('');setMultiSel([]);
+  }
+
   function goBack(){
     setConv(function(prev){
       var idx=-1;for(var i=prev.ak.length-1;i>=0;i--){if(!prev.afk.includes(prev.ak[i])){idx=i;break;}}
@@ -1099,7 +1111,7 @@ function App(){
             </div>
           )}
         </div>
-        <div className="ds-footer">{canBack&&<button className="ds-btn ds-btn--ghost" onClick={goBack}>← Terug</button>}<span className="ds-hint">{DS.version}</span></div>
+        <div className="ds-footer">{canBack&&<button className="ds-btn ds-btn--ghost" onClick={goBack}>← Terug</button>}<span className="ds-hint">{DS.version}{cd.user&&<React.Fragment> · <span style={{color:'#8a99ab'}}>{cd.user}</span> <span onClick={resetName} title="Naam wijzigen" style={{cursor:'pointer',opacity:0.45,marginLeft:1}}>✎</span></React.Fragment>}</span></div>
       </div>
     );
   }
@@ -1270,7 +1282,7 @@ function App(){
           {stepBody}
         </div>
       </div>
-      <div className="ds-footer">{canBack&&<button className="ds-btn ds-btn--ghost" onClick={goBack}>← Terug</button>}<span className="ds-hint">{DS.version}</span></div>
+      <div className="ds-footer">{canBack&&<button className="ds-btn ds-btn--ghost" onClick={goBack}>← Terug</button>}<span className="ds-hint">{DS.version}{cd.user&&<React.Fragment> · <span style={{color:'#8a99ab'}}>{cd.user}</span> <span onClick={resetName} title="Naam wijzigen" style={{cursor:'pointer',opacity:0.45,marginLeft:1}}>✎</span></React.Fragment>}</span></div>
     </div>
   );
 }

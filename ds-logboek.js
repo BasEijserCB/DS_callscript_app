@@ -1231,7 +1231,9 @@
             '<span style="font-size:11px;color:'+(geenOrderMode?'#ff6600':'#aaa')+';">'+(geenOrderMode?'Gegevens gewist':'Geen order')+'</span>' +
           '</div>' : '') +
         '</div></div>' +
-        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.26.2</div>' +
+        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.27.0' +
+          (callData.user ? ' · <span style="color:#999;">'+callData.user+'</span> <span id="btn-edit-name" title="Naam wijzigen" style="cursor:pointer;opacity:0.45;margin-left:1px;">✎</span>' : '') +
+        '</div>' +
       '</div>';
 
     idoc.getElementById('btn-close').onclick = function(){ wrapper.remove(); };
@@ -1248,6 +1250,18 @@
       dsWide = !dsWide;
       localStorage.setItem('ds_wide', dsWide ? '1' : '0');
       wrapper.style.width = dsWide ? '600px' : '340px';
+      renderApp();
+    };
+    var editNameBtn = idoc.getElementById('btn-edit-name');
+    if (editNameBtn) editNameBtn.onclick = function() {
+      if (!confirm('Weet je zeker dat je je naam wilt wijzigen?')) return;
+      localStorage.removeItem('ds_fname'); localStorage.removeItem('ds_lname');
+      bFname = ''; bLname = '';
+      callData.fname = ''; callData.lname = ''; callData.user = '';
+      ['fname','lname'].forEach(function(k){
+        var i = answeredKeys.indexOf(k); if (i > -1) answeredKeys.splice(i,1);
+        var j = autoFilledKeys.indexOf(k); if (j > -1) autoFilledKeys.splice(j,1);
+      });
       renderApp();
     };
     if (canGoBack()) idoc.getElementById('btn-terug').onclick = goBack;
