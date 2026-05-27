@@ -424,7 +424,7 @@ try {
       'BENI': '696230',  'BEZA': '231149',   'BEWI': '158831',
     };
     const pickupShippers = {'Nederland': '246477', 'België': '246481', 'Duitsland': '419436'};
-    const shipperId = isPickup ? (pickupShippers[orderData.detectedCountry] || '246477') : '1012729';
+    const shipperId = isSameDay ? '1012729' : (pickupShippers[orderData.detectedCountry] || '246477');
     setDxDropdown('_shipperId', shipperId);
     await new Promise(resolve => setTimeout(resolve, 500));
     const routeCode = (orderData.geplandeRoute || '').match(/[A-Z]{4}/)?.[0];
