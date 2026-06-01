@@ -112,7 +112,7 @@ try {
           'aansluiting':     {N:'1965690', E:'1965691'},
           'deur omdraaien':  {N:'1965700', E:'1965700'}, // geen nazorg variant, gebruik extra dienst
           'milieuretour':    {N:'1967581', E:'1967578'},
-          'inbouwen':        {N:'1965690', E:'1965691'},
+          'inbouwen':        {N:'1939895', E:'1939896'}, // vrijstaande koelkast/vriezer ingebouwd → inbouw koelkast-sjabloon
         },
         'vriezer': {
           'plaatsen':        {N:'1966711', E:'1966712'},
@@ -217,7 +217,7 @@ try {
           'aansluiting':     {N:'1965694', E:'1965695'},
           'deur omdraaien':  {N:'1965701', E:'1965701'},
           'milieuretour':    {N:'1967583', E:'1967582'},
-          'inbouwen':        {N:'1965694', E:'1965695'},
+          'inbouwen':        {N:'1939897', E:'1939898'}, // vrijstaande koelkast/vriezer ingebouwd → inbouw koelkast-sjabloon
         },
         'vriezer': {
           'plaatsen':        {N:'1966718', E:'1966719'},
@@ -322,7 +322,7 @@ try {
           'aansluiting':     {N:'2106149', E:'2106150'},
           'deur omdraaien':  {N:'2106151', E:'2106151'},
           'milieuretour':    {N:'2106171', E:'2106170'},
-          'inbouwen':        {N:'2106149', E:'2106150'},
+          'inbouwen':        {N:'2106142', E:'2106143'}, // vrijstaande koelkast/vriezer ingebouwd → inbouw koelkast-sjabloon
         },
         'vriezer': {
           'plaatsen':        {N:'2106153', E:'2106154'},
