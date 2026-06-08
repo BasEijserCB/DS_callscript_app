@@ -1,6 +1,6 @@
 javascript:(async function(){
 try {
-  const PASTE_VERSION = 'v1.30.3';
+  const PASTE_VERSION = 'v1.30.4';
   const clipboardText = await navigator.clipboard.readText();
   const orderData = JSON.parse(clipboardText);
   if (!orderData.time || (Date.now() - orderData.time) > 300000) {
@@ -536,6 +536,11 @@ try {
   if ((isSameDay || isPickup) && orderData.serviceTypeId) {
     const builtInServices = [277249, 247513, 301445, 322997, 277248, 254509, 254508, 490316, 490317];
     const needsBuiltIn = builtInServices.includes(parseInt(orderData.serviceTypeId));
+    // Deur omdraaien (Extra dienst) bestaat alleen onder netwerk Coolblue Built-in.
+    // Na kanaal terug naar 2Mans moet netwerk op Built-in (132137) BLIJVEN — anders
+    // herlaadt DireXtion de service-lijst en wist de geselecteerde service.
+    const keepBuiltInNetwork = [247513, 301445];
+    const stayBuiltInNetwork = keepBuiltInNetwork.includes(parseInt(orderData.serviceTypeId));
     if (needsBuiltIn) {
       setDxDropdown('_channelId', 132134);
       await new Promise(resolve => setTimeout(resolve, 200));
@@ -551,8 +556,12 @@ try {
       setDxTagBox('_services', [parseInt(orderData.serviceTypeId)]);
       await new Promise(resolve => setTimeout(resolve, 400));
       setDxDropdown('_channelId', 16);
-      await new Promise(resolve => setTimeout(resolve, 400));
-      setDxDropdown('_networkId', 12);
+      // Netwerk alleen terugzetten naar 2Mans (12) als de service dat toelaat.
+      // Voor deur omdraaien blijft netwerk op Coolblue Built-in (132137).
+      if (!stayBuiltInNetwork) {
+        await new Promise(resolve => setTimeout(resolve, 400));
+        setDxDropdown('_networkId', 12);
+      }
     } else {
       setDxDropdown('_channelId', 16);
       await new Promise(resolve => setTimeout(resolve, 800));

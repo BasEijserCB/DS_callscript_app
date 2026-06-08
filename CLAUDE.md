@@ -53,6 +53,7 @@ Nieuwste bovenaan. Alleen `ds-logboek.js` versies (productie).
 
 | Versie | Wijziging |
 |---|---|
+| v1.30.4 | Fix: same-day "Deur omdraaien" service werd gewist bij terugzetten netwerk → 2Mans. Deur-omdraaien Extra-dienst services (`247513`/`301445`) bestaan alleen onder netwerk Coolblue Built-in (132137); paste-bookmarklet laat na kanaal-reset naar 2Mans het netwerk nu op Built-in staan (skip `netwerk → 12`) voor deze services. Wijziging alleen in `paste-bookmarklet.js`. |
 | v1.30.3 | Fix: same-day "Deur omdraaien" selecteerde verkeerde service `51068` ("(Nazorg) - apparaat waterpas zetten"). Deur omdraaien heeft geen nazorg-variant; nu `247513` ("(Extra dienst) - deur omdraaien") of `301445` ("(Extra dienst) - deur omdraaien koel-vriescombinatie") bij koel-vries combo. `builtInServices` in paste-bookmarklet bijgewerkt. Ook in staging. |
 | v1.30.0 | Fix: "Blijverkoop vergeten" springt direct naar logging — geen uitkomstvraag meer. Held registreert administratie en gaat door; geen visit nodig. Uitkomst auto-gevuld als `'Administratie afgehandeld'`, dsWaarde altijd `'Blijverkoop vergeten — administratie afgehandeld'`, categorie `Advies gegeven`. Info-blokje op submit-scherm. Ook in staging. |
 | v1.29.0 | Refactor: Beller-kolom (P) in Google Sheets log beperkt tot vier waarden: `CBB`, `CBF`, `Klantenservice`, `Overig`. Winkel, Teamleider, Interne leveringen, Technische Dienst, Yeply, G4S en Andere beller worden allemaal als `Overig` gelogd — minder datapunten, simpelere analyse. Ook in staging. |
