@@ -1,6 +1,6 @@
 javascript:(async function(){
 try {
-  const PASTE_VERSION = 'v1.30.2';
+  const PASTE_VERSION = 'v1.30.3';
   const clipboardText = await navigator.clipboard.readText();
   const orderData = JSON.parse(clipboardText);
   if (!orderData.time || (Date.now() - orderData.time) > 300000) {
@@ -534,7 +534,7 @@ try {
 
   // ── STAP 4b: SAME DAY — KANAAL / NETWERK / SERVICE ───────────
   if ((isSameDay || isPickup) && orderData.serviceTypeId) {
-    const builtInServices = [277249, 51068, 322997, 277248, 254509, 254508, 490316, 490317];
+    const builtInServices = [277249, 247513, 301445, 322997, 277248, 254509, 254508, 490316, 490317];
     const needsBuiltIn = builtInServices.includes(parseInt(orderData.serviceTypeId));
     if (needsBuiltIn) {
       setDxDropdown('_channelId', 132134);

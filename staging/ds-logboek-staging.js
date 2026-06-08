@@ -6,7 +6,7 @@
 // React, ReactDOM, DS, and browser globals are accessible inside JSX.
 
 (function () {
-  const STAGING_VERSION = "0.9.1-staging";
+  const STAGING_VERSION = "0.9.2-staging";
   const ROOT_ID = "ds-logboek-staging-root";
   const STYLE_ID = "ds-logboek-staging-style";
   const GAS_URL = "https://script.google.com/a/macros/coolblue.nl/s/AKfycbxb-OwLCFGlDQ48qz3KnGnmsgnVLWxuOjvEr7UG3M3z0WzO0kVsTKGd_8mZjtvHvPHnEg/exec";
@@ -669,7 +669,7 @@
     else if (prob.includes('trekschakelaar')) serviceTypeId=277249;
     else if (prob.includes('milieuretour')&&cd.milieuretour_type==='Pick-up') serviceTypeId=427807;
     else if (prob.includes('milieuretour')) serviceTypeId=20;
-    else if (prob.includes('deur omdraaien')) serviceTypeId=51068;
+    else if (prob.includes('deur omdraaien')) serviceTypeId=effectiefProduct(cd).toLowerCase().includes('koel-vries')?301445:247513;
     else if (prob.includes('inbouwen')) serviceTypeId=322997;
     else if (prob.includes('stapelkit')) serviceTypeId=isNazorg?727124:727123;
     else if (prob.includes('spullen achtergelaten')) serviceTypeId=51076;
