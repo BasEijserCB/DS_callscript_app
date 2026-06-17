@@ -1,6 +1,6 @@
 javascript:(async function(){
 try {
-  const PASTE_VERSION = 'v1.30.4';
+  const PASTE_VERSION = 'v1.31.0';
   const clipboardText = await navigator.clipboard.readText();
   const orderData = JSON.parse(clipboardText);
   if (!orderData.time || (Date.now() - orderData.time) > 300000) {
@@ -69,7 +69,11 @@ try {
   }
 
   // ── STAP 1: SJABLOON EERST (zodat het geen velden overschrijft) ──
-  if (orderData.dienstType && !isSameDay && !isPickup) {
+  // Bij deur omdraaien + koelkast/vriezer slaat de widget de dienstType-vraag over
+  // (skipDienstType: alleen Extra dienst-sjabloon beschikbaar). dienstType is dan leeg,
+  // maar er moet wél een sjabloon geplaatst worden — behandel als Extra dienst.
+  const deurOmdraaienGeenDienst = !orderData.dienstType && (orderData.probleem || '').toLowerCase().includes('deur omdraaien');
+  if ((orderData.dienstType || deurOmdraaienGeenDienst) && !isSameDay && !isPickup) {
     const land    = orderData.detectedCountry;
     const product = (orderData.product || '').toLowerCase();
     const probleem = (orderData.probleem || '').toLowerCase();

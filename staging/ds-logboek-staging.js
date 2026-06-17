@@ -6,7 +6,7 @@
 // React, ReactDOM, DS, and browser globals are accessible inside JSX.
 
 (function () {
-  const STAGING_VERSION = "0.9.2-staging";
+  const STAGING_VERSION = "0.10.0-staging";
   const ROOT_ID = "ds-logboek-staging-root";
   const STYLE_ID = "ds-logboek-staging-style";
   const GAS_URL = "https://script.google.com/a/macros/coolblue.nl/s/AKfycbxb-OwLCFGlDQ48qz3KnGnmsgnVLWxuOjvEr7UG3M3z0WzO0kVsTKGd_8mZjtvHvPHnEg/exec";
@@ -359,6 +359,9 @@
         if (!afk.includes('uitkomst')) { cd.uitkomst='Geen oplossing gepland'; afk.push('uitkomst'); }
       } else if (cd.probleem==='Nazorg niet gelukt / swap aanvragen') {
         // directe log, geen verdere vragen
+      } else if (cd.probleem==='Schade / Defect') {
+        // Schade kan niet ingepland worden (geen same/next day) — alleen advies aan de held.
+        if (!afk.includes('uitkomst')) { cd.uitkomst='Schade — advies gegeven'; afk.push('uitkomst'); }
       } else {
         if (!ak.includes('product')) {
           var tvProb=cd.probleem.includes('TV')||cd.probleem.includes('Soundbar');
@@ -545,6 +548,7 @@
       if (cd.probleem==='Product past niet op gewenste plek') return 'Product past niet op gewenste plek — held geïnformeerd voor Jerney-afmelding';
       if (cd.probleem==='Nazorg niet gelukt / swap aanvragen') return 'Nazorg niet gelukt — opmerking gemaakt, swap via KS aanvragen';
       if (cd.probleem==='Blijverkoop vergeten') return 'Blijverkoop vergeten — administratie afgehandeld';
+      if (cd.probleem==='Schade / Defect') return 'Schade gemeld — klant geadviseerd (korting of nieuw product, held meldt in Jerney)';
       if (cd.pick_up_status==='Pick-up niet gelukt — swap nodig') return 'Pick-up niet gelukt — held instructie gegeven voor Jerney (swap aanvragen)';
       if (cd.pick_up_status==='Pick-up niet nodig') return 'Pick-up niet nodig — held geïnformeerd';
       var isAdv=cd.probleem==='Advies gegeven'||cd.uitkomst==='Advies gegeven';
@@ -906,6 +910,7 @@
       maakProductLabel: maakProductLabel,
       artikelsoortNaarProduct: artikelsoortNaarProduct,
       isLogOnlyProduct: isLogOnlyProduct,
+      alleProbleemOpties: alleProbleemOpties,
       version: STAGING_VERSION,
     };
 
@@ -961,11 +966,12 @@ function App(){
   var _ct=useState(''),textVal=_ct[0],setTextVal=_ct[1];
   var _cm=useState([]),multiSel=_cm[0],setMultiSel=_cm[1];
   var _pt=useState('taak'),probleemTab=_pt[0],setProbleemTab=_pt[1];
+  var _sat=useState(false),showAlleTaken=_sat[0],setShowAlleTaken=_sat[1];
   var _nc=useState(false),nameConfirm=_nc[0],setNameConfirm=_nc[1];
   var cd=conv.cd,ak=conv.ak,afk=conv.afk,isAG=conv.isAG;
   var inputRef=useRef(null);
 
-  useEffect(function(){if(inputRef.current)inputRef.current.focus();setProbleemTab('taak');},[ak.length]);
+  useEffect(function(){if(inputRef.current)inputRef.current.focus();setProbleemTab('taak');setShowAlleTaken(false);},[ak.length]);
 
   var steps=DS.bepaalStappen(cd,ak,afk,alleProds);
   var stap=steps.find(function(s){return !ak.includes(s.key);});
@@ -999,6 +1005,19 @@ function App(){
     setTextVal('');setMultiSel([]);setNameConfirm(false);
   }
   function cancelResetName(){setNameConfirm(false);}
+
+  // Wis de automatische apparaatdetectie zodat de gebruiker handmatig kiest
+  function resetProductDetectie(){
+    var keys=['product','productVerfijnd','formaatTV','probleem','milieuretour_type','pick_up_status','uitkomst','geplandeRoute','dienstType','tvNetwerk','next_day_reden','geen_oplossing_reden','advies_gelukt'];
+    setConv(function(prev){
+      var newCd=Object.assign({},prev.cd);
+      keys.forEach(function(k){newCd[k]='';});
+      var newAk=prev.ak.filter(function(k){return keys.indexOf(k)===-1;});
+      var newAfk=prev.afk.filter(function(k){return keys.indexOf(k)===-1;});
+      return {cd:newCd,ak:newAk,afk:newAfk,isAG:false};
+    });
+    setTextVal('');setMultiSel([]);
+  }
 
   function goBack(){
     setConv(function(prev){
@@ -1061,7 +1080,7 @@ function App(){
     </div>}
     </div>
   );}
-  function ProductChip(){if(!chip)return null;return <div style={{fontSize:11,color:'#5a6a7f',background:'#eef1f4',border:'1px solid #e2e7ec',borderRadius:12,padding:'3px 8px',display:'inline-block',marginBottom:8}}>{chip}</div>;}
+  function ProductChip(){if(!chip)return null;var klikbaar=alleProds.length<=1&&cd.product;return <div onClick={klikbaar?resetProductDetectie:undefined} title={klikbaar?'Klik om het apparaat handmatig te kiezen':undefined} style={{fontSize:11,color:'#5a6a7f',background:'#eef1f4',border:'1px solid #e2e7ec',borderRadius:12,padding:'3px 8px',display:'inline-block',marginBottom:8,cursor:klikbaar?'pointer':'default'}}>{chip}{klikbaar?' ✎':''}</div>;}
   function StepHead(){return(
     <div className="ds-step-head">
       {trail.length>0&&<ul className="ds-trail">{trail.map(function(v,i){return <li key={i}>{v}</li>;})}</ul>}
@@ -1084,6 +1103,7 @@ function App(){
           {cd.probleem==='Product past niet op gewenste plek'&&<div className="ds-note is-info"><div><strong>Instructie voor de Held</strong><br/>Meld af in Jerney als "Niet uitvoerbaar". Reden: product past niet op de gewenste plek.</div></div>}
           {cd.probleem==='Nazorg niet gelukt / swap aanvragen'&&<div className="ds-note is-info"><div><strong>Actie DS</strong><br/>Plaats een opmerking op de originele order dat omruil nodig is. KS plant de swap.</div></div>}
           {cd.probleem==='Blijverkoop vergeten'&&<div className="ds-note is-info"><div><strong>Administratie afgehandeld</strong><br/>De held kan zijn rit gewoon vervolgen. Geen visit of andere oplossing nodig — alleen loggen.</div></div>}
+          {cd.probleem==='Schade / Defect'&&<div className="ds-note is-info"><div><strong>Schade kan niet ingepland worden</strong><br/>DS plant hiervoor geen same day of next day visit. Adviseer de klant dat zij kunnen kiezen voor een <strong>korting</strong> of een <strong>nieuw product</strong>. De bezorger geeft de keuze van de klant aan in Jerney.</div></div>}
           {cd.pick_up_status==='Pick-up niet gelukt — swap nodig'&&<div className="ds-note is-info"><div><strong>Instructie voor de Held</strong><br/>Meld de pick-up af in Jerney. Kies "Swap aanvragen" als reden.</div></div>}
           {cd.onderweg_type==='Adres klopt niet'&&<div className="ds-note is-info"><div><strong>Instructie voor de Held</strong><br/>Geef aan in Jerney dat het adres niet klopt. Noteer het correcte adres in het opmerkingenveld.{sc.adresQuery&&<span style={{display:'block',marginTop:8}}><strong>🔍 Zoek het adres op:</strong>{adresLand==='NL'&&<a href={'https://bagviewer.kadaster.nl/lvbag/bag-viewer/?searchQuery='+sc.adresQuery+'&zoomlevel=15'} target="_blank" rel="noreferrer" style={{color:'#0090e3',display:'block',marginTop:4}}>🇳🇱 Bagviewer (Kadaster)</a>}{adresLand==='BE'&&<a href={'https://www.geopunt.be/kaart?zoomLevel=14&locationSearch='+sc.adresQuery} target="_blank" rel="noreferrer" style={{color:'#0090e3',display:'block',marginTop:4}}>🇧🇪 Geopunt</a>}<a href={'https://www.google.com/maps/search/'+sc.adresQuery} target="_blank" rel="noreferrer" style={{color:'#0090e3',display:'block',marginTop:4}}>🗺 Google Maps</a><a href={'https://www.bing.com/maps?q='+sc.adresQuery} target="_blank" rel="noreferrer" style={{color:'#0090e3',display:'block',marginTop:4}}>🗺 Bing Maps</a></span>}</div></div>}
           {cd.onderweg_type==='Klant niet thuis'&&<div className="ds-note is-info"><div><strong>Check of de held deze stappen heeft doorlopen:</strong><br/>\u{1f514} Aangebeld · \u{1f4de} Klant gebeld · \u{1f550} Binnen tijdvak<br/><strong>Afmelden in Jerney:</strong> kies "Klant niet thuis", maak foto van de voordeur.</div></div>}
@@ -1276,7 +1296,15 @@ function App(){
           <button style={Object.assign(tabStyle(probleemTab==='anders'),{borderRadius:0,border:'none'})} onClick={function(){setProbleemTab('anders');}}>Andere situaties</button>
         </div>
         {probleemTab==='taak'
-          ? (stap.opties||[]).map(function(o){return <button key={o} className="ds-opt" onClick={function(){handleSelect(o);}}><span className="ds-opt__label">{o}</span></button>;})
+          ? (function(){
+              var getoond=stap.opties||[];
+              var verborgenTaken=DS.alleProbleemOpties.filter(function(o){return getoond.indexOf(o)===-1&&bijzonderItems.indexOf(o)===-1;});
+              return <React.Fragment>
+                {getoond.map(function(o){return <button key={o} className="ds-opt" onClick={function(){handleSelect(o);}}><span className="ds-opt__label">{o}</span></button>;})}
+                {verborgenTaken.length>0&&<button className="ds-opt" style={{opacity:0.7,fontSize:12}} onClick={function(){setShowAlleTaken(!showAlleTaken);}}><span className="ds-opt__label">{showAlleTaken?'Minder taken ▴':'Meer taken (filter negeren) ▾'}</span></button>}
+                {showAlleTaken&&verborgenTaken.map(function(o){return <button key={o} className="ds-opt" style={{opacity:0.85}} onClick={function(){handleSelect(o);}}><span className="ds-opt__label">{o}</span></button>;})}
+              </React.Fragment>;
+            })()
           : bijzonderItems.map(function(o){return <button key={o} className="ds-opt" onClick={function(){handleSelect(o);}}><span className="ds-opt__label">{o}</span></button>;})}
       </div>
     );

@@ -812,6 +812,9 @@
         if (!autoFilledKeys.includes('uitkomst')) { callData.uitkomst='Geen oplossing gepland'; autoFilledKeys.push('uitkomst'); }
       } else if (callData.probleem==='Nazorg niet gelukt / swap aanvragen') {
         // Geen verdere vragen — directe log
+      } else if (callData.probleem==='Schade / Defect') {
+        // Schade kan niet ingepland worden (geen same/next day) — alleen advies aan de held.
+        if (!autoFilledKeys.includes('uitkomst')) { callData.uitkomst='Schade — advies gegeven'; autoFilledKeys.push('uitkomst'); }
       } else if (callData.probleem==='Spullen achtergelaten bij klant') {
         s.push({key:'uitkomst',label:'Wat was de uitkomst?',type:'ux-select',opties:['Same day gepland','Next day gepland','Helden lossen het zelf op (geen DS-visit gepland)']});
         if (callData.uitkomst==='Same day gepland') s.push({key:'geplandeRoute',label:'Op welke route gepland?',type:'route-input'});
@@ -1147,6 +1150,9 @@
       if (callData.probleem==='Blijverkoop vergeten') {
         return 'Blijverkoop vergeten — administratie afgehandeld';
       }
+      if (callData.probleem==='Schade / Defect') {
+        return 'Schade gemeld — klant geadviseerd (korting of nieuw product, held meldt in Jerney)';
+      }
       var isAdv=callData.probleem==='Advies gegeven'||callData.uitkomst==='Advies gegeven';
       if (isAdv) return callData.advies_gelukt==='Ja, service uitgevoerd' ? 'Advies gegeven aan held waardoor service uitgevoerd is' : 'Nee, geen oplossing door DS';
       if (callData.uitkomst==='Same day gepland')    return 'Ja stop gepland (same day)';
@@ -1232,7 +1238,7 @@
             '<span style="font-size:11px;color:'+(geenOrderMode?'#ff6600':'#aaa')+';">'+(geenOrderMode?'Gegevens gewist':'Geen order')+'</span>' +
           '</div>' : '') +
         '</div></div>' +
-        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.30.4' +
+        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.31.0' +
           (callData.user ? ' · <span style="color:#999;">'+callData.user+'</span> ' + (nameEditConfirm ? '<span style="color:#666;margin-left:4px;">Naam wissen?</span> <span id="btn-edit-name-yes" style="cursor:pointer;color:#c00;font-weight:600;margin-left:4px;">Ja</span> <span id="btn-edit-name-no" style="cursor:pointer;color:#666;margin-left:4px;">Nee</span>' : '<span id="btn-edit-name" title="Naam wijzigen" style="cursor:pointer;opacity:0.45;margin-left:1px;">✎</span>') : '') +
         '</div>' +
       '</div>';
@@ -1422,6 +1428,21 @@
   }
 
   // ── RENDER STAP ───────────────────────────────────────────────
+  // Wis de automatische apparaatdetectie zodat de gebruiker handmatig kiest
+  // (zelfde stappen als wanneer er geen detectie plaatsvond)
+  function resetProductDetectie() {
+    var keys=['product','productVerfijnd','formaatTV','probleem','milieuretour_type','pick_up_status','uitkomst','geplandeRoute','dienstType','tvNetwerk','next_day_reden','geen_oplossing_reden','advies_gelukt'];
+    keys.forEach(function(k){ callData[k]=''; });
+    answeredKeys=answeredKeys.filter(function(k){ return keys.indexOf(k)===-1; });
+    autoFilledKeys=autoFilledKeys.filter(function(k){ return keys.indexOf(k)===-1; });
+    isProductAutoGuessed=false;
+    renderApp();
+  }
+  function bindProductChip() {
+    var pc=idoc.getElementById('ds-product-chip');
+    if (pc) pc.onclick=resetProductDetectie;
+  }
+
   function renderHuidigeStap() {
     var container=idoc.getElementById('stap-container');
     var stap=getNextStep();
@@ -1438,7 +1459,9 @@
         productLabel = 'Model: ' + callData.model;
       }
       if (productLabel) {
-        productChip = '<div style="font-size:11px; color:#666; background:#F3F3F3; border:1px solid #E0E0E0; border-radius:12px; padding:3px 8px; display:inline-block; margin-bottom:8px;">' + productLabel + '</div>';
+        // Klikbaar maken zodat de gebruiker de automatische apparaatdetectie kan overrulen
+        var chipKlikbaar = !meerdereProducten && callData.product;
+        productChip = '<div' + (chipKlikbaar ? ' id="ds-product-chip" title="Klik om het apparaat handmatig te kiezen" style="cursor:pointer;' : ' style="') + 'font-size:11px; color:#666; background:#F3F3F3; border:1px solid #E0E0E0; border-radius:12px; padding:3px 8px; display:inline-block; margin-bottom:8px;">' + productLabel + (chipKlikbaar ? ' <span style="opacity:0.55;">✎</span>' : '') + '</div>';
       }
     }
 
@@ -1463,6 +1486,7 @@
         if (bLname) { callData.lname=bLname; answeredKeys.push('lname'); autoFilledKeys.push('lname'); }
         renderApp();
       };
+      bindProductChip();
       return;
     }
     if (startMelding && startMelding.startsWith('andere_orders:')) {
@@ -1499,6 +1523,10 @@
       // Info blokje voor blijverkoop vergeten
       if (callData.probleem==='Blijverkoop vergeten') {
         submitHtml += '<div class="info-box">ℹ️ <b>Administratie afgehandeld:</b><br>De held kan zijn rit gewoon vervolgen. Geen visit of andere oplossing nodig — alleen loggen.</div>';
+      }
+      // Info blokje voor schade / defect — geen visit, alleen advies
+      if (callData.probleem==='Schade / Defect') {
+        submitHtml += '<div class="info-box">ℹ️ <b>Schade kan niet ingepland worden:</b><br>DS plant hiervoor geen same day of next day visit. Adviseer de klant dat zij kunnen kiezen voor een <b>korting</b> of een <b>nieuw product</b>. De bezorger geeft de keuze van de klant aan in Jerney.</div>';
       }
       // Info blokje voor nazorg niet gelukt / swap
       if (callData.probleem==='Nazorg niet gelukt / swap aanvragen') {
@@ -1572,6 +1600,7 @@
         submitHtml += '<button id="btn-loggen" class="action-btn submit-btn">✓ Loggen</button>';
       }
       container.innerHTML = submitHtml;
+      bindProductChip();
       var openDirex = function() { if (direxUrl) window.open(direxUrl, '_blank'); };
       if (isGepland && !isLogOnly) {
         idoc.getElementById('btn-clipboard').onclick = function() { kopieerNaarKlembord(); };
@@ -1585,6 +1614,7 @@
     }
 
     container.innerHTML=productChip+'<label>'+stap.label+'</label>';
+    bindProductChip();
 
     var handleSelect=function(o) {
       callData[stap.key]=o; answeredKeys.push(stap.key);
@@ -1837,6 +1867,34 @@
         }
 
         maakProbleemGrid(sec.opties, secBody, sec, secIdx, false);
+
+        // Verborgen taken — overrule de slimme type-filtering en toon weggelaten taken
+        (function(s){
+          var getoondFull = s.opties.map(toLogLabel).concat((s.extraOpties||[]).map(toLogLabel));
+          var bijzLijst = ['Advies gegeven','Spullen achtergelaten bij klant','Onverwacht retour','Nazorg niet gelukt / swap aanvragen','Product past niet op gewenste plek','Blijverkoop vergeten','Verkeerd gelabeld product','Product niet aanwezig','Buiten DS-scope: klant moet zelf KS bellen'];
+          var verborgenTaken = alleProbleemOpties.filter(function(o){ return getoondFull.indexOf(o)===-1 && bijzLijst.indexOf(o)===-1; });
+          if (verborgenTaken.length===0) return;
+          var alleToggle=idoc.createElement('div'); alleToggle.className='toggle-link'; alleToggle.style.cssText='font-size:11px;margin-top:4px;';
+          alleToggle.innerText='Meer taken (filter negeren) ▾';
+          var alleExpand=idoc.createElement('div'); alleExpand.style.display='none';
+          var alleGrid=idoc.createElement('div'); alleGrid.className='btn-grid'; alleGrid.style.marginTop='4px';
+          verborgenTaken.forEach(function(taak){
+            var tb=idoc.createElement('button'); tb.className='ux-btn'; tb.style.opacity='0.85'; tb.innerText=taak;
+            tb.onclick=(function(val){ return function(){
+              callData.probleem=val;
+              if(!answeredKeys.includes('probleem')) answeredKeys.push('probleem');
+              callData.product=s.typeLabel;
+              if(!answeredKeys.includes('product')){ answeredKeys.push('product'); autoFilledKeys.push('product'); }
+              if(s.origNaam) callData.model=s.origNaam;
+              if(!answeredKeys.includes('product_keuze')){ callData.product_keuze=s.typeLabel; answeredKeys.push('product_keuze'); }
+              renderApp();
+            };})(taak);
+            alleGrid.appendChild(tb);
+          });
+          alleExpand.appendChild(alleGrid);
+          alleToggle.onclick=function(){ var o=alleExpand.style.display!=='none'; alleExpand.style.display=o?'none':'block'; alleToggle.innerText=o?'Meer taken (filter negeren) ▾':'Meer taken (filter negeren) ▴'; };
+          secBody.appendChild(alleToggle); secBody.appendChild(alleExpand);
+        })(sec);
 
         // Overig knop
         var ovBtn2=idoc.createElement('button'); ovBtn2.className='ux-btn';
