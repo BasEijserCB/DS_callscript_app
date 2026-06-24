@@ -22,10 +22,11 @@ function doGet(e) {
     // Live formule (herberekent dagelijks via TODAY) — reproduceert:
     //   =EN(A>=VANDAAG()-WEEKDAG(VANDAAG();2)-34; A<=VANDAAG()-WEEKDAG(VANDAAG();2))
     // De logdatum wordt als echte DATE() ingebed zodat de tekst-datum in kolom A
-    // de vergelijking niet breekt. Apps Script-formules: Engelse functies + komma's.
-    var dateExpr = "DATE(" + yyyy + "," + mm + "," + dd + ")";
-    var laatste5Weken = "=AND(" + dateExpr + ">=TODAY()-WEEKDAY(TODAY(),2)-34," +
-                                  dateExpr + "<=TODAY()-WEEKDAY(TODAY(),2))";
+    // de vergelijking niet breekt. Engelse functienamen + puntkomma's als
+    // argumentscheiding (Sheet staat op NL-locale; komma's geven #ERROR).
+    var dateExpr = "DATE(" + yyyy + ";" + mm + ";" + dd + ")";
+    var laatste5Weken = "=AND(" + dateExpr + ">=TODAY()-WEEKDAY(TODAY();2)-34;" +
+                                  dateExpr + "<=TODAY()-WEEKDAY(TODAY();2))";
 
     sheet.appendRow([
       datum,                        // Kolom A: Datum
