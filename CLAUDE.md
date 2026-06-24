@@ -198,6 +198,8 @@ ds-logboek.js  (scrapet DOM → gespreksflow → twee outputs)
 | T | extra_dienst | extra dienst nodig? (Ja / leeg) |
 | U | categorie | uitkomstcategorie |
 | V | tijdBlok | uurblok, bijv. `"08:00 - 08:59"` (server-side berekend) |
+| W | weeknummer | ISO-weeknummer van de logdatum, integer (server-side via `isoWeekNumber()`) |
+| X | laatste5Weken | live `=AND(...)`-formule: `TRUE`/`FALSE` of logdatum binnen de laatste 5 voltooide weken valt; logdatum als `DATE(y,m,d)` ingebed, `TODAY()` blijft live (herberekent dagelijks) |
 
 ---
 
