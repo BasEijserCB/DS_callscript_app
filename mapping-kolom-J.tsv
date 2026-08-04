@@ -160,3 +160,23 @@ swap niet uitgevoerd	Nazorg niet gelukt / swap aanvragen	Probleem bij de klant	1
 swap niet uitgevoerd. Niet meer nodig	Nazorg niet gelukt / swap aanvragen	Probleem bij de klant	1
 verkeerd gelabeld product	Verkeerd gelabeld product	Probleem bij de klant	1
 wasmachine staat nog aan	Vraag / advies	Overig	1
+Pick-up ophalen	Pick-up ophalen	Nazorg nodig	0
+Product past niet op gewenste plek	Product past niet op gewenste plek	Probleem bij de klant	0
+Nazorg niet gelukt / swap aanvragen	Nazorg niet gelukt / swap aanvragen	Probleem bij de klant	0
+Pakket niet meegenomen / niet ingeladen	Pakket niet meegenomen / niet ingeladen	Pakket	0
+Pakket verkeerd / beschadigd	Pakket verkeerd / beschadigd	Pakket	0
+Overige vraag over pakket	Overige vraag over pakket	Pakket	0
+Depot/hub: ziekmelding	Depot/hub: ziekmelding	Depot / hub	0
+Depot/hub: alarm of sleutelkastje	Depot/hub: alarm of sleutelkastje	Depot / hub	0
+Depot/hub: voertuig kapot of incident	Depot/hub: voertuig kapot of incident	Depot / hub	0
+Depot/hub: waar is de vracht	Depot/hub: waar is de vracht	Depot / hub	0
+Depot/hub: overige vraag	Depot/hub: overige vraag	Depot / hub	0
+Stop / tijdslot aanpassen	Stop / tijdslot aanpassen	Planning / administratie	0
+Adres of telefoonnummer doorgeven aan held	Adres of telefoonnummer doorgeven aan held	Planning / administratie	0
+Held terugsturen (taak niet gespecificeerd)	Held terugsturen (taak niet gespecificeerd)	Planning / administratie	0
+Vraag / advies	Vraag / advies	Overig	0
+Interne levering	Interne levering	Overig	0
+Externe partner	Externe partner	Overig	0
+Buiten DS: held regelt met TL	Buiten DS: held regelt met TL	Overig	0
+Buiten DS: klant doorverwezen naar KS	Buiten DS: klant doorverwezen naar KS	Overig	0
+Buiten DS: overig	Buiten DS: overig	Overig	0
