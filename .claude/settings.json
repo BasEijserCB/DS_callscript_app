@@ -1,7 +1,12 @@
 {
   "permissions": {
     "allow": [
-      "Bash(git -C \"/Users/bas.eijsermans/Documents/Callscript app/DS_callscript_app\" log 13cc99dbd8ac3fb113164cb6dcec55e572589ce7..HEAD --oneline)"
+      "Bash(git -C \"/Users/bas.eijsermans/Documents/Callscript app/DS_callscript_app\" log 13cc99dbd8ac3fb113164cb6dcec55e572589ce7..HEAD --oneline)",
+      "Bash(python3 -c ' *)",
+      "Bash(node --check staging/ds-logboek-staging.js)",
+      "Bash(node --check gas-backend.js)",
+      "Bash(sed -i '' 's/DS Logboek v1\\\\.32\\\\.0/DS Logboek v1.33.0/' ds-logboek.js)",
+      "Bash(sed -i '' 's/const STAGING_VERSION = \"0\\\\.11\\\\.0-staging\";/const STAGING_VERSION = \"0.12.0-staging\";/' staging/ds-logboek-staging.js)"
     ]
   }
 }
