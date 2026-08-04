@@ -55,7 +55,7 @@ function doGet(e) {
       laatste5Weken,                // Kolom X: TRUE/FALSE — datum binnen laatste 5 voltooide weken (live formule)
       p.locatie || "",              // Kolom Y: Locatie/context (Onderweg / Bij de klant / Depot / hub / Stop aanpassen / Buiten DS)
       p.ingang  || "",              // Kolom Z: Ingang van het belletje (ks_reden / tl_reden, bijv. "Nazorg nodig", "Held terugsturen")
-      p.probleemCategorie || ""     // Kolom AA: Probleem categorie — de groep van kolom J (Taak bij de klant / Probleem bij de klant / Onderweg / Pakket / Depot / hub / Planning / administratie / Overig)
+      p.probleemCategorie || ""     // Kolom AA: Probleem categorie — de groep van kolom J (Nazorg nodig / Probleem bij de klant / Onderweg / Pakket / Depot / hub / Planning / administratie / Overig)
     ]);
 
     return ContentService

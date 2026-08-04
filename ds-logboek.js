@@ -1238,7 +1238,7 @@
             '<span style="font-size:11px;color:'+(geenOrderMode?'#ff6600':'#aaa')+';">'+(geenOrderMode?'Gegevens gewist':'Geen order')+'</span>' +
           '</div>' : '') +
         '</div></div>' +
-        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.33.0' +
+        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.33.1' +
           (callData.user ? ' · <span style="color:#999;">'+callData.user+'</span> ' + (nameEditConfirm ? '<span style="color:#666;margin-left:4px;">Naam wissen?</span> <span id="btn-edit-name-yes" style="cursor:pointer;color:#c00;font-weight:600;margin-left:4px;">Ja</span> <span id="btn-edit-name-no" style="cursor:pointer;color:#666;margin-left:4px;">Nee</span>' : '<span id="btn-edit-name" title="Naam wijzigen" style="cursor:pointer;opacity:0.45;margin-left:1px;">✎</span>') : '') +
         '</div>' +
       '</div>';
@@ -2142,7 +2142,7 @@
   // Voeg je een nieuwe taak/klacht toe aan de flow? Zet 'm dan ook hieronder,
   // in de juiste groep — de groep is meteen de probleemcategorie (kolom AA).
   var PROBLEEM_CATEGORIEEN = {
-    'Taak bij de klant': [
+    'Nazorg nodig': [
       'Plaatsen / Naar boven tillen','Aansluiting controleren','Trekschakelaar aansluiten',
       'Apparaat inbouwen (Keuken)','Deur omdraaien','Stapelkit plaatsen',
       'TV installeren','TV ophangen en installeren',

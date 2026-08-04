@@ -6,7 +6,7 @@
 // React, ReactDOM, DS, and browser globals are accessible inside JSX.
 
 (function () {
-  const STAGING_VERSION = "0.12.0-staging";
+  const STAGING_VERSION = "0.12.1-staging";
   const ROOT_ID = "ds-logboek-staging-root";
   const STYLE_ID = "ds-logboek-staging-style";
   const GAS_URL = "https://script.google.com/a/macros/coolblue.nl/s/AKfycbxb-OwLCFGlDQ48qz3KnGnmsgnVLWxuOjvEr7UG3M3z0WzO0kVsTKGd_8mZjtvHvPHnEg/exec";
@@ -572,7 +572,7 @@
   // Voeg je een nieuwe taak/klacht toe aan de flow? Zet 'm dan ook hieronder,
   // in de juiste groep — de groep is meteen de probleemcategorie (kolom AA).
   var PROBLEEM_CATEGORIEEN = {
-    'Taak bij de klant': [
+    'Nazorg nodig': [
       'Plaatsen / Naar boven tillen','Aansluiting controleren','Trekschakelaar aansluiten',
       'Apparaat inbouwen (Keuken)','Deur omdraaien','Stapelkit plaatsen',
       'TV installeren','TV ophangen en installeren',
