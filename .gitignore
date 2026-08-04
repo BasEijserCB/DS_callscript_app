@@ -1,1 +1,4 @@
 .DS_Store
+
+# Sheet-exports — alleen lokaal, horen niet in de repo (zie mapping-kolom-J.tsv voor de mapping zelf)
+*.xlsx

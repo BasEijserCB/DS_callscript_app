@@ -207,7 +207,9 @@ ds-logboek.js  (scrapet DOM → gespreksflow → twee outputs)
 | Z | ingang | reden van het belletje bij KS/Winkel/Teamleider (`ks_reden` / `tl_reden` via `INGANG_MAP`), anders leeg |
 | AA | probleemCategorie | **probleem categorie** — de groep van kolom J (zie `PROBLEEM_CATEGORIEEN`) |
 
-**Twee categoriekolommen, twee vragen.** Kolom U (`Oplossing categorie`) zegt *hoe het afliep*, kolom AA (`Probleem categorie`) zegt *waar het over ging*. Ze zijn onafhankelijk: een `Taak bij de klant` kan `Same day gepland` of `Geen oplossing` worden.
+**Twee categoriekolommen, twee vragen.** Kolom U (`Oplossing categorie`) zegt *hoe het afliep*, kolom AA (`Probleem categorie`) zegt *waar het over ging*. Ze zijn onafhankelijk: een `Nazorg nodig` kan `Same day gepland` of `Geen oplossing` worden. De kruising AA × U is de kernanalyse.
+
+**Let op — `Nazorg nodig` staat in twee kolommen met verschillende betekenis:** in Z (ingang) betekent het dat KS/Winkel mét een nazorgverzoek belde, in AA (probleemcategorie) dat het nazorgwerk betrof. In draaitabellen botsen ze niet, maar bouw je een rapport waarin beide voorkomen, benoem ze dan expliciet.
 
 ### Kolom J — gesloten vocabulaire (v1.32.0, gegroepeerd v1.33.0)
 
@@ -232,6 +234,16 @@ Helperfuncties in `bouwLogParams()`-blok: `taakNaarVocab()` (callData.probleem �
 **De sheet is eenmalig gemigreerd (2026-08-04).** De 3.429 historische rijen zijn via een tijdelijk mapping- en analysetabblad omgezet en daarna als platte waarden over kolom J en AA heen geplakt; beide hulptabbladen zijn verwijderd. In het tabblad Database staan dus geen formules — dat moet zo blijven, want Sheets telt een cel met een formule (ook als die `""` teruggeeft) als gevuld, en `appendRow` schrijft na de laatste gevulde rij. Zet analyse-formules altijd in een apart tabblad.
 
 `mapping-kolom-J.tsv` blijft in de repo als naslag: kolom A oud label, B genormaliseerd, C probleemcategorie, D aantal rijen in de export. De onderste 20 regels zijn identiteitsregels (telling 0) voor vocabulaire-waarden die niet als historisch label voorkwamen. Nodig als er ooit een oude backup teruggezet wordt of pre-v1.32.0 data geïmporteerd moet worden.
+
+### Openstaand: de `Vraag / advies`-bucket (~25% van alle rijen)
+
+Na de normalisatie is `Vraag / advies` met afstand de grootste waarde in kolom J: 866 van 3.429 historische rijen (25,3%), en dat blijft zo voor nieuwe rijen. Die rijen zeggen niets over het onderwerp van het gesprek.
+
+Dit is **geen labelprobleem maar een meetprobleem**, en samenvoegen lost het niet op. De oorzaak zit in de flow: de probleemstap heeft onder "Andere opties ▾" een knop `Advies gegeven`, en dat is een *uitkomst*, geen probleem. Wie die kiest, legt nooit vast waar het gesprek over ging. Bronnen die erin samenkomen: `probleem='Advies gegeven'` (CBB), `ks_reden='Advies gegeven aan KS'`/`'aan Winkel'`, `tl_reden='Andere vraag'`, en de KS/Winkel-ingangen `'Informatie over vracht'` en `'Witgoed Demo Wissel'`.
+
+Wat er inmiddels wél mee kan: kolom Y splitst de groep naar `Onderweg` / `Bij de klant` / leeg, en kolom Z naar de KS-ingang. Voor echt inzicht is een flowwijziging nodig — bijvoorbeeld een korte onderwerpvraag na `Advies gegeven`. Dat kost een extra klik voor de medewerker en is bewust nog niet gedaan; de opdracht in aug. 2026 was uitdrukkelijk alleen de log-output, zonder de frontend te raken.
+
+`Vraag over service` (331 rijen, 9,7%) is bewust géén onderdeel van deze bucket: dat is een expliciete keuze in de onderweg-flow, geen escape-knop, en staat als eigen waarde in de groep `Onderweg`.
 
 ---
 
