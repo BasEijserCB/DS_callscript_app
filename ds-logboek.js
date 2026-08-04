@@ -1238,7 +1238,7 @@
             '<span style="font-size:11px;color:'+(geenOrderMode?'#ff6600':'#aaa')+';">'+(geenOrderMode?'Gegevens gewist':'Geen order')+'</span>' +
           '</div>' : '') +
         '</div></div>' +
-        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.31.0' +
+        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.33.0' +
           (callData.user ? ' · <span style="color:#999;">'+callData.user+'</span> ' + (nameEditConfirm ? '<span style="color:#666;margin-left:4px;">Naam wissen?</span> <span id="btn-edit-name-yes" style="cursor:pointer;color:#c00;font-weight:600;margin-left:4px;">Ja</span> <span id="btn-edit-name-no" style="cursor:pointer;color:#666;margin-left:4px;">Nee</span>' : '<span id="btn-edit-name" title="Naam wijzigen" style="cursor:pointer;opacity:0.45;margin-left:1px;">✎</span>') : '') +
         '</div>' +
       '</div>';
@@ -2135,92 +2135,183 @@
     return 'Advies gegeven';
   }
 
+  // ── LOG-NORMALISATIE (kolommen J / S / Y / Z) ─────────────────
+  // Kolom J bevat uitsluitend WAT er moest gebeuren — een gesloten vocabulaire.
+  // Wie belde staat in kolom P, waar het speelde in kolom Y, de ingang van het
+  // belletje in kolom Z en de afloop in O + U. Vrije tekst gaat naar kolom S.
+  // Voeg je een nieuwe taak/klacht toe aan de flow? Zet 'm dan ook hieronder,
+  // in de juiste groep — de groep is meteen de probleemcategorie (kolom AA).
+  var PROBLEEM_CATEGORIEEN = {
+    'Taak bij de klant': [
+      'Plaatsen / Naar boven tillen','Aansluiting controleren','Trekschakelaar aansluiten',
+      'Apparaat inbouwen (Keuken)','Deur omdraaien','Stapelkit plaatsen',
+      'TV installeren','TV ophangen en installeren',
+      'TV + Soundbar installeren','TV + Soundbar ophangen en installeren',
+      'Milieuretour ophalen','Pick-up ophalen',
+      'Spullen achtergelaten bij klant','Blijverkoop vergeten'
+    ],
+    'Probleem bij de klant': [
+      'Schade / Defect','Service niet uitvoerbaar','Product past niet op gewenste plek',
+      'Product niet aanwezig','Verkeerd gelabeld product','Onverwacht retour',
+      'Milieuretour past niet in bus','Nazorg niet gelukt / swap aanvragen'
+    ],
+    'Onderweg': [
+      'Adres niet gevonden / niet bereikbaar','Adres klopt niet',
+      'Klant niet bereikbaar / verkeerd nummer','Klant niet thuis','Vraag over service'
+    ],
+    'Pakket': [
+      'Pakket niet meegenomen / niet ingeladen','Pakket verkeerd / beschadigd','Overige vraag over pakket'
+    ],
+    'Depot / hub': [
+      'Depot/hub: ziekmelding','Depot/hub: alarm of sleutelkastje','Depot/hub: voertuig kapot of incident',
+      'Depot/hub: waar is de vracht','Depot/hub: overige vraag'
+    ],
+    'Planning / administratie': [
+      'Stop / tijdslot aanpassen','Adres of telefoonnummer doorgeven aan held',
+      'Held terugsturen (taak niet gespecificeerd)'
+    ],
+    'Overig': [
+      'Vraag / advies','Interne levering','Externe partner',
+      'Buiten DS: held regelt met TL','Buiten DS: klant doorverwezen naar KS','Buiten DS: overig'
+    ]
+  };
+
+  // Afgeleid: platte lijst + omgekeerde opzoektabel waarde → categorie
+  var PROBLEEM_VOCAB = [], PROBLEEM_CAT_VAN = {};
+  Object.keys(PROBLEEM_CATEGORIEEN).forEach(function(cat) {
+    PROBLEEM_CATEGORIEEN[cat].forEach(function(v) { PROBLEEM_VOCAB.push(v); PROBLEEM_CAT_VAN[v] = cat; });
+  });
+  // Leeg bij een waarde buiten het vocabulaire — dat valt op in de sheet en is
+  // het signaal dat PROBLEEM_CATEGORIEEN achterloopt op de flow.
+  function probleemCategorie(j) { return PROBLEEM_CAT_VAN[j] || ''; }
+
+  // callData.probleem (taak bij de klant) → vocabulaire-waarde.
+  // Onbekende waarden gaan ongewijzigd door zodat ze in de sheet opvallen —
+  // dat is het signaal dat PROBLEEM_VOCAB bijgewerkt moet worden.
+  function taakNaarVocab(p) {
+    if (!p) return '';
+    if (p === 'Advies gegeven') return 'Vraag / advies';
+    if (p === 'Buiten DS-scope: klant moet zelf KS bellen') return 'Buiten DS: klant doorverwezen naar KS';
+    if (p === 'Milieuretour / Pick-up ophalen') return callData.milieuretour_type==='Pick-up' ? 'Pick-up ophalen' : 'Milieuretour ophalen';
+    return p;
+  }
+
+  // cbf_depot_reden (CBF) en cbb_hub_reden (CBB) → één gedeelde depot/hub-familie
+  function depotVraagNaarVocab(reden) {
+    var r = (reden||'').toLowerCase();
+    if (r.indexOf('ziek') !== -1) return 'Depot/hub: ziekmelding';
+    if (r.indexOf('alarm') !== -1 || r.indexOf('sleutelkastje') !== -1) return 'Depot/hub: alarm of sleutelkastje';
+    if (r.indexOf('kapot') !== -1 || r.indexOf('incident') !== -1) return 'Depot/hub: voertuig kapot of incident';
+    if (r.indexOf('vracht') !== -1) return 'Depot/hub: waar is de vracht';
+    return 'Depot/hub: overige vraag';
+  }
+
+  // ks_reden / tl_reden → kolom Z (ingang van het belletje)
+  var INGANG_MAP = {
+    'Nazorg nodig':                                        'Nazorg nodig',
+    'KS vraagt om held terug te sturen':                   'Held terugsturen',
+    'Winkel vraagt om held terug te sturen':               'Held terugsturen',
+    'Advies gegeven aan KS':                               'Advies gevraagd',
+    'Advies gegeven aan Winkel':                           'Advies gevraagd',
+    'Spullen achtergelaten bij klant':                     'Spullen achtergelaten',
+    'Bezorgadres/telefoonnummer klant doorgeven aan held': 'Adres/telefoonnummer doorgeven',
+    'Tijdslot aanpassing / stop aanpassen':                'Tijdslot / stop aanpassen',
+    'Informatie over vracht':                              'Informatie over vracht',
+    'Witgoed Demo Wissel':                                 'Witgoed Demo Wissel',
+    'Vraag om aanpassingen in rit':                        'Rit aanpassen',
+    'Andere vraag':                                        'Andere vraag'
+  };
+  function ingangNaarVocab(r) { return INGANG_MAP[r] || r || ''; }
+
   function bouwLogParams() {
     callData.dsWaarde = berekenDsWaarde();
     var probLog, redenGeenOplossing, redenNextDay, routeLog, orderOplLog;
     var logDriver1 = callData.driver1, logDriver2 = callData.driver2, logOrderBron = callData.orderBron;
     var skipRouteFields = false;
+    var logLocatie = '', logIngang = '', extraDetails = [];
     if (callData.bellerType === 'Teamleider') {
-      probLog            = callData.tl_reden + (callData.tl_uitkomst ? ' — ' + callData.tl_uitkomst : '');
+      probLog            = callData.tl_reden==='Vraag om aanpassingen in rit' ? 'Stop / tijdslot aanpassen' : 'Vraag / advies';
+      logIngang          = ingangNaarVocab(callData.tl_reden);
       redenGeenOplossing = ''; redenNextDay = ''; routeLog = ''; orderOplLog = '';
       logDriver1 = ''; logDriver2 = '';
     } else if (callData.bellerType === 'Interne leveringen') {
-      probLog            = 'Interne levering: ' + (callData.intern_reden||'');
+      probLog            = 'Interne levering';
+      if (callData.intern_reden) extraDetails.push(callData.intern_reden);
       redenGeenOplossing = ''; redenNextDay = ''; routeLog = ''; orderOplLog = '';
       logDriver1 = ''; logDriver2 = '';
     } else if (callData.bellerType === 'CBF') {
       if (callData.locatie === 'Depot / Hub vraag') {
-        probLog = 'Depot / Hub vraag: ' + (callData.cbf_depot_reden||'') + (callData.cbf_depot_toelichting ? ' — ' + callData.cbf_depot_toelichting : '');
+        probLog    = depotVraagNaarVocab(callData.cbf_depot_reden);
+        logLocatie = 'Depot / hub';
+        if (callData.cbf_depot_toelichting) extraDetails.push(callData.cbf_depot_toelichting);
         logDriver1 = ''; logDriver2 = ''; logOrderBron = '';
       } else if (callData.locatie === 'Stop aanpassen / verwijderen') {
-        probLog = 'CBF stop aanpassen — ' + (callData.cbf_stop_uitkomst||'');
+        probLog    = 'Stop / tijdslot aanpassen';
+        logLocatie = 'Stop aanpassen';
         logDriver1 = ''; logDriver2 = '';
       } else if (callData.locatie === 'Bij de klant') {
-        if (callData.cbf_pakket_reden === 'Spullen achtergelaten bij klant') {
-          probLog = 'Spullen achtergelaten — ' + (callData.uitkomst||'');
-        } else {
-          probLog = 'Vraag over pakket: ' + (callData.cbf_pakket_reden||'');
-        }
+        probLog    = callData.cbf_pakket_reden==='Spullen achtergelaten bij klant'
+          ? 'Spullen achtergelaten bij klant'
+          : (callData.cbf_pakket_reden||'');
+        logLocatie = 'Bij de klant';
       } else {
-        probLog = 'Onderweg: ' + callData.onderweg_type;
+        probLog    = callData.onderweg_type;
+        logLocatie = 'Onderweg';
       }
       redenGeenOplossing = ''; redenNextDay = ''; routeLog = ''; orderOplLog = '';
     } else if (callData.locatie==='Afhandeling buiten DS') {
-      probLog            = 'Afhandeling buiten DS: ' + callData.afwijkend_reden;
+      probLog            = callData.afwijkend_reden==='Overig' ? 'Buiten DS: overig' : 'Buiten DS: held regelt met TL';
+      logLocatie         = 'Buiten DS';
+      if (callData.afwijkend_reden==='Overig' && callData.afwijkend_toelichting) extraDetails.push(callData.afwijkend_toelichting);
       redenGeenOplossing = ''; redenNextDay = ''; routeLog = ''; orderOplLog = '';
     } else if (['Technische Dienst','Yeply','G4S'].includes(callData.locatie)) {
-      probLog            = callData.locatie + ': externe partner';
+      probLog            = 'Externe partner';
+      extraDetails.push(callData.locatie);
       redenGeenOplossing = ''; redenNextDay = ''; routeLog = ''; orderOplLog = '';
-    } else if (callData.locatie==='Winkel') {
-      var winkelOpl = callData.ks_reden==='Winkel vraagt om held terug te sturen' ? callData.ks_uitkomst : callData.uitkomst;
+    } else if (callData.locatie==='Winkel' || callData.locatie==='Klantenservice') {
+      var terugSturen = callData.ks_reden==='KS vraagt om held terug te sturen' || callData.ks_reden==='Winkel vraagt om held terug te sturen';
+      var ksOpl       = terugSturen ? callData.ks_uitkomst : callData.uitkomst;
+      logIngang       = ingangNaarVocab(callData.ks_reden);
       if (callData.ks_reden==='Tijdslot aanpassing / stop aanpassen') {
-        probLog = 'Tijdslot aanpassing — ' + (callData.ks_tijdslot_uitkomst||'') + ' — product mee terug: ' + (callData.product_mee_terug||'?');
+        probLog = 'Stop / tijdslot aanpassen';
+        extraDetails.push('Product mee terug: ' + (callData.product_mee_terug||'?'));
+      } else if (callData.ks_reden==='Bezorgadres/telefoonnummer klant doorgeven aan held') {
+        probLog = 'Adres of telefoonnummer doorgeven aan held';
+      } else if (callData.ks_reden==='Spullen achtergelaten bij klant') {
+        probLog = 'Spullen achtergelaten bij klant'; logLocatie = 'Bij de klant';
+      } else if (callData.ks_reden==='Advies gegeven aan KS' || callData.ks_reden==='Advies gegeven aan Winkel'
+              || callData.ks_reden==='Informatie over vracht' || callData.ks_reden==='Witgoed Demo Wissel') {
+        probLog = 'Vraag / advies';
       } else {
-        probLog = callData.ks_reden + (callData.probleem ? ' — ' + callData.probleem : '');
-      }
-      redenGeenOplossing = callData.geen_oplossing_reden||'';
-      redenNextDay       = callData.next_day_reden||'';
-      routeLog           = (winkelOpl==='Next day gepland') ? 'Next Day' : callData.geplandeRoute;
-      orderOplLog        = (winkelOpl==='Same day gepland'||winkelOpl==='Next day gepland') ? callData.orderBron+'-DS' : '';
-      if (callData.ks_reden==='Informatie over vracht' || callData.ks_reden==='Witgoed Demo Wissel') {
-        logDriver1 = ''; logDriver2 = ''; logOrderBron = '';
-        probLog = ''; routeLog = ''; skipRouteFields = true;
-      }
-    } else if (callData.locatie==='Klantenservice') {
-      var ksOpl = callData.ks_reden==='KS vraagt om held terug te sturen' ? callData.ks_uitkomst : callData.uitkomst;
-      if (callData.ks_reden==='Tijdslot aanpassing / stop aanpassen') {
-        probLog = 'Tijdslot aanpassing — ' + (callData.ks_tijdslot_uitkomst||'') + ' — product mee terug: ' + (callData.product_mee_terug||'?');
-      } else {
-        probLog = callData.ks_reden + (callData.probleem ? ' — ' + callData.probleem : '');
+        probLog = callData.probleem ? taakNaarVocab(callData.probleem) : 'Held terugsturen (taak niet gespecificeerd)';
+        logLocatie = 'Bij de klant';
       }
       redenGeenOplossing = callData.geen_oplossing_reden||'';
       redenNextDay       = callData.next_day_reden||'';
       routeLog           = (ksOpl==='Next day gepland') ? 'Next Day' : callData.geplandeRoute;
       orderOplLog        = (ksOpl==='Same day gepland'||ksOpl==='Next day gepland') ? callData.orderBron+'-DS' : '';
+      if (callData.ks_reden==='Informatie over vracht' || callData.ks_reden==='Witgoed Demo Wissel') {
+        logDriver1 = ''; logDriver2 = ''; logOrderBron = '';
+        routeLog = ''; skipRouteFields = true;
+      }
     } else if (callData.locatie==='Vraag over depot / hub') {
-      probLog            = 'Vraag over depot/hub: ' + (callData.cbb_hub_reden||'') + (callData.cbb_hub_toelichting ? ' — ' + callData.cbb_hub_toelichting : '');
+      probLog            = depotVraagNaarVocab(callData.cbb_hub_reden);
+      logLocatie         = 'Depot / hub';
+      if (callData.cbb_hub_toelichting) extraDetails.push(callData.cbb_hub_toelichting);
       redenGeenOplossing = ''; redenNextDay = ''; routeLog = ''; orderOplLog = '';
       logDriver1 = ''; logDriver2 = '';
     } else if (callData.locatie==='Bij de klant') {
-      var pickupNietGelukt = callData.pick_up_status === 'Pick-up niet gelukt — swap nodig';
-      var pickupNietNodig  = callData.pick_up_status === 'Pick-up niet nodig';
-      probLog = pickupNietGelukt
-        ? 'Pick-up niet gelukt — held instructie gegeven voor Jerney (swap aanvragen)'
-        : pickupNietNodig
-          ? 'Pick-up niet nodig — held geïnformeerd'
-          : callData.milieuretour_type
-          ? (callData.milieuretour_type==='Pick-up' ? 'Pick-up (handmatig gepland)' : 'Milieuretour ophalen')
-          : callData.probleem==='Nazorg niet gelukt / swap aanvragen'
-            ? 'Nazorg niet gelukt — opmerking gemaakt, swap via KS aanvragen'
-            : callData.probleem==='Product past niet op gewenste plek'
-              ? 'Product past niet op gewenste plek — held geïnformeerd voor Jerney-afmelding'
-              : callData.probleem;
+      probLog = callData.milieuretour_type
+        ? (callData.milieuretour_type==='Pick-up' ? 'Pick-up ophalen' : 'Milieuretour ophalen')
+        : taakNaarVocab(callData.probleem);
+      logLocatie         = 'Bij de klant';
       redenGeenOplossing = callData.geen_oplossing_reden||'';
       redenNextDay       = callData.next_day_reden||'';
       routeLog           = (callData.uitkomst==='Next day gepland'||callData.uitkomst==='Next day visit gepland') ? 'Next Day' : callData.geplandeRoute;
       orderOplLog        = (callData.uitkomst==='Same day gepland'||callData.uitkomst==='Next day gepland'||callData.uitkomst==='Same day visit gepland'||callData.uitkomst==='Next day visit gepland') ? callData.orderBron+'-DS' : '';
     } else {
       probLog            = callData.onderweg_type;
+      logLocatie         = 'Onderweg';
       redenGeenOplossing = '';
       redenNextDay       = '';
       routeLog           = '';
@@ -2228,10 +2319,10 @@
     }
     var prodLog = skipRouteFields ? '' : callData.product+(callData.formaatTV?' ('+callData.formaatTV+')':'');
     var bellerLog = !callData.bellerType ? '' : callData.bellerType==='CBB' ? 'CBB' : callData.bellerType==='CBF' ? 'CBF' : callData.locatie==='Klantenservice' ? 'Klantenservice' : 'Overig';
-    var extraInfo = callData.locatie==='Afhandeling buiten DS' && callData.afwijkend_reden==='Overig' ? callData.afwijkend_toelichting : '';
+    var extraInfo = extraDetails.filter(function(d){ return d; }).join(' | ');
     var extraDienst = (callData.locatie==='Klantenservice'||callData.locatie==='Winkel') && callData.ks_reden==='Nazorg nodig' ? 'Ja' : '';
     var categorie = berekenCategorie();
-    return '?id='+Date.now()+'&user='+encodeURIComponent(callData.user)+'&route='+encodeURIComponent(callData.route)+'&depot='+encodeURIComponent(callData.depot)+'&driver1='+encodeURIComponent(logDriver1)+'&driver2='+encodeURIComponent(logDriver2)+'&orderBron='+encodeURIComponent(logOrderBron)+'&product='+encodeURIComponent(prodLog)+'&probleem='+encodeURIComponent(probLog)+'&redenGeenOplossing='+encodeURIComponent(redenGeenOplossing)+'&redenNextDay='+encodeURIComponent(redenNextDay)+'&orderOplossing='+encodeURIComponent(orderOplLog)+'&geplandeRoute='+encodeURIComponent(routeLog)+'&dsWaarde='+encodeURIComponent(callData.dsWaarde)+'&bellerType='+encodeURIComponent(bellerLog)+'&tijdvak='+encodeURIComponent(callData.tijdvak)+'&aankomsttijd='+encodeURIComponent(callData.aankomsttijd)+'&extra_info='+encodeURIComponent(extraInfo)+'&extra_dienst='+encodeURIComponent(extraDienst)+'&categorie='+encodeURIComponent(categorie);
+    return '?id='+Date.now()+'&user='+encodeURIComponent(callData.user)+'&route='+encodeURIComponent(callData.route)+'&depot='+encodeURIComponent(callData.depot)+'&driver1='+encodeURIComponent(logDriver1)+'&driver2='+encodeURIComponent(logDriver2)+'&orderBron='+encodeURIComponent(logOrderBron)+'&product='+encodeURIComponent(prodLog)+'&probleem='+encodeURIComponent(probLog)+'&redenGeenOplossing='+encodeURIComponent(redenGeenOplossing)+'&redenNextDay='+encodeURIComponent(redenNextDay)+'&orderOplossing='+encodeURIComponent(orderOplLog)+'&geplandeRoute='+encodeURIComponent(routeLog)+'&dsWaarde='+encodeURIComponent(callData.dsWaarde)+'&bellerType='+encodeURIComponent(bellerLog)+'&tijdvak='+encodeURIComponent(callData.tijdvak)+'&aankomsttijd='+encodeURIComponent(callData.aankomsttijd)+'&extra_info='+encodeURIComponent(extraInfo)+'&extra_dienst='+encodeURIComponent(extraDienst)+'&categorie='+encodeURIComponent(categorie)+'&locatie='+encodeURIComponent(logLocatie)+'&ingang='+encodeURIComponent(logIngang)+'&probleemCategorie='+encodeURIComponent(probleemCategorie(probLog));
   }
 
   // ── KLEMBORD ALLEEN ─────────────────────────────────────────

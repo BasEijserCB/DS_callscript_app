@@ -6,7 +6,7 @@
 // React, ReactDOM, DS, and browser globals are accessible inside JSX.
 
 (function () {
-  const STAGING_VERSION = "0.10.0-staging";
+  const STAGING_VERSION = "0.12.0-staging";
   const ROOT_ID = "ds-logboek-staging-root";
   const STYLE_ID = "ds-logboek-staging-style";
   const GAS_URL = "https://script.google.com/a/macros/coolblue.nl/s/AKfycbxb-OwLCFGlDQ48qz3KnGnmsgnVLWxuOjvEr7UG3M3z0WzO0kVsTKGd_8mZjtvHvPHnEg/exec";
@@ -565,74 +565,167 @@
     return cd.onderweg_uitkomst||'';
   }
 
+  // ── LOG-NORMALISATIE (kolommen J / S / Y / Z) ─────────────────
+  // Kolom J bevat uitsluitend WAT er moest gebeuren — een gesloten vocabulaire.
+  // Wie belde staat in kolom P, waar het speelde in kolom Y, de ingang van het
+  // belletje in kolom Z en de afloop in O + U. Vrije tekst gaat naar kolom S.
+  // Voeg je een nieuwe taak/klacht toe aan de flow? Zet 'm dan ook hieronder,
+  // in de juiste groep — de groep is meteen de probleemcategorie (kolom AA).
+  var PROBLEEM_CATEGORIEEN = {
+    'Taak bij de klant': [
+      'Plaatsen / Naar boven tillen','Aansluiting controleren','Trekschakelaar aansluiten',
+      'Apparaat inbouwen (Keuken)','Deur omdraaien','Stapelkit plaatsen',
+      'TV installeren','TV ophangen en installeren',
+      'TV + Soundbar installeren','TV + Soundbar ophangen en installeren',
+      'Milieuretour ophalen','Pick-up ophalen',
+      'Spullen achtergelaten bij klant','Blijverkoop vergeten'
+    ],
+    'Probleem bij de klant': [
+      'Schade / Defect','Service niet uitvoerbaar','Product past niet op gewenste plek',
+      'Product niet aanwezig','Verkeerd gelabeld product','Onverwacht retour',
+      'Milieuretour past niet in bus','Nazorg niet gelukt / swap aanvragen'
+    ],
+    'Onderweg': [
+      'Adres niet gevonden / niet bereikbaar','Adres klopt niet',
+      'Klant niet bereikbaar / verkeerd nummer','Klant niet thuis','Vraag over service'
+    ],
+    'Pakket': [
+      'Pakket niet meegenomen / niet ingeladen','Pakket verkeerd / beschadigd','Overige vraag over pakket'
+    ],
+    'Depot / hub': [
+      'Depot/hub: ziekmelding','Depot/hub: alarm of sleutelkastje','Depot/hub: voertuig kapot of incident',
+      'Depot/hub: waar is de vracht','Depot/hub: overige vraag'
+    ],
+    'Planning / administratie': [
+      'Stop / tijdslot aanpassen','Adres of telefoonnummer doorgeven aan held',
+      'Held terugsturen (taak niet gespecificeerd)'
+    ],
+    'Overig': [
+      'Vraag / advies','Interne levering','Externe partner',
+      'Buiten DS: held regelt met TL','Buiten DS: klant doorverwezen naar KS','Buiten DS: overig'
+    ]
+  };
+
+  // Afgeleid: platte lijst + omgekeerde opzoektabel waarde → categorie
+  var PROBLEEM_VOCAB = [], PROBLEEM_CAT_VAN = {};
+  Object.keys(PROBLEEM_CATEGORIEEN).forEach(function(cat) {
+    PROBLEEM_CATEGORIEEN[cat].forEach(function(v) { PROBLEEM_VOCAB.push(v); PROBLEEM_CAT_VAN[v] = cat; });
+  });
+  // Leeg bij een waarde buiten het vocabulaire — dat valt op in de sheet en is
+  // het signaal dat PROBLEEM_CATEGORIEEN achterloopt op de flow.
+  function probleemCategorie(j) { return PROBLEEM_CAT_VAN[j] || ''; }
+
+  // cd.probleem (taak bij de klant) → vocabulaire-waarde.
+  // Onbekende waarden gaan ongewijzigd door zodat ze in de sheet opvallen —
+  // dat is het signaal dat PROBLEEM_VOCAB bijgewerkt moet worden.
+  function taakNaarVocab(cd, p) {
+    if (!p) return '';
+    if (p === 'Advies gegeven') return 'Vraag / advies';
+    if (p === 'Buiten DS-scope: klant moet zelf KS bellen') return 'Buiten DS: klant doorverwezen naar KS';
+    if (p === 'Milieuretour / Pick-up ophalen') return cd.milieuretour_type==='Pick-up' ? 'Pick-up ophalen' : 'Milieuretour ophalen';
+    return p;
+  }
+
+  // cbf_depot_reden (CBF) en cbb_hub_reden (CBB) → één gedeelde depot/hub-familie
+  function depotVraagNaarVocab(reden) {
+    var r = (reden||'').toLowerCase();
+    if (r.indexOf('ziek') !== -1) return 'Depot/hub: ziekmelding';
+    if (r.indexOf('alarm') !== -1 || r.indexOf('sleutelkastje') !== -1) return 'Depot/hub: alarm of sleutelkastje';
+    if (r.indexOf('kapot') !== -1 || r.indexOf('incident') !== -1) return 'Depot/hub: voertuig kapot of incident';
+    if (r.indexOf('vracht') !== -1) return 'Depot/hub: waar is de vracht';
+    return 'Depot/hub: overige vraag';
+  }
+
+  // ks_reden / tl_reden → kolom Z (ingang van het belletje)
+  var INGANG_MAP = {
+    'Nazorg nodig':                                        'Nazorg nodig',
+    'KS vraagt om held terug te sturen':                   'Held terugsturen',
+    'Winkel vraagt om held terug te sturen':               'Held terugsturen',
+    'Advies gegeven aan KS':                               'Advies gevraagd',
+    'Advies gegeven aan Winkel':                           'Advies gevraagd',
+    'Spullen achtergelaten bij klant':                     'Spullen achtergelaten',
+    'Bezorgadres/telefoonnummer klant doorgeven aan held': 'Adres/telefoonnummer doorgeven',
+    'Tijdslot aanpassing / stop aanpassen':                'Tijdslot / stop aanpassen',
+    'Informatie over vracht':                              'Informatie over vracht',
+    'Witgoed Demo Wissel':                                 'Witgoed Demo Wissel',
+    'Vraag om aanpassingen in rit':                        'Rit aanpassen',
+    'Andere vraag':                                        'Andere vraag'
+  };
+  function ingangNaarVocab(r) { return INGANG_MAP[r] || r || ''; }
+
   // ── LOG PARAMS ────────────────────────────────────────────────
   function bouwLogParams(cd) {
     var dsW=berekenDsWaarde(cd);
     var probLog, redenGeenOplossing='', redenNextDay='', routeLog='', orderOplLog='';
     var logD1=cd.driver1, logD2=cd.driver2, logOB=cd.orderBron;
     var skipRF=false;
+    var logLocatie='', logIngang='', extraDetails=[];
     if (cd.bellerType==='Teamleider') {
-      probLog=cd.tl_reden+(cd.tl_uitkomst?' — '+cd.tl_uitkomst:''); logD1=''; logD2='';
+      probLog=cd.tl_reden==='Vraag om aanpassingen in rit'?'Stop / tijdslot aanpassen':'Vraag / advies';
+      logIngang=ingangNaarVocab(cd.tl_reden);
+      logD1=''; logD2='';
     } else if (cd.bellerType==='Interne leveringen') {
-      probLog='Interne levering: '+(cd.intern_reden||'');
+      probLog='Interne levering';
+      if (cd.intern_reden) extraDetails.push(cd.intern_reden);
       redenGeenOplossing=''; redenNextDay=''; routeLog=''; orderOplLog='';
       logD1=''; logD2='';
     } else if (cd.bellerType==='CBF') {
-      if (cd.locatie==='Depot / Hub vraag') { probLog='Depot / Hub vraag: '+(cd.cbf_depot_reden||'')+(cd.cbf_depot_toelichting?' — '+cd.cbf_depot_toelichting:''); logD1=''; logD2=''; logOB=''; }
-      else if (cd.locatie==='Stop aanpassen / verwijderen') { probLog='CBF stop aanpassen — '+(cd.cbf_stop_uitkomst||''); logD1=''; logD2=''; logOB=''; }
-      else if (cd.locatie==='Bij de klant') {
-        if (cd.cbf_pakket_reden==='Spullen achtergelaten bij klant') probLog='Spullen achtergelaten — '+(cd.uitkomst||'');
-        else probLog='Vraag over pakket: '+(cd.cbf_pakket_reden||'');
-      } else probLog='Onderweg: '+cd.onderweg_type;
+      if (cd.locatie==='Depot / Hub vraag') {
+        probLog=depotVraagNaarVocab(cd.cbf_depot_reden); logLocatie='Depot / hub';
+        if (cd.cbf_depot_toelichting) extraDetails.push(cd.cbf_depot_toelichting);
+        logD1=''; logD2=''; logOB='';
+      } else if (cd.locatie==='Stop aanpassen / verwijderen') {
+        probLog='Stop / tijdslot aanpassen'; logLocatie='Stop aanpassen'; logD1=''; logD2=''; logOB='';
+      } else if (cd.locatie==='Bij de klant') {
+        probLog=cd.cbf_pakket_reden==='Spullen achtergelaten bij klant'?'Spullen achtergelaten bij klant':(cd.cbf_pakket_reden||'');
+        logLocatie='Bij de klant';
+      } else { probLog=cd.onderweg_type; logLocatie='Onderweg'; }
     } else if (cd.locatie==='Afhandeling buiten DS') {
-      probLog='Afhandeling buiten DS: '+cd.afwijkend_reden;
+      probLog=cd.afwijkend_reden==='Overig'?'Buiten DS: overig':'Buiten DS: held regelt met TL';
+      logLocatie='Buiten DS';
+      if (cd.afwijkend_reden==='Overig'&&cd.afwijkend_toelichting) extraDetails.push(cd.afwijkend_toelichting);
     } else if (['Technische Dienst','Yeply','G4S'].includes(cd.locatie)) {
-      probLog=cd.locatie+': externe partner';
-    } else if (cd.locatie==='Winkel') {
-      var wOpl=cd.ks_reden==='Winkel vraagt om held terug te sturen'?cd.ks_uitkomst:cd.uitkomst;
+      probLog='Externe partner'; extraDetails.push(cd.locatie);
+    } else if (cd.locatie==='Winkel'||cd.locatie==='Klantenservice') {
+      var terugSturen=cd.ks_reden==='KS vraagt om held terug te sturen'||cd.ks_reden==='Winkel vraagt om held terug te sturen';
+      var ksOpl=terugSturen?cd.ks_uitkomst:cd.uitkomst;
+      logIngang=ingangNaarVocab(cd.ks_reden);
       if (cd.ks_reden==='Tijdslot aanpassing / stop aanpassen') {
-        probLog='Tijdslot aanpassing — '+(cd.ks_tijdslot_uitkomst||'')+'  — product mee terug: '+(cd.product_mee_terug||'?');
+        probLog='Stop / tijdslot aanpassen';
+        extraDetails.push('Product mee terug: '+(cd.product_mee_terug||'?'));
+      } else if (cd.ks_reden==='Bezorgadres/telefoonnummer klant doorgeven aan held') {
+        probLog='Adres of telefoonnummer doorgeven aan held';
+      } else if (cd.ks_reden==='Spullen achtergelaten bij klant') {
+        probLog='Spullen achtergelaten bij klant'; logLocatie='Bij de klant';
+      } else if (cd.ks_reden==='Advies gegeven aan KS'||cd.ks_reden==='Advies gegeven aan Winkel'
+              ||cd.ks_reden==='Informatie over vracht'||cd.ks_reden==='Witgoed Demo Wissel') {
+        probLog='Vraag / advies';
       } else {
-        probLog=cd.ks_reden+(cd.probleem?' — '+cd.probleem:'');
+        probLog=cd.probleem?taakNaarVocab(cd,cd.probleem):'Held terugsturen (taak niet gespecificeerd)';
+        logLocatie='Bij de klant';
       }
       redenGeenOplossing=cd.geen_oplossing_reden||''; redenNextDay=cd.next_day_reden||'';
-      routeLog=(wOpl==='Next day gepland')?'Next Day':cd.geplandeRoute; orderOplLog=(wOpl==='Same day gepland'||wOpl==='Next day gepland')?cd.orderBron+'-DS':'';
-      if (cd.ks_reden==='Informatie over vracht'||cd.ks_reden==='Witgoed Demo Wissel') { logD1=''; logD2=''; logOB=''; probLog=''; routeLog=''; skipRF=true; }
-    } else if (cd.locatie==='Klantenservice') {
-      var kOpl=cd.ks_reden==='KS vraagt om held terug te sturen'?cd.ks_uitkomst:cd.uitkomst;
-      if (cd.ks_reden==='Tijdslot aanpassing / stop aanpassen') {
-        probLog='Tijdslot aanpassing — '+(cd.ks_tijdslot_uitkomst||'')+' — product mee terug: '+(cd.product_mee_terug||'?');
-      } else {
-        probLog=cd.ks_reden+(cd.probleem?' — '+cd.probleem:'');
-      }
-      redenGeenOplossing=cd.geen_oplossing_reden||''; redenNextDay=cd.next_day_reden||'';
-      routeLog=(kOpl==='Next day gepland')?'Next Day':cd.geplandeRoute; orderOplLog=(kOpl==='Same day gepland'||kOpl==='Next day gepland')?cd.orderBron+'-DS':'';
+      routeLog=(ksOpl==='Next day gepland')?'Next Day':cd.geplandeRoute; orderOplLog=(ksOpl==='Same day gepland'||ksOpl==='Next day gepland')?cd.orderBron+'-DS':'';
+      if (cd.ks_reden==='Informatie over vracht'||cd.ks_reden==='Witgoed Demo Wissel') { logD1=''; logD2=''; logOB=''; routeLog=''; skipRF=true; }
     } else if (cd.locatie==='Vraag over depot / hub') {
-      probLog='Vraag over depot/hub: '+(cd.cbb_hub_reden||'')+(cd.cbb_hub_toelichting?' — '+cd.cbb_hub_toelichting:''); logD1=''; logD2='';
+      probLog=depotVraagNaarVocab(cd.cbb_hub_reden); logLocatie='Depot / hub';
+      if (cd.cbb_hub_toelichting) extraDetails.push(cd.cbb_hub_toelichting);
+      logD1=''; logD2='';
     } else if (cd.locatie==='Bij de klant') {
-      var pickupNietGelukt=cd.pick_up_status==='Pick-up niet gelukt — swap nodig';
-      var pickupNietNodig=cd.pick_up_status==='Pick-up niet nodig';
-      probLog=pickupNietGelukt
-        ?'Pick-up niet gelukt — held instructie gegeven voor Jerney (swap aanvragen)'
-        :pickupNietNodig
-          ?'Pick-up niet nodig — held geïnformeerd'
-          :cd.milieuretour_type
-          ?(cd.milieuretour_type==='Pick-up'?'Pick-up (handmatig gepland)':'Milieuretour ophalen')
-          :cd.probleem==='Nazorg niet gelukt / swap aanvragen'
-            ?'Nazorg niet gelukt — opmerking gemaakt, swap via KS aanvragen'
-            :cd.probleem==='Product past niet op gewenste plek'
-              ?'Product past niet op gewenste plek — held geïnformeerd voor Jerney-afmelding'
-              :cd.probleem;
+      probLog=cd.milieuretour_type
+        ?(cd.milieuretour_type==='Pick-up'?'Pick-up ophalen':'Milieuretour ophalen')
+        :taakNaarVocab(cd,cd.probleem);
+      logLocatie='Bij de klant';
       redenGeenOplossing=cd.geen_oplossing_reden||''; redenNextDay=cd.next_day_reden||'';
       routeLog=(cd.uitkomst==='Next day gepland'||cd.uitkomst==='Next day visit gepland')?'Next Day':cd.geplandeRoute;
       orderOplLog=(cd.uitkomst==='Same day gepland'||cd.uitkomst==='Next day gepland'||cd.uitkomst==='Same day visit gepland'||cd.uitkomst==='Next day visit gepland')?cd.orderBron+'-DS':'';
-    } else { probLog=cd.onderweg_type; }
+    } else { probLog=cd.onderweg_type; logLocatie='Onderweg'; }
     var prodLog=skipRF?'':cd.product+(cd.formaatTV?' ('+cd.formaatTV+')':'');
     var bellerLog=!cd.bellerType?'':cd.bellerType==='CBB'?'CBB':cd.bellerType==='CBF'?'CBF':cd.locatie==='Klantenservice'?'Klantenservice':'Overig';
-    var extraInfo=cd.locatie==='Afhandeling buiten DS'&&cd.afwijkend_reden==='Overig'?cd.afwijkend_toelichting:'';
+    var extraInfo=extraDetails.filter(function(d){ return d; }).join(' | ');
     var extraDienst=(cd.locatie==='Klantenservice'||cd.locatie==='Winkel')&&cd.ks_reden==='Nazorg nodig'?'Ja':'';
     var cat=berekenCategorie(cd);
-    return '?id='+Date.now()+'&user='+encodeURIComponent(cd.user)+'&route='+encodeURIComponent(cd.route)+'&depot='+encodeURIComponent(cd.depot)+'&driver1='+encodeURIComponent(logD1)+'&driver2='+encodeURIComponent(logD2)+'&orderBron='+encodeURIComponent(logOB)+'&product='+encodeURIComponent(prodLog)+'&probleem='+encodeURIComponent(probLog)+'&redenGeenOplossing='+encodeURIComponent(redenGeenOplossing)+'&redenNextDay='+encodeURIComponent(redenNextDay)+'&orderOplossing='+encodeURIComponent(orderOplLog)+'&geplandeRoute='+encodeURIComponent(routeLog)+'&dsWaarde='+encodeURIComponent(dsW)+'&bellerType='+encodeURIComponent(bellerLog)+'&tijdvak='+encodeURIComponent(cd.tijdvak)+'&aankomsttijd='+encodeURIComponent(cd.aankomsttijd)+'&extra_info='+encodeURIComponent(extraInfo)+'&extra_dienst='+encodeURIComponent(extraDienst)+'&categorie='+encodeURIComponent(cat);
+    return '?id='+Date.now()+'&user='+encodeURIComponent(cd.user)+'&route='+encodeURIComponent(cd.route)+'&depot='+encodeURIComponent(cd.depot)+'&driver1='+encodeURIComponent(logD1)+'&driver2='+encodeURIComponent(logD2)+'&orderBron='+encodeURIComponent(logOB)+'&product='+encodeURIComponent(prodLog)+'&probleem='+encodeURIComponent(probLog)+'&redenGeenOplossing='+encodeURIComponent(redenGeenOplossing)+'&redenNextDay='+encodeURIComponent(redenNextDay)+'&orderOplossing='+encodeURIComponent(orderOplLog)+'&geplandeRoute='+encodeURIComponent(routeLog)+'&dsWaarde='+encodeURIComponent(dsW)+'&bellerType='+encodeURIComponent(bellerLog)+'&tijdvak='+encodeURIComponent(cd.tijdvak)+'&aankomsttijd='+encodeURIComponent(cd.aankomsttijd)+'&extra_info='+encodeURIComponent(extraInfo)+'&extra_dienst='+encodeURIComponent(extraDienst)+'&categorie='+encodeURIComponent(cat)+'&locatie='+encodeURIComponent(logLocatie)+'&ingang='+encodeURIComponent(logIngang)+'&probleemCategorie='+encodeURIComponent(probleemCategorie(probLog));
   }
 
   // ── KLEMBORD ─────────────────────────────────────────────────

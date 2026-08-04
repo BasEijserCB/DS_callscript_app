@@ -53,6 +53,8 @@ Nieuwste bovenaan. Alleen `ds-logboek.js` versies (productie).
 
 | Versie | Wijziging |
 |---|---|
+| v1.33.0 | Add: **kolom AA `probleemCategorie`** — de groep waartoe de kolom J-waarde behoort (`Taak bij de klant` / `Probleem bij de klant` / `Onderweg` / `Pakket` / `Depot / hub` / `Planning / administratie` / `Overig`). `PROBLEEM_VOCAB` is vervangen door `PROBLEEM_CATEGORIEEN` (groep → waarden); de platte lijst en de opzoektabel `PROBLEEM_CAT_VAN` worden daaruit afgeleid, zodat waarde en categorie niet uit elkaar kunnen lopen. Kolom U heet in de sheet voortaan **Oplossing categorie** (was: Categorie) — alleen een kopwijziging, de waarden en `berekenCategorie()` zijn ongewijzigd. Ook in staging (v0.12.0-staging). `mapping-kolom-J.tsv` heeft een kolom C met de probleemcategorie. |
+| v1.32.0 | Refactor (log-output, geen flow-wijziging): kolom J bevat voortaan uitsluitend **wat** er moest gebeuren, uit een gesloten vocabulaire van 44 waarden (`PROBLEEM_VOCAB`). Beller-/contextprefixen (`Onderweg:`, `KS:`, `Winkel:`), `ks_reden`-prefixen (`Nazorg nodig — `, `KS vraagt om held terug te sturen — `), uitkomst-suffixen en vrije tekst zijn uit J verwijderd. Twee nieuwe kolommen: **Y `locatie`** (Onderweg / Bij de klant / Depot / hub / Stop aanpassen / Buiten DS) en **Z `ingang`** (`ks_reden` / `tl_reden` genormaliseerd). Vrije tekst en losse details (depot/hub-toelichting, partnernaam, `product_mee_terug`, `intern_reden`) gaan nu naar kolom S, ` \| `-gescheiden. Milieuretour en Pick-up zijn twee aparte J-waarden; de vier TV-varianten blijven bestaan. Ook in staging (v0.11.0-staging). `mapping-kolom-J.tsv` mapt de 161 historische labels naar de nieuwe 44. |
 | v1.31.0 | Add: `'Schade / Defect'` is geen planbaar probleem meer. Bij CBB "Bij de klant" wordt voor schade géén same day/next day uitkomst meer gevraagd; uitkomst auto-gevuld `'Schade — advies gegeven'`, categorie `Advies gegeven`, dsWaarde `'Schade gemeld — klant geadviseerd (korting of nieuw product, held meldt in Jerney)'`. Submit-scherm toont info-blokje (klant kiest korting of nieuw product, bezorger geeft door in Jerney). Add: twee manieren om de automatische apparaatdetectie te overrulen — (1) productchip is klikbaar (`resetProductDetectie()`) en stuurt de gebruiker door de handmatige apparaatkeuze; (2) per taak-sectie een "Meer taken (filter negeren)"-toggle die de door type-filtering weggelaten taken alsnog toont. Beide ook in staging. Fix (paste-bookmarklet): deur omdraaien + koelkast/vriezer next-day pakte geen sjabloon omdat `skipDienstType` de `dienstType` leeglaat en het sjabloon-blok `dienstType` vereiste; nu valt deur omdraaien zonder dienstType terug op het Extra dienst-sjabloon. |
 | v1.30.4 | Fix: same-day "Deur omdraaien" service werd gewist bij terugzetten netwerk → 2Mans. Deur-omdraaien Extra-dienst services (`247513`/`301445`) bestaan alleen onder netwerk Coolblue Built-in (132137); paste-bookmarklet laat na kanaal-reset naar 2Mans het netwerk nu op Built-in staan (skip `netwerk → 12`) voor deze services. Wijziging alleen in `paste-bookmarklet.js`. |
 | v1.30.3 | Fix: same-day "Deur omdraaien" selecteerde verkeerde service `51068` ("(Nazorg) - apparaat waterpas zetten"). Deur omdraaien heeft geen nazorg-variant; nu `247513` ("(Extra dienst) - deur omdraaien") of `301445` ("(Extra dienst) - deur omdraaien koel-vriescombinatie") bij koel-vries combo. `builtInServices` in paste-bookmarklet bijgewerkt. Ook in staging. |
@@ -185,7 +187,7 @@ ds-logboek.js  (scrapet DOM → gespreksflow → twee outputs)
 | G | driver2 | bijrijder |
 | H | orderBron | ordernummer (bron) |
 | I | product | product / formaat |
-| J | probleem | taak / klacht |
+| J | probleem | taak / klacht — **gesloten vocabulaire**, zie `PROBLEEM_VOCAB` |
 | K | redenGeenOplossing | waarom geen opl? |
 | L | redenNextDay | waarom next day? |
 | M | orderOplossing | ordernummer-DS |
@@ -194,12 +196,39 @@ ds-logboek.js  (scrapet DOM → gespreksflow → twee outputs)
 | P | bellerType | wie belde er? |
 | Q | tijdvak | gecommuniceerd tijdvak |
 | R | aankomsttijd | aankomsttijd |
-| S | extra_info | toelichting afwijkend |
+| S | extra_info | vrije tekst en losse details, ` \| `-gescheiden (afwijkend-toelichting, depot/hub-toelichting, partnernaam, product mee terug, intern_reden) |
 | T | extra_dienst | extra dienst nodig? (Ja / leeg) |
-| U | categorie | uitkomstcategorie |
+| U | categorie | **oplossing categorie** — hoe het afliep (zie `berekenCategorie()`) |
 | V | tijdBlok | uurblok, bijv. `"08:00 - 08:59"` (server-side berekend) |
 | W | weeknummer | ISO-weeknummer van de logdatum, integer (server-side via `isoWeekNumber()`) |
 | X | laatste5Weken | live `=AND(...)`-formule: `TRUE`/`FALSE` of logdatum binnen de laatste 5 voltooide weken valt; logdatum als `DATE(y,m,d)` ingebed, `TODAY()` blijft live (herberekent dagelijks) |
+| Y | locatie | waar het speelde: `Onderweg` / `Bij de klant` / `Depot / hub` / `Stop aanpassen` / `Buiten DS` / leeg |
+| Z | ingang | reden van het belletje bij KS/Winkel/Teamleider (`ks_reden` / `tl_reden` via `INGANG_MAP`), anders leeg |
+| AA | probleemCategorie | **probleem categorie** — de groep van kolom J (zie `PROBLEEM_CATEGORIEEN`) |
+
+**Twee categoriekolommen, twee vragen.** Kolom U (`Oplossing categorie`) zegt *hoe het afliep*, kolom AA (`Probleem categorie`) zegt *waar het over ging*. Ze zijn onafhankelijk: een `Taak bij de klant` kan `Same day gepland` of `Geen oplossing` worden.
+
+### Kolom J — gesloten vocabulaire (v1.32.0, gegroepeerd v1.33.0)
+
+Kolom J beantwoordt uitsluitend de vraag **wat moest er gebeuren**. De andere dimensies staan elders: wie belde in P, waar het speelde in Y, de ingang van het belletje in Z, de afloop in O + U, de probleemgroep in AA, vrije tekst in S. `bouwLogParams()` plakt die dimensies dus nooit meer aan elkaar.
+
+`PROBLEEM_CATEGORIEEN` (44 waarden in zeven groepen, identiek in productie en staging) is de bron. `PROBLEEM_VOCAB` (platte lijst) en `PROBLEEM_CAT_VAN` (waarde → groep) worden eruit afgeleid — één plek onderhouden dus.
+
+| Groep = kolom AA | Waarden = kolom J |
+|---|---|
+| Taak bij de klant | Plaatsen / Naar boven tillen · Aansluiting controleren · Trekschakelaar aansluiten · Apparaat inbouwen (Keuken) · Deur omdraaien · Stapelkit plaatsen · TV installeren · TV ophangen en installeren · TV + Soundbar installeren · TV + Soundbar ophangen en installeren · Milieuretour ophalen · Pick-up ophalen · Spullen achtergelaten bij klant · Blijverkoop vergeten |
+| Probleem bij de klant | Schade / Defect · Service niet uitvoerbaar · Product past niet op gewenste plek · Product niet aanwezig · Verkeerd gelabeld product · Onverwacht retour · Milieuretour past niet in bus · Nazorg niet gelukt / swap aanvragen |
+| Onderweg | Adres niet gevonden / niet bereikbaar · Adres klopt niet · Klant niet bereikbaar / verkeerd nummer · Klant niet thuis · Vraag over service |
+| Pakket | Pakket niet meegenomen / niet ingeladen · Pakket verkeerd / beschadigd · Overige vraag over pakket |
+| Depot / hub | Depot/hub: ziekmelding · alarm of sleutelkastje · voertuig kapot of incident · waar is de vracht · overige vraag |
+| Planning / administratie | Stop / tijdslot aanpassen · Adres of telefoonnummer doorgeven aan held · Held terugsturen (taak niet gespecificeerd) |
+| Overig | Vraag / advies · Interne levering · Externe partner · Buiten DS: held regelt met TL · Buiten DS: klant doorverwezen naar KS · Buiten DS: overig |
+
+**Bij het toevoegen van een nieuwe taak of klacht aan de flow: zet 'm ook in `PROBLEEM_CATEGORIEEN`, in de juiste groep** (beide bestanden). Twee vangnetten maken het zichtbaar als dat vergeten wordt: `taakNaarVocab()` geeft onbekende waarden ongewijzigd door (er verschijnt een niet-vocabulaire waarde in kolom J) en `probleemCategorie()` geeft dan een lege kolom AA.
+
+Helperfuncties in `bouwLogParams()`-blok: `taakNaarVocab()` (callData.probleem → J), `depotVraagNaarVocab()` (`cbf_depot_reden` + `cbb_hub_reden` → één gedeelde depot/hub-familie), `ingangNaarVocab()` (`INGANG_MAP`, → kolom Z), `probleemCategorie()` (J → kolom AA).
+
+`mapping-kolom-J.tsv` in de repo mapt de 161 historische J-waarden naar de nieuwe 44 plus hun probleemcategorie — kolom A oud label, B genormaliseerd, C probleemcategorie, D aantal rijen. Bedoeld voor twee VERT.ZOEKEN-hulpkolommen in de sheet (index 2 en 3).
 
 ---
 

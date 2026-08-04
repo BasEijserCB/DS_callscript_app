@@ -49,10 +49,13 @@ function doGet(e) {
       p.aankomsttijd,               // Kolom R: Aankomsttijd
       p.extra_info,                 // Kolom S: Extra info (toelichting afwijkend)
       p.extra_dienst,               // Kolom T: Extra dienst nodig? (Ja / leeg)
-      p.categorie,                  // Kolom U: Categorie (Same day gepland / Next day gepland / Onderweg opgelost / Advies gegeven / Geen oplossing / Buiten DS scope)
+      p.categorie,                  // Kolom U: Oplossing categorie (Same day gepland / Next day gepland / Onderweg opgelost / Advies gegeven / Geen oplossing / Buiten DS scope)
       tijdBlok,                     // Kolom V: Tijdblok (bijv. "08:00 - 08:59")
       weeknummer,                   // Kolom W: ISO-weeknummer (bijv. 26)
-      laatste5Weken                 // Kolom X: TRUE/FALSE — datum binnen laatste 5 voltooide weken (live formule)
+      laatste5Weken,                // Kolom X: TRUE/FALSE — datum binnen laatste 5 voltooide weken (live formule)
+      p.locatie || "",              // Kolom Y: Locatie/context (Onderweg / Bij de klant / Depot / hub / Stop aanpassen / Buiten DS)
+      p.ingang  || "",              // Kolom Z: Ingang van het belletje (ks_reden / tl_reden, bijv. "Nazorg nodig", "Held terugsturen")
+      p.probleemCategorie || ""     // Kolom AA: Probleem categorie — de groep van kolom J (Taak bij de klant / Probleem bij de klant / Onderweg / Pakket / Depot / hub / Planning / administratie / Overig)
     ]);
 
     return ContentService
