@@ -229,7 +229,9 @@ Kolom J beantwoordt uitsluitend de vraag **wat moest er gebeuren**. De andere di
 
 Helperfuncties in `bouwLogParams()`-blok: `taakNaarVocab()` (callData.probleem → J), `depotVraagNaarVocab()` (`cbf_depot_reden` + `cbb_hub_reden` → één gedeelde depot/hub-familie), `ingangNaarVocab()` (`INGANG_MAP`, → kolom Z), `probleemCategorie()` (J → kolom AA).
 
-`mapping-kolom-J.tsv` in de repo mapt de 161 historische J-waarden naar de nieuwe 44 plus hun probleemcategorie — kolom A oud label, B genormaliseerd, C probleemcategorie, D aantal rijen. Bedoeld voor twee VERT.ZOEKEN-hulpkolommen in de sheet (index 2 en 3).
+**De sheet is eenmalig gemigreerd (2026-08-04).** De 3.429 historische rijen zijn via een tijdelijk mapping- en analysetabblad omgezet en daarna als platte waarden over kolom J en AA heen geplakt; beide hulptabbladen zijn verwijderd. In het tabblad Database staan dus geen formules — dat moet zo blijven, want Sheets telt een cel met een formule (ook als die `""` teruggeeft) als gevuld, en `appendRow` schrijft na de laatste gevulde rij. Zet analyse-formules altijd in een apart tabblad.
+
+`mapping-kolom-J.tsv` blijft in de repo als naslag: kolom A oud label, B genormaliseerd, C probleemcategorie, D aantal rijen in de export. De onderste 20 regels zijn identiteitsregels (telling 0) voor vocabulaire-waarden die niet als historisch label voorkwamen. Nodig als er ooit een oude backup teruggezet wordt of pre-v1.32.0 data geïmporteerd moet worden.
 
 ---
 
