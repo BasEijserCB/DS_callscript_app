@@ -187,6 +187,7 @@ De keten client → GAS → sheet slikte vroeger fouten aan beide kanten: `doGet
 - `LockService`-scriptlock rond de schrijfactie, zodat parallelle aanroepen niet dezelfde laatste rij bepalen.
 - Ontdubbeling op `id` via `CacheService` (6 uur). Nodig omdat de client niet-bevestigde regels opnieuw aanbiedt.
 - De respons bevat het rijnummer (`"Success: Database rij 3695"`), en `console.log`/`console.error` loggen elke uitkomst. De executielijst laat daarmee zelf zien of en waar er geschreven is.
+- Elke fout gaat óók naar een eigen foutenlogboek in `ScriptProperties` (laatste 25, nieuwste eerst). Uitlezen met `toonFouten()` vanuit de GAS-editor, legen met `wisFouten()`. Nodig omdat de Cloud-logboeken bij een **standaard GCP-project** grijs staan en niet te openen zijn — precies waardoor de oorzaak van het incident onvindbaar bleef. `ScriptProperties` staat los van de sheet en blijft dus werken als juist het schrijven kapot is.
 
 **Client** (`ds-logboek.js` + staging, module `DSLog`):
 

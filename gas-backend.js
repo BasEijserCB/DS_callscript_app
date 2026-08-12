@@ -11,6 +11,14 @@ var DEDUPE_TTL_SEC = 21600; // 6 uur
 var MAX_POGINGEN = 4;
 var EERSTE_WACHT_MS = 500;
 
+// Eigen foutenlogboek in ScriptProperties. Nodig omdat de Cloud-logboeken van
+// een standaard GCP-project niet te openen zijn — precies waardoor de oorzaak
+// van het incident van 10/11-08-2026 onvindbaar bleef. ScriptProperties staat
+// los van de sheet, dus dit blijft werken als juist het schrijven kapot is.
+// Uitlezen: draai toonFouten() vanuit de editor.
+var FOUT_LOG_KEY = "recente_fouten";
+var FOUT_LOG_MAX = 25;
+
 function doGet(e) {
   var lock = LockService.getScriptLock();
   var p = (e && e.parameter) || {};
@@ -99,7 +107,9 @@ function doGet(e) {
   } catch (error) {
     // Deze regel is het enige spoor dat een mislukte schrijfactie achterlaat in
     // Cloud Logging. De client krijgt de melding ook terug en toont hem.
-    console.error("FOUT bij loggen (id " + id + ", user " + (p.user || "?") + "): " + error);
+    var melding = "FOUT bij loggen (id " + id + ", user " + (p.user || "?") + "): " + error;
+    console.error(melding);
+    bewaarFout(melding);
     return tekst("Error: " + error);
   } finally {
     if (lock.hasLock()) lock.releaseLock();
@@ -136,6 +146,31 @@ function schrijfMetRetry(sheet, rij, datum, tijd) {
     }
   }
   throw new Error("Na " + MAX_POGINGEN + " pogingen niet kunnen schrijven. Laatste fout: " + laatsteFout);
+}
+
+// Nieuwste fout vooraan, lijst afgekapt op FOUT_LOG_MAX.
+function bewaarFout(bericht) {
+  try {
+    var props = PropertiesService.getScriptProperties();
+    var lijst = JSON.parse(props.getProperty(FOUT_LOG_KEY) || "[]");
+    lijst.unshift({ tijd: new Date().toISOString(), fout: String(bericht) });
+    props.setProperty(FOUT_LOG_KEY, JSON.stringify(lijst.slice(0, FOUT_LOG_MAX)));
+  } catch (e) {
+    console.error("Kon fout niet wegschrijven naar ScriptProperties: " + e);
+  }
+}
+
+// Draai dit vanuit de GAS-editor om te zien wat er misging.
+function toonFouten() {
+  var lijst = JSON.parse(PropertiesService.getScriptProperties().getProperty(FOUT_LOG_KEY) || "[]");
+  if (!lijst.length) { Logger.log("Geen fouten geregistreerd."); return; }
+  Logger.log(lijst.length + " recente fout(en), nieuwste eerst:");
+  lijst.forEach(function (f) { Logger.log("  " + f.tijd + "  " + f.fout); });
+}
+
+function wisFouten() {
+  PropertiesService.getScriptProperties().deleteProperty(FOUT_LOG_KEY);
+  Logger.log("Foutenlijst gewist.");
 }
 
 function tekst(s) {
