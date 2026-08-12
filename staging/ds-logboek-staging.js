@@ -6,10 +6,10 @@
 // React, ReactDOM, DS, and browser globals are accessible inside JSX.
 
 (function () {
-  const STAGING_VERSION = "0.13.0-staging";
+  const STAGING_VERSION = "0.14.0-staging";
   const ROOT_ID = "ds-logboek-staging-root";
   const STYLE_ID = "ds-logboek-staging-style";
-  const GAS_URL = "https://script.google.com/a/macros/coolblue.nl/s/AKfycbxb-OwLCFGlDQ48qz3KnGnmsgnVLWxuOjvEr7UG3M3z0WzO0kVsTKGd_8mZjtvHvPHnEg/exec";
+  const GAS_URL = "https://script.google.com/macros/s/AKfycbxb-OwLCFGlDQ48qz3KnGnmsgnVLWxuOjvEr7UG3M3z0WzO0kVsTKGd_8mZjtvHvPHnEg/exec";
 
   if (document.getElementById(ROOT_ID)) {
     document.getElementById(ROOT_ID).style.display = "block";
@@ -51,6 +51,13 @@
       schrijf(lees().filter(function(x) { return x.id !== id; }));
     }
 
+    // Google stuurt bij een mislukte content-redirect een complete HTML-pagina
+    // terug. Die hoort niet integraal in een toast.
+    function korteFout(txt) {
+      var t = String(txt || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+      return t.length > 160 ? t.slice(0, 160) + '…' : t;
+    }
+
     // Melding in het hoofddocument, niet in de widget-iframe: de widget is op het
     // moment van verzenden al opgeruimd.
     function toon(tekst, kleur, msAuto) {
@@ -69,24 +76,66 @@
       return t;
     }
 
-    // Alleen een leesbare respons die met 'Success' begint telt als bevestiging.
-    // Een netwerkfout of een onleesbare respons is expliciet géén bevestiging:
-    // dan weten we het niet, en dan houden we de regel vast.
+    // Verzenden via een <script>-tag (JSONP), niet via fetch. Apps Script serveert
+    // zijn output via een redirect naar googleusercontent.com, en die heeft de
+    // Google-sessiecookie nodig. Cross-origin fetch stuurt geen cookies mee en
+    // krijgt daar een 404 — de rij wordt dan wél geschreven, maar de bevestiging
+    // is onleesbaar. Een script-tag stuurt de cookie wel mee.
+    //
+    // Alleen een antwoord dat met 'Success' begint telt als bevestiging. Uitblijven
+    // van antwoord is expliciet géén bevestiging: dan weten we het niet, en dan
+    // houden we de regel vast.
+    var cbTeller = 0;
+
     function verzend(entry) {
-      return fetch(LOG_URL + entry.params, { keepalive: true, cache: 'no-store' })
-        .then(function(r) { return r.text(); })
-        .then(function(txt) {
-          if (txt && txt.indexOf('Success') === 0) {
+      return new Promise(function(resolve) {
+        var naam = '__dsLogCb' + (++cbTeller) + '_' + Math.random().toString(36).slice(2, 8);
+        var el = document.createElement('script');
+        var afgerond = false, timer;
+
+        function af(res) {
+          if (afgerond) return;
+          afgerond = true;
+          clearTimeout(timer);
+          try { delete window[naam]; } catch (e) { window[naam] = undefined; }
+          if (el.parentNode) el.parentNode.removeChild(el);
+          resolve(res);
+        }
+
+        window[naam] = function(antwoord) {
+          var txt = String(antwoord || '');
+          if (txt.indexOf('Success') === 0) {
             verwijder(entry.id);
-            return { ok: true, tekst: txt };
+            af({ ok: true, tekst: txt });
+          } else {
+            af({ ok: false, tekst: txt || '(leeg antwoord)' });
           }
-          return { ok: false, tekst: txt || '(lege respons)' };
-        })
-        .catch(function(err) { return { ok: false, tekst: 'Verzending mislukt: ' + err }; });
+        };
+
+        timer = setTimeout(function() { af({ ok: false, tekst: 'Geen antwoord binnen 30 seconden' }); }, 30000);
+        el.onerror = function() { af({ ok: false, tekst: 'Verbinding met het logboek mislukt' }); };
+        el.src = LOG_URL + entry.params + '&callback=' + naam;
+        document.head.appendChild(el);
+      });
     }
 
     function nieuweId() {
       return 'l' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+    }
+
+    // Eén melding per pagina-sessie: bij herhaalde mislukkingen loopt de teller op
+    // in de bestaande toast. Tien losse rode blokken leest niemand meer.
+    var foutToast = null, foutAantal = 0;
+
+    function meldFout(reden) {
+      foutAantal++;
+      var regel = foutAantal === 1
+        ? '⚠ Geen bevestiging uit het logboek ontvangen. De regel is lokaal bewaard en wordt ' +
+          'opnieuw aangeboden zodra je de widget opent; dubbele rijen zijn uitgesloten. — ' + korteFout(reden)
+        : '⚠ ' + foutAantal + ' logregels zonder bevestiging. Ze zijn lokaal bewaard en worden ' +
+          'opnieuw aangeboden; dubbele rijen zijn uitgesloten. — ' + korteFout(reden);
+      if (foutToast && foutToast.isConnected) foutToast.lastChild.nodeValue = regel;
+      else foutToast = toon(regel, '#c0392b');
     }
 
     // bouwParams krijgt de log-id mee zodat de backend kan ontdubbelen.
@@ -100,10 +149,8 @@
           console.log('[DS Logboek] ' + res.tekst);
           return;
         }
-        console.error('[DS Logboek] loggen mislukt:', res.tekst);
-        toon('⚠ Deze logregel is NIET opgeslagen in het logboek. Hij staat lokaal bewaard ' +
-             'en wordt automatisch opnieuw verstuurd zodra je de widget opent. ' +
-             'Blijft dit gebeuren, meld het dan. — ' + res.tekst, '#c0392b');
+        console.error('[DS Logboek] geen bevestiging:', res.tekst);
+        meldFout(res.tekst);
       });
     }
 

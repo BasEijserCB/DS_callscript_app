@@ -23,6 +23,10 @@ function doGet(e) {
   var lock = LockService.getScriptLock();
   var p = (e && e.parameter) || {};
   var id = p.id || "";
+  // JSONP: cross-origin fetch krijgt de output niet terug (de redirect naar
+  // googleusercontent.com heeft de sessiecookie nodig, en fetch stuurt die niet mee).
+  // Een <script>-tag doet dat wel, mits we JavaScript terugsturen in plaats van tekst.
+  var cb = String(p.callback || "").replace(/[^A-Za-z0-9_]/g, "");
 
   try {
     var ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -36,7 +40,7 @@ function doGet(e) {
     var cache = CacheService.getScriptCache();
     if (id && cache.get("log_" + id)) {
       console.log("Duplicaat genegeerd (id " + id + ")");
-      return tekst("Success: duplicaat genegeerd (id " + id + ")");
+      return tekst("Success: duplicaat genegeerd (id " + id + ")", cb);
     }
 
     // Serialiseer gelijktijdige aanroepen: twee parallelle appendRow-calls kunnen
@@ -102,7 +106,7 @@ function doGet(e) {
 
     if (id) cache.put("log_" + id, "1", DEDUPE_TTL_SEC);
     console.log("Gelogd: " + DOEL_TABBLAD + " rij " + rijNr + " — " + (p.user || "?") + " (id " + id + ")");
-    return tekst("Success: " + DOEL_TABBLAD + " rij " + rijNr);
+    return tekst("Success: " + DOEL_TABBLAD + " rij " + rijNr, cb);
 
   } catch (error) {
     // Deze regel is het enige spoor dat een mislukte schrijfactie achterlaat in
@@ -110,7 +114,7 @@ function doGet(e) {
     var melding = "FOUT bij loggen (id " + id + ", user " + (p.user || "?") + "): " + error;
     console.error(melding);
     bewaarFout(melding);
-    return tekst("Error: " + error);
+    return tekst("Error: " + error, cb);
   } finally {
     if (lock.hasLock()) lock.releaseLock();
   }
@@ -173,7 +177,14 @@ function wisFouten() {
   Logger.log("Foutenlijst gewist.");
 }
 
-function tekst(s) {
+// Zonder callback: platte tekst (handig om de URL in een tabblad te openen).
+// Met callback: JavaScript, zodat een <script>-tag het antwoord kan afleveren.
+function tekst(s, callback) {
+  if (callback) {
+    return ContentService
+      .createTextOutput(callback + "(" + JSON.stringify(String(s)) + ");")
+      .setMimeType(ContentService.MimeType.JAVASCRIPT);
+  }
   return ContentService.createTextOutput(s).setMimeType(ContentService.MimeType.TEXT);
 }
 
