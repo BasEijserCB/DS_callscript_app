@@ -35,17 +35,19 @@ function doGet(e) {
     var sheet = ss.getSheetByName(DOEL_TABBLAD);
     if (!sheet) throw new Error("Tabblad '" + DOEL_TABBLAD + "' niet gevonden — hernoemd of verwijderd?");
 
+    // Serialiseer gelijktijdige aanroepen: twee parallelle appendRow-calls kunnen
+    // anders dezelfde laatste rij bepalen en elkaar overschrijven.
+    if (!lock.tryLock(30000)) throw new Error("Geen scriptlock binnen 30s — te veel gelijktijdige aanroepen");
+
     // De client stuurt een regel opnieuw zolang die niet bevestigd is. Was deze
     // id al verwerkt, dan bevestigen we opnieuw zonder een tweede rij te schrijven.
+    // Deze check hoort BINNEN de lock: daarbuiten komen twee gelijktijdige
+    // aanroepen met dezelfde id er allebei langs en schrijven ze allebei een rij.
     var cache = CacheService.getScriptCache();
     if (id && cache.get("log_" + id)) {
       console.log("Duplicaat genegeerd (id " + id + ")");
       return tekst("Success: duplicaat genegeerd (id " + id + ")", cb);
     }
-
-    // Serialiseer gelijktijdige aanroepen: twee parallelle appendRow-calls kunnen
-    // anders dezelfde laatste rij bepalen en elkaar overschrijven.
-    if (!lock.tryLock(30000)) throw new Error("Geen scriptlock binnen 30s — te veel gelijktijdige aanroepen");
 
     var tz = Session.getScriptTimeZone();
     var timestamp = new Date();

@@ -179,7 +179,6 @@
       var wachtend = lees();
       if (!wachtend.length) return;
 
-      var bezig = toon('↻ ' + wachtend.length + ' niet-opgeslagen logregel(s) worden opnieuw verstuurd…', '#2c3e50');
       var klaar = 0, gelukt = 0;
 
       wachtend.forEach(function(entry) {
@@ -188,9 +187,12 @@
           if (res.ok) gelukt++; else console.error('[DS Logboek] herverzending mislukt:', res.tekst);
           if (klaar < wachtend.length) return;
 
-          bezig.remove();
+          // Stilte bij succes. Wie de pagina sluit vlak na het loggen krijgt geen
+          // bevestiging meer binnen; die regel wordt hier alsnog bevestigd en dat
+          // is geen nieuws. Alleen wat níét lukt verdient de aandacht — anders
+          // wordt de melding dagelijkse ruis en klikt niemand hem nog serieus weg.
           if (gelukt === wachtend.length) {
-            toon('✓ ' + gelukt + ' bewaarde logregel(s) alsnog opgeslagen.', '#1e8449', 9000);
+            console.log('[DS Logboek] ' + gelukt + ' bewaarde logregel(s) alsnog bevestigd.');
           } else {
             toon('⚠ ' + (wachtend.length - gelukt) + ' van ' + wachtend.length + ' logregels konden nog ' +
                  'steeds niet worden opgeslagen. Ze blijven bewaard en worden later opnieuw geprobeerd.', '#c0392b');
@@ -1401,7 +1403,7 @@
             '<span style="font-size:11px;color:'+(geenOrderMode?'#ff6600':'#aaa')+';">'+(geenOrderMode?'Gegevens gewist':'Geen order')+'</span>' +
           '</div>' : '') +
         '</div></div>' +
-        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.35.0' +
+        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.35.1' +
           (callData.user ? ' · <span style="color:#999;">'+callData.user+'</span> ' + (nameEditConfirm ? '<span style="color:#666;margin-left:4px;">Naam wissen?</span> <span id="btn-edit-name-yes" style="cursor:pointer;color:#c00;font-weight:600;margin-left:4px;">Ja</span> <span id="btn-edit-name-no" style="cursor:pointer;color:#666;margin-left:4px;">Nee</span>' : '<span id="btn-edit-name" title="Naam wijzigen" style="cursor:pointer;opacity:0.45;margin-left:1px;">✎</span>') : '') +
         '</div>' +
       '</div>';
