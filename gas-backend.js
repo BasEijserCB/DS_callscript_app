@@ -1,7 +1,39 @@
+// Naam van het doel-tabblad. Niet getActiveSheet() gebruiken: dat hangt af van
+// UI-state en niet van wat dit script hoort te doen. (Niet de oorzaak van het
+// incident van 10/11-08-2026 — die is nooit gevonden; zie CLAUDE.md.)
+var DOEL_TABBLAD = "Database";
+
+// Hoe lang een verwerkte log-id onthouden wordt. De client biedt niet-bevestigde
+// regels opnieuw aan; zonder deze check zou dat dubbele rijen opleveren.
+var DEDUPE_TTL_SEC = 21600; // 6 uur
+
+// Aantal schrijfpogingen en de wachttijd waarmee die oploopt.
+var MAX_POGINGEN = 4;
+var EERSTE_WACHT_MS = 500;
+
 function doGet(e) {
+  var lock = LockService.getScriptLock();
+  var p = (e && e.parameter) || {};
+  var id = p.id || "";
+
   try {
-    var p = e.parameter;
-    var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    if (!ss) throw new Error("getActiveSpreadsheet() gaf null — script niet aan een sheet gekoppeld?");
+
+    var sheet = ss.getSheetByName(DOEL_TABBLAD);
+    if (!sheet) throw new Error("Tabblad '" + DOEL_TABBLAD + "' niet gevonden — hernoemd of verwijderd?");
+
+    // De client stuurt een regel opnieuw zolang die niet bevestigd is. Was deze
+    // id al verwerkt, dan bevestigen we opnieuw zonder een tweede rij te schrijven.
+    var cache = CacheService.getScriptCache();
+    if (id && cache.get("log_" + id)) {
+      console.log("Duplicaat genegeerd (id " + id + ")");
+      return tekst("Success: duplicaat genegeerd (id " + id + ")");
+    }
+
+    // Serialiseer gelijktijdige aanroepen: twee parallelle appendRow-calls kunnen
+    // anders dezelfde laatste rij bepalen en elkaar overschrijven.
+    if (!lock.tryLock(30000)) throw new Error("Geen scriptlock binnen 30s — te veel gelijktijdige aanroepen");
 
     var tz = Session.getScriptTimeZone();
     var timestamp = new Date();
@@ -28,13 +60,13 @@ function doGet(e) {
     var laatste5Weken = "=AND(" + dateExpr + ">=TODAY()-WEEKDAY(TODAY();2)-34;" +
                                   dateExpr + "<=TODAY()-WEEKDAY(TODAY();2))";
 
-    sheet.appendRow([
+    var rij = [
       datum,                        // Kolom A: Datum
       tijd,                         // Kolom B: Tijd
       p.user,                       // Kolom C: DS Medewerker
       p.route,                      // Kolom D: Route (Bezorger)
       p.depot,                      // Kolom E: Depot
-      p.driver1,                    // Kolom F: Chauffeur 1 
+      p.driver1,                    // Kolom F: Chauffeur 1
       p.driver2,                    // Kolom G: Bijrijder
       p.orderBron,                  // Kolom H: Ordernummer (Bron)
       p.product,                    // Kolom I: Product / Formaat
@@ -49,25 +81,65 @@ function doGet(e) {
       p.aankomsttijd,               // Kolom R: Aankomsttijd
       p.extra_info,                 // Kolom S: Extra info (toelichting afwijkend)
       p.extra_dienst,               // Kolom T: Extra dienst nodig? (Ja / leeg)
-      p.categorie,                  // Kolom U: Oplossing categorie (Same day gepland / Next day gepland / Onderweg opgelost / Advies gegeven / Geen oplossing / Buiten DS scope)
+      p.categorie,                  // Kolom U: Oplossing categorie
       tijdBlok,                     // Kolom V: Tijdblok (bijv. "08:00 - 08:59")
       weeknummer,                   // Kolom W: ISO-weeknummer (bijv. 26)
-      laatste5Weken,                // Kolom X: TRUE/FALSE — datum binnen laatste 5 voltooide weken (live formule)
-      p.locatie || "",              // Kolom Y: Locatie/context (Onderweg / Bij de klant / Depot / hub / Stop aanpassen / Buiten DS)
-      p.ingang  || "",              // Kolom Z: Ingang van het belletje (ks_reden / tl_reden, bijv. "Nazorg nodig", "Held terugsturen")
-      p.probleemCategorie || ""     // Kolom AA: Probleem categorie — de groep van kolom J (Nazorg nodig / Probleem bij de klant / Onderweg / Pakket / Depot / hub / Planning / administratie / Overig)
-    ]);
+      laatste5Weken,                // Kolom X: TRUE/FALSE — binnen laatste 5 voltooide weken
+      p.locatie || "",              // Kolom Y: Locatie/context
+      p.ingang  || "",              // Kolom Z: Ingang van het belletje
+      p.probleemCategorie || ""     // Kolom AA: Probleem categorie (groep van kolom J)
+    ];
 
-    return ContentService
-      .createTextOutput("Success")
-      .setMimeType(ContentService.MimeType.TEXT);
+    var rijNr = schrijfMetRetry(sheet, rij, datum, tijd);
+
+    if (id) cache.put("log_" + id, "1", DEDUPE_TTL_SEC);
+    console.log("Gelogd: " + DOEL_TABBLAD + " rij " + rijNr + " — " + (p.user || "?") + " (id " + id + ")");
+    return tekst("Success: " + DOEL_TABBLAD + " rij " + rijNr);
 
   } catch (error) {
-    console.error("Fout bij loggen: " + error.toString());
-    return ContentService
-      .createTextOutput("Error: " + error.toString())
-      .setMimeType(ContentService.MimeType.TEXT);
+    // Deze regel is het enige spoor dat een mislukte schrijfactie achterlaat in
+    // Cloud Logging. De client krijgt de melding ook terug en toont hem.
+    console.error("FOUT bij loggen (id " + id + ", user " + (p.user || "?") + "): " + error);
+    return tekst("Error: " + error);
+  } finally {
+    if (lock.hasLock()) lock.releaseLock();
   }
+}
+
+// Schrijft de rij en controleert daarna dat hij er echt staat. Een appendRow die
+// "slaagt" zonder rij op te leveren — het patroon van augustus 2026 — wordt hier
+// alsnog als fout herkend in plaats van als succes gerapporteerd.
+function schrijfMetRetry(sheet, rij, datum, tijd) {
+  var wacht = EERSTE_WACHT_MS;
+  var laatsteFout;
+
+  for (var poging = 1; poging <= MAX_POGINGEN; poging++) {
+    try {
+      sheet.appendRow(rij);
+      SpreadsheetApp.flush();
+
+      var rijNr = sheet.getLastRow();
+      var terug = sheet.getRange(rijNr, 1, 1, 2).getDisplayValues()[0];
+      if (terug[0] !== datum || terug[1] !== tijd) {
+        throw new Error("Verificatie mislukt: rij " + rijNr + " bevat '" +
+                        terug[0] + " " + terug[1] + "' in plaats van '" + datum + " " + tijd + "'");
+      }
+      return rijNr;
+
+    } catch (err) {
+      laatsteFout = err;
+      console.warn("Schrijfpoging " + poging + "/" + MAX_POGINGEN + " mislukt: " + err);
+      if (poging < MAX_POGINGEN) {
+        Utilities.sleep(wacht);
+        wacht *= 2;
+      }
+    }
+  }
+  throw new Error("Na " + MAX_POGINGEN + " pogingen niet kunnen schrijven. Laatste fout: " + laatsteFout);
+}
+
+function tekst(s) {
+  return ContentService.createTextOutput(s).setMimeType(ContentService.MimeType.TEXT);
 }
 
 // ISO 8601 weeknummer: week start maandag, week 1 bevat de eerste donderdag van het jaar.

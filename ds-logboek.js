@@ -38,6 +38,122 @@
     return '';
   }
 
+
+  // ── LOGGING MET ONTVANGSTBEVESTIGING ─────────────────────────
+  // Aanleiding: 10/11-08-2026 verdwenen ~50 logregels zonder dat iemand het
+  // merkte. De backend gaf HTTP 200 terug bij een mislukte schrijfactie en de
+  // client deed er .catch(function(){}) overheen. Beide kanten zwegen.
+  //
+  // Nu geldt: een regel wordt eerst lokaal vastgelegd en pas uit de buffer
+  // verwijderd als de backend bevestigt dat de rij geschreven én teruggelezen is.
+  // Zonder die bevestiging blijft hij staan, ziet de medewerker een rode melding,
+  // en wordt hij bij de volgende widget-start opnieuw aangeboden. De backend
+  // ontdubbelt op log-id, dus opnieuw aanbieden levert geen tweede rij op.
+  var LOG_URL = 'https://script.google.com/a/macros/coolblue.nl/s/AKfycbxb-OwLCFGlDQ48qz3KnGnmsgnVLWxuOjvEr7UG3M3z0WzO0kVsTKGd_8mZjtvHvPHnEg/exec';
+  var LOG_BUFFER_KEY = 'ds_log_buffer';
+
+  var DSLog = (function() {
+
+    function lees() {
+      try {
+        var l = JSON.parse(localStorage.getItem(LOG_BUFFER_KEY) || '[]');
+        return Object.prototype.toString.call(l) === '[object Array]' ? l : [];
+      } catch (e) { return []; }
+    }
+
+    function schrijf(lijst) {
+      try { localStorage.setItem(LOG_BUFFER_KEY, JSON.stringify(lijst)); } catch (e) {}
+    }
+
+    function bewaar(entry) { var l = lees(); l.push(entry); schrijf(l); }
+
+    function verwijder(id) {
+      schrijf(lees().filter(function(x) { return x.id !== id; }));
+    }
+
+    // Melding in het hoofddocument, niet in de widget-iframe: de widget is op het
+    // moment van verzenden al opgeruimd.
+    function toon(tekst, kleur, msAuto) {
+      var t = document.createElement('div');
+      t.style.cssText = 'position:fixed;bottom:20px;right:20px;z-index:2147483647;max-width:380px;' +
+        'background:' + kleur + ';color:#fff;font:13px/1.5 "Segoe UI",Arial,sans-serif;' +
+        'padding:12px 14px;border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,0.28);';
+      var sluit = document.createElement('span');
+      sluit.textContent = '✕';
+      sluit.style.cssText = 'cursor:pointer;float:right;font-weight:700;margin-left:12px;opacity:0.85;';
+      sluit.onclick = function() { t.remove(); };
+      t.appendChild(sluit);
+      t.appendChild(document.createTextNode(tekst));
+      document.body.appendChild(t);
+      if (msAuto) setTimeout(function() { t.remove(); }, msAuto);
+      return t;
+    }
+
+    // Alleen een leesbare respons die met 'Success' begint telt als bevestiging.
+    // Een netwerkfout of een onleesbare respons is expliciet géén bevestiging:
+    // dan weten we het niet, en dan houden we de regel vast.
+    function verzend(entry) {
+      return fetch(LOG_URL + entry.params, { keepalive: true, cache: 'no-store' })
+        .then(function(r) { return r.text(); })
+        .then(function(txt) {
+          if (txt && txt.indexOf('Success') === 0) {
+            verwijder(entry.id);
+            return { ok: true, tekst: txt };
+          }
+          return { ok: false, tekst: txt || '(lege respons)' };
+        })
+        .catch(function(err) { return { ok: false, tekst: 'Verzending mislukt: ' + err }; });
+    }
+
+    function nieuweId() {
+      return 'l' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+    }
+
+    // bouwParams krijgt de log-id mee zodat de backend kan ontdubbelen.
+    function log(bouwParams, omschrijving) {
+      var entry = { id: nieuweId(), tijd: Date.now(), omschrijving: omschrijving || '' };
+      entry.params = bouwParams(entry.id);
+      bewaar(entry);
+
+      verzend(entry).then(function(res) {
+        if (res.ok) {
+          console.log('[DS Logboek] ' + res.tekst);
+          return;
+        }
+        console.error('[DS Logboek] loggen mislukt:', res.tekst);
+        toon('⚠ Deze logregel is NIET opgeslagen in het logboek. Hij staat lokaal bewaard ' +
+             'en wordt automatisch opnieuw verstuurd zodra je de widget opent. ' +
+             'Blijft dit gebeuren, meld het dan. — ' + res.tekst, '#c0392b');
+      });
+    }
+
+    // Bij elke widget-start: alles wat nog niet bevestigd is opnieuw aanbieden.
+    function verwerkBuffer() {
+      var wachtend = lees();
+      if (!wachtend.length) return;
+
+      var bezig = toon('↻ ' + wachtend.length + ' niet-opgeslagen logregel(s) worden opnieuw verstuurd…', '#2c3e50');
+      var klaar = 0, gelukt = 0;
+
+      wachtend.forEach(function(entry) {
+        verzend(entry).then(function(res) {
+          klaar++;
+          if (res.ok) gelukt++; else console.error('[DS Logboek] herverzending mislukt:', res.tekst);
+          if (klaar < wachtend.length) return;
+
+          bezig.remove();
+          if (gelukt === wachtend.length) {
+            toon('✓ ' + gelukt + ' bewaarde logregel(s) alsnog opgeslagen.', '#1e8449', 9000);
+          } else {
+            toon('⚠ ' + (wachtend.length - gelukt) + ' van ' + wachtend.length + ' logregels konden nog ' +
+                 'steeds niet worden opgeslagen. Ze blijven bewaard en worden later opnieuw geprobeerd.', '#c0392b');
+          }
+        });
+      });
+    }
+
+    return { log: log, verwerkBuffer: verwerkBuffer, aantalWachtend: function() { return lees().length; } };
+  })();
   // ── SCRAPEN ──────────────────────────────────────────────────
   // Het ordernummer is het anker: als dat er is, is de DOM klaar.
   // We pollen max 3 seconden voordat we verdergaan (ook als het leeg blijft).
@@ -1238,7 +1354,7 @@
             '<span style="font-size:11px;color:'+(geenOrderMode?'#ff6600':'#aaa')+';">'+(geenOrderMode?'Gegevens gewist':'Geen order')+'</span>' +
           '</div>' : '') +
         '</div></div>' +
-        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.33.1' +
+        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.34.0' +
           (callData.user ? ' · <span style="color:#999;">'+callData.user+'</span> ' + (nameEditConfirm ? '<span style="color:#666;margin-left:4px;">Naam wissen?</span> <span id="btn-edit-name-yes" style="cursor:pointer;color:#c00;font-weight:600;margin-left:4px;">Ja</span> <span id="btn-edit-name-no" style="cursor:pointer;color:#666;margin-left:4px;">Nee</span>' : '<span id="btn-edit-name" title="Naam wijzigen" style="cursor:pointer;opacity:0.45;margin-left:1px;">✎</span>') : '') +
         '</div>' +
       '</div>';
@@ -2223,7 +2339,7 @@
   };
   function ingangNaarVocab(r) { return INGANG_MAP[r] || r || ''; }
 
-  function bouwLogParams() {
+  function bouwLogParams(logId) {
     callData.dsWaarde = berekenDsWaarde();
     var probLog, redenGeenOplossing, redenNextDay, routeLog, orderOplLog;
     var logDriver1 = callData.driver1, logDriver2 = callData.driver2, logOrderBron = callData.orderBron;
@@ -2322,7 +2438,7 @@
     var extraInfo = extraDetails.filter(function(d){ return d; }).join(' | ');
     var extraDienst = (callData.locatie==='Klantenservice'||callData.locatie==='Winkel') && callData.ks_reden==='Nazorg nodig' ? 'Ja' : '';
     var categorie = berekenCategorie();
-    return '?id='+Date.now()+'&user='+encodeURIComponent(callData.user)+'&route='+encodeURIComponent(callData.route)+'&depot='+encodeURIComponent(callData.depot)+'&driver1='+encodeURIComponent(logDriver1)+'&driver2='+encodeURIComponent(logDriver2)+'&orderBron='+encodeURIComponent(logOrderBron)+'&product='+encodeURIComponent(prodLog)+'&probleem='+encodeURIComponent(probLog)+'&redenGeenOplossing='+encodeURIComponent(redenGeenOplossing)+'&redenNextDay='+encodeURIComponent(redenNextDay)+'&orderOplossing='+encodeURIComponent(orderOplLog)+'&geplandeRoute='+encodeURIComponent(routeLog)+'&dsWaarde='+encodeURIComponent(callData.dsWaarde)+'&bellerType='+encodeURIComponent(bellerLog)+'&tijdvak='+encodeURIComponent(callData.tijdvak)+'&aankomsttijd='+encodeURIComponent(callData.aankomsttijd)+'&extra_info='+encodeURIComponent(extraInfo)+'&extra_dienst='+encodeURIComponent(extraDienst)+'&categorie='+encodeURIComponent(categorie)+'&locatie='+encodeURIComponent(logLocatie)+'&ingang='+encodeURIComponent(logIngang)+'&probleemCategorie='+encodeURIComponent(probleemCategorie(probLog));
+    return '?id='+encodeURIComponent(logId||Date.now())+'&user='+encodeURIComponent(callData.user)+'&route='+encodeURIComponent(callData.route)+'&depot='+encodeURIComponent(callData.depot)+'&driver1='+encodeURIComponent(logDriver1)+'&driver2='+encodeURIComponent(logDriver2)+'&orderBron='+encodeURIComponent(logOrderBron)+'&product='+encodeURIComponent(prodLog)+'&probleem='+encodeURIComponent(probLog)+'&redenGeenOplossing='+encodeURIComponent(redenGeenOplossing)+'&redenNextDay='+encodeURIComponent(redenNextDay)+'&orderOplossing='+encodeURIComponent(orderOplLog)+'&geplandeRoute='+encodeURIComponent(routeLog)+'&dsWaarde='+encodeURIComponent(callData.dsWaarde)+'&bellerType='+encodeURIComponent(bellerLog)+'&tijdvak='+encodeURIComponent(callData.tijdvak)+'&aankomsttijd='+encodeURIComponent(callData.aankomsttijd)+'&extra_info='+encodeURIComponent(extraInfo)+'&extra_dienst='+encodeURIComponent(extraDienst)+'&categorie='+encodeURIComponent(categorie)+'&locatie='+encodeURIComponent(logLocatie)+'&ingang='+encodeURIComponent(logIngang)+'&probleemCategorie='+encodeURIComponent(probleemCategorie(probLog));
   }
 
   // ── KLEMBORD ALLEEN ─────────────────────────────────────────
@@ -2396,15 +2512,15 @@
   function verstuurEnKopieer() {
     kopieerNaarKlembord();
     verwijderGeparkeerd();
+    DSLog.log(bouwLogParams, callData.orderBron || 'geen order');
     wrapper.remove();
-    fetch('https://script.google.com/a/macros/coolblue.nl/s/AKfycbxb-OwLCFGlDQ48qz3KnGnmsgnVLWxuOjvEr7UG3M3z0WzO0kVsTKGd_8mZjtvHvPHnEg/exec'+bouwLogParams()).catch(function(){});
   }
 
   // ── VERSTUUR: ALLEEN LOGGEN ───────────────────────────────────
   function verstuurAlleen() {
     verwijderGeparkeerd();
+    DSLog.log(bouwLogParams, callData.orderBron || 'geen order');
     wrapper.remove();
-    fetch('https://script.google.com/a/macros/coolblue.nl/s/AKfycbxb-OwLCFGlDQ48qz3KnGnmsgnVLWxuOjvEr7UG3M3z0WzO0kVsTKGd_8mZjtvHvPHnEg/exec'+bouwLogParams()).catch(function(){});
   }
 
   renderApp();
@@ -2438,6 +2554,7 @@
     pollCount++;
     if (orderReady || pollCount >= 30) {
       clearInterval(pollInterval);
+      DSLog.verwerkBuffer();
       doScrapeAndInit();
     }
   }, 100);

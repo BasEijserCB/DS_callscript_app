@@ -24,7 +24,7 @@ Uitzondering op de functionele regel: als uitdrukkelijk gevraagd wordt om een wi
 | `paste-loader-bookmarklet.js` | Leesbare broncode van de paste bookmarklet loader. Haalt `paste-bookmarklet.js` op, cached in localStorage (`ds_paste_prod_cache`), stale-while-revalidate. Toont oranje toast als nieuwe versie gedownload is. |
 | `install.html` | Installatiepagina. Bevat **beide** bookmarklets als sleepbare knoppen. |
 | `build.py` | Syntax-checkt `ds-logboek.js` en `paste-bookmarklet.js`, detecteert versienummer uit `ds-logboek.js` en synchroniseert `PASTE_VERSION` in `paste-bookmarklet.js`. |
-| `gas-backend.js` | Broncode van het Google Apps Script backend (`doGet`). Schrijft elke log-entry als rij naar de actieve Google Sheet. Moet handmatig gekopieerd worden naar de GAS editor bij wijzigingen. |
+| `gas-backend.js` | Broncode van het Google Apps Script backend (`doGet`). Schrijft elke log-entry als rij naar het tabblad `DOEL_TABBLAD` (`Database`), met retry, terugleescontrole en ontdubbeling op log-id. Moet handmatig gekopieerd worden naar de GAS editor bij wijzigingen — een commit hier verandert niets in productie. |
 | `staging/ds-logboek-staging.js` | Staging build van de widget: zelfde data-laag (scraping, flow engine, logging, clipboard) als `ds-logboek.js`, maar met een volledig nieuwe React+Babel UI (side-panel design). Bevat `STAGING_VERSION` constante (`vX.X.X-staging`). |
 | `staging/loader-staging-bookmarklet.js` | Loader bookmarklet voor de staging widget. Haalt `ds-logboek-staging.js` op via raw GitHub URL, cached in localStorage (`ds_app_staging_cache`), stale-while-revalidate. Toont eigen toast bij update. |
 | `staging/install-staging.html` | Installatiepagina voor de staging bookmarklet. |
@@ -53,6 +53,7 @@ Nieuwste bovenaan. Alleen `ds-logboek.js` versies (productie).
 
 | Versie | Wijziging |
 |---|---|
+| v1.34.0 | Add: **logging met ontvangstbevestiging**. Elke logregel wordt eerst in `localStorage` (`ds_log_buffer`) vastgelegd en pas verwijderd als de backend bevestigt dat de rij geschreven én teruggelezen is. Zonder bevestiging blijft de regel staan, krijgt de medewerker een rode melding, en wordt hij bij de volgende widget-start opnieuw aangeboden (`DSLog.verwerkBuffer()`). De backend ontdubbelt op log-id via `CacheService` (6 uur), dus herverzending geeft geen dubbele rijen. Vervangt `fetch(...).catch(function(){})` — de constructie die het verlies van aug. 2026 onzichtbaar hield. Ook in staging (v0.13.0-staging). |
 | v1.33.1 | Rename: probleemcategorie (kolom AA) `'Taak bij de klant'` → `'Nazorg nodig'`. Alleen de groepsnaam in `PROBLEEM_CATEGORIEEN`; de 14 waarden in de groep en alle kolom J-waarden zijn ongewijzigd. Let op: `'Nazorg nodig'` komt daarmee ook voor in kolom Z (ingang, via `INGANG_MAP`) — zelfde term, andere betekenis: AA = wat voor werk het was, Z = hoe het belletje binnenkwam. Ook in staging (v0.12.1-staging) en in `mapping-kolom-J.tsv` (52 regels). |
 | v1.33.0 | Add: **kolom AA `probleemCategorie`** — de groep waartoe de kolom J-waarde behoort (`Taak bij de klant` / `Probleem bij de klant` / `Onderweg` / `Pakket` / `Depot / hub` / `Planning / administratie` / `Overig`). `PROBLEEM_VOCAB` is vervangen door `PROBLEEM_CATEGORIEEN` (groep → waarden); de platte lijst en de opzoektabel `PROBLEEM_CAT_VAN` worden daaruit afgeleid, zodat waarde en categorie niet uit elkaar kunnen lopen. Kolom U heet in de sheet voortaan **Oplossing categorie** (was: Categorie) — alleen een kopwijziging, de waarden en `berekenCategorie()` zijn ongewijzigd. Ook in staging (v0.12.0-staging). `mapping-kolom-J.tsv` heeft een kolom C met de probleemcategorie. |
 | v1.32.0 | Refactor (log-output, geen flow-wijziging): kolom J bevat voortaan uitsluitend **wat** er moest gebeuren, uit een gesloten vocabulaire van 44 waarden (`PROBLEEM_VOCAB`). Beller-/contextprefixen (`Onderweg:`, `KS:`, `Winkel:`), `ks_reden`-prefixen (`Nazorg nodig — `, `KS vraagt om held terug te sturen — `), uitkomst-suffixen en vrije tekst zijn uit J verwijderd. Twee nieuwe kolommen: **Y `locatie`** (Onderweg / Bij de klant / Depot / hub / Stop aanpassen / Buiten DS) en **Z `ingang`** (`ks_reden` / `tl_reden` genormaliseerd). Vrije tekst en losse details (depot/hub-toelichting, partnernaam, `product_mee_terug`, `intern_reden`) gaan nu naar kolom S, ` \| `-gescheiden. Milieuretour en Pick-up zijn twee aparte J-waarden; de vier TV-varianten blijven bestaan. Ook in staging (v0.11.0-staging). `mapping-kolom-J.tsv` mapt de 161 historische labels naar de nieuwe 44. |
@@ -174,6 +175,43 @@ ds-logboek.js  (scrapet DOM → gespreksflow → twee outputs)
 - `coolblue.dirextion.nl/Basic` — `.details-field` CSS klassen; producttype via `artikelsoort`-kolom in tabel (gebruikt `artikelsoortNaarProduct`), prefix-detectie als fallback
 
 **GAS backend** moet deployment staan op toegang "Iedereen" (niet "Iedereen binnen Coolblue") anders blokkeert CORS.
+
+### Logging-garantie (v1.34.0) — geen stille fouten meer
+
+De keten client → GAS → sheet slikte vroeger fouten aan beide kanten: `doGet` ving zijn eigen exceptions af en gaf HTTP 200 met `"Error: ..."` terug, en de client deed daar `fetch(...).catch(function(){})` overheen. Een mislukte schrijfactie was daardoor van een geslaagde niet te onderscheiden — niet in de sheet, niet in de executielijst, en niet voor de medewerker. Dat is wat het incident van 10/11-08-2026 twee dagen onzichtbaar hield.
+
+**Backend** (`gas-backend.js`):
+
+- `getSheetByName(DOEL_TABBLAD)` in plaats van `getActiveSheet()` — het doel-tabblad hoort niet van UI-state af te hangen. Hernoem je het tabblad, dan moet de constante mee; `doGet` gooit dan een fout in plaats van ergens anders te schrijven.
+- `schrijfMetRetry()` doet tot 4 pogingen met oplopende wachttijd (500 ms, verdubbelend), en **leest na elke poging de geschreven rij terug**: komen kolom A en B niet overeen met de datum en tijd die weggeschreven zijn, dan telt het als mislukt. Een `appendRow` die "slaagt" zonder rij op te leveren wordt zo alsnog als fout herkend.
+- `LockService`-scriptlock rond de schrijfactie, zodat parallelle aanroepen niet dezelfde laatste rij bepalen.
+- Ontdubbeling op `id` via `CacheService` (6 uur). Nodig omdat de client niet-bevestigde regels opnieuw aanbiedt.
+- De respons bevat het rijnummer (`"Success: Database rij 3695"`), en `console.log`/`console.error` loggen elke uitkomst. De executielijst laat daarmee zelf zien of en waar er geschreven is.
+
+**Client** (`ds-logboek.js` + staging, module `DSLog`):
+
+- Een logregel gaat **eerst** naar `localStorage['ds_log_buffer']`, daarna pas over de lijn. Crasht of sluit de pagina ertussenin, dan staat hij er nog.
+- Alleen een leesbare respons die met `Success` begint telt als bevestiging en verwijdert de regel uit de buffer. Een netwerkfout of onleesbare respons is expliciet géén bevestiging: dan weten we het niet, dus houden we hem vast.
+- Mislukt het, dan verschijnt een rode melding in het hoofddocument (niet in de widget-iframe — die is op dat moment al opgeruimd) die niet vanzelf verdwijnt.
+- `DSLog.verwerkBuffer()` draait bij elke widget-start en biedt alles wat nog openstaat opnieuw aan, met een melding over de afloop.
+- De buffer verloopt **niet** vanzelf. Regels automatisch weggooien zou precies de stille fout terugbrengen die dit moest oplossen.
+
+Productie en staging delen bewust dezelfde buffersleutel, zodat de widget die het eerst opent de openstaande regels opruimt.
+
+**Let op bij diagnose vanuit de GAS-editor:** `getActiveSheet()` geeft daar het tabblad dat de ontwikkelaar het laatst open had, niet wat een web-app-executie ziet (die heeft geen UI-sessie). Conclusies over `doGet`-gedrag zijn niet te trekken uit een editor-run.
+
+### Incident 10/11-08-2026 — oorzaak niet gevonden (gesloten)
+
+Tussen **10-08 13:58** (laatste geschreven rij) en **11-08 10:39** (eerste rij erna) is 21 uur lang geen enkele regel in de sheet beland, terwijl de web-app in die periode gewoon executies draaide — alle op "Voltooid". Grofweg 40 à 50 gesprekken zijn verloren. Wat onderzocht en uitgesloten is:
+
+- **Verkeerd tabblad.** Uitgesloten: versiegeschiedenis zit op bestandsniveau, en het bestand kreeg in dat venster geen enkele wijziging. Het verborgen tabblad `Data fietsbelletjes` bevat geen logregels; het rijverschil met de export van 04-08 was toeval.
+- **Weergaveprobleem (filter op kolom X).** Uitgesloten door de rijen langs de UI heen te tellen: 11-08 heeft 29 rijen, allemaal vanaf 10:39.
+- **Cellimiet, beveiligde reeksen, te weinig kolommen in het grid.** Alle drie uitgesloten. Doorslaggevend: een kopie van de versie van 10-08 14:15 — exact de kapotte toestand — accepteert een `appendRow` van 27 waarden zonder problemen (29 kolommen, grid ruim voldoende).
+- **Code- of deploywijziging.** Uitgesloten: alle executies draaiden op Versie 28, ook de geslaagde ervoor en erna.
+
+Wat overblijft is iets in de omgeving — autorisatie, quota, of een serverstatus van het document — dat geen spoor in het bestand achterlaat. De `catch` in `doGet` schreef destijds wel `console.error`, maar die logs waren niet meer in te zien. Zonder foutmelding was verder zoeken gokken, en de zoektocht is bewust gestaakt ten gunste van de garanties hierboven.
+
+**Leerpunt voor volgende keer:** de status in de Apps Script-executielijst zegt niets. Een `doGet` die zijn eigen exception afvangt en netjes returnt, staat daar op "Voltooid". Sinds v1.34.0 logt elke uitvoering expliciet `Gelogd: ...` of `FOUT bij loggen: ...` — dát is het signaal, niet de statuskolom.
 
 **GAS backend kolommen** (`doGet` → `appendRow`):
 
@@ -334,6 +372,8 @@ parkeerSessie() / herstelSessie(staat) // sessie pauzeren/hervatten via localSto
 detecteerType(naam)             // detecteert merk + producttype via prefixTabel (voor coolbluebezorgt variant)
 artikelsoortNaarProduct(soort)  // converteert artikelsoort-tekst (uit Basic tabel) naar widget-productnaam
 isLogOnlyProduct()              // true als effectiefProduct() 'Fornuis' of 'Kookplaat' is — geen stop plannen
+DSLog.log(bouwParams, oms)      // logregel bufferen in localStorage + versturen; toont rode melding als de backend niet bevestigt
+DSLog.verwerkBuffer()           // draait bij widget-start; biedt alle niet-bevestigde regels opnieuw aan
 LEGACY_LABEL_ALIASES            // mapping van oude → nieuwe label-waarden; toegepast in herstelSessie() om geparkeerde sessies te migreren na hernoemen van keuze-opties. Huidig: 'Pakket niet meegenomen (manco)' + 'Pakje niet ingeladen' → 'Pakket niet meegenomen / niet ingeladen', plus eerder hernoemde uitkomsten
 ```
 
