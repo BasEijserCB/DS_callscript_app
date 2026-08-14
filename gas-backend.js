@@ -1,53 +1,7 @@
-// Naam van het doel-tabblad. Niet getActiveSheet() gebruiken: dat hangt af van
-// UI-state en niet van wat dit script hoort te doen. (Niet de oorzaak van het
-// incident van 10/11-08-2026 — die is nooit gevonden; zie CLAUDE.md.)
-var DOEL_TABBLAD = "Database";
-
-// Hoe lang een verwerkte log-id onthouden wordt. De client biedt niet-bevestigde
-// regels opnieuw aan; zonder deze check zou dat dubbele rijen opleveren.
-var DEDUPE_TTL_SEC = 21600; // 6 uur
-
-// Aantal schrijfpogingen en de wachttijd waarmee die oploopt.
-var MAX_POGINGEN = 4;
-var EERSTE_WACHT_MS = 500;
-
-// Eigen foutenlogboek in ScriptProperties. Nodig omdat de Cloud-logboeken van
-// een standaard GCP-project niet te openen zijn — precies waardoor de oorzaak
-// van het incident van 10/11-08-2026 onvindbaar bleef. ScriptProperties staat
-// los van de sheet, dus dit blijft werken als juist het schrijven kapot is.
-// Uitlezen: draai toonFouten() vanuit de editor.
-var FOUT_LOG_KEY = "recente_fouten";
-var FOUT_LOG_MAX = 25;
-
 function doGet(e) {
-  var lock = LockService.getScriptLock();
-  var p = (e && e.parameter) || {};
-  var id = p.id || "";
-  // JSONP: cross-origin fetch krijgt de output niet terug (de redirect naar
-  // googleusercontent.com heeft de sessiecookie nodig, en fetch stuurt die niet mee).
-  // Een <script>-tag doet dat wel, mits we JavaScript terugsturen in plaats van tekst.
-  var cb = String(p.callback || "").replace(/[^A-Za-z0-9_]/g, "");
-
   try {
-    var ss = SpreadsheetApp.getActiveSpreadsheet();
-    if (!ss) throw new Error("getActiveSpreadsheet() gaf null — script niet aan een sheet gekoppeld?");
-
-    var sheet = ss.getSheetByName(DOEL_TABBLAD);
-    if (!sheet) throw new Error("Tabblad '" + DOEL_TABBLAD + "' niet gevonden — hernoemd of verwijderd?");
-
-    // Serialiseer gelijktijdige aanroepen: twee parallelle appendRow-calls kunnen
-    // anders dezelfde laatste rij bepalen en elkaar overschrijven.
-    if (!lock.tryLock(30000)) throw new Error("Geen scriptlock binnen 30s — te veel gelijktijdige aanroepen");
-
-    // De client stuurt een regel opnieuw zolang die niet bevestigd is. Was deze
-    // id al verwerkt, dan bevestigen we opnieuw zonder een tweede rij te schrijven.
-    // Deze check hoort BINNEN de lock: daarbuiten komen twee gelijktijdige
-    // aanroepen met dezelfde id er allebei langs en schrijven ze allebei een rij.
-    var cache = CacheService.getScriptCache();
-    if (id && cache.get("log_" + id)) {
-      console.log("Duplicaat genegeerd (id " + id + ")");
-      return tekst("Success: duplicaat genegeerd (id " + id + ")", cb);
-    }
+    var p = e.parameter;
+    var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
 
     var tz = Session.getScriptTimeZone();
     var timestamp = new Date();
@@ -74,13 +28,13 @@ function doGet(e) {
     var laatste5Weken = "=AND(" + dateExpr + ">=TODAY()-WEEKDAY(TODAY();2)-34;" +
                                   dateExpr + "<=TODAY()-WEEKDAY(TODAY();2))";
 
-    var rij = [
+    sheet.appendRow([
       datum,                        // Kolom A: Datum
       tijd,                         // Kolom B: Tijd
       p.user,                       // Kolom C: DS Medewerker
       p.route,                      // Kolom D: Route (Bezorger)
       p.depot,                      // Kolom E: Depot
-      p.driver1,                    // Kolom F: Chauffeur 1
+      p.driver1,                    // Kolom F: Chauffeur 1 
       p.driver2,                    // Kolom G: Bijrijder
       p.orderBron,                  // Kolom H: Ordernummer (Bron)
       p.product,                    // Kolom I: Product / Formaat
@@ -95,99 +49,25 @@ function doGet(e) {
       p.aankomsttijd,               // Kolom R: Aankomsttijd
       p.extra_info,                 // Kolom S: Extra info (toelichting afwijkend)
       p.extra_dienst,               // Kolom T: Extra dienst nodig? (Ja / leeg)
-      p.categorie,                  // Kolom U: Oplossing categorie
+      p.categorie,                  // Kolom U: Oplossing categorie (Same day gepland / Next day gepland / Onderweg opgelost / Advies gegeven / Geen oplossing / Buiten DS scope)
       tijdBlok,                     // Kolom V: Tijdblok (bijv. "08:00 - 08:59")
       weeknummer,                   // Kolom W: ISO-weeknummer (bijv. 26)
-      laatste5Weken,                // Kolom X: TRUE/FALSE — binnen laatste 5 voltooide weken
-      p.locatie || "",              // Kolom Y: Locatie/context
-      p.ingang  || "",              // Kolom Z: Ingang van het belletje
-      p.probleemCategorie || ""     // Kolom AA: Probleem categorie (groep van kolom J)
-    ];
+      laatste5Weken,                // Kolom X: TRUE/FALSE — datum binnen laatste 5 voltooide weken (live formule)
+      p.locatie || "",              // Kolom Y: Locatie/context (Onderweg / Bij de klant / Depot / hub / Stop aanpassen / Buiten DS)
+      p.ingang  || "",              // Kolom Z: Ingang van het belletje (ks_reden / tl_reden, bijv. "Nazorg nodig", "Held terugsturen")
+      p.probleemCategorie || ""     // Kolom AA: Probleem categorie — de groep van kolom J (Nazorg nodig / Probleem bij de klant / Onderweg / Pakket / Depot / hub / Planning / administratie / Overig)
+    ]);
 
-    var rijNr = schrijfMetRetry(sheet, rij, datum, tijd);
-
-    if (id) cache.put("log_" + id, "1", DEDUPE_TTL_SEC);
-    console.log("Gelogd: " + DOEL_TABBLAD + " rij " + rijNr + " — " + (p.user || "?") + " (id " + id + ")");
-    return tekst("Success: " + DOEL_TABBLAD + " rij " + rijNr, cb);
+    return ContentService
+      .createTextOutput("Success")
+      .setMimeType(ContentService.MimeType.TEXT);
 
   } catch (error) {
-    // Deze regel is het enige spoor dat een mislukte schrijfactie achterlaat in
-    // Cloud Logging. De client krijgt de melding ook terug en toont hem.
-    var melding = "FOUT bij loggen (id " + id + ", user " + (p.user || "?") + "): " + error;
-    console.error(melding);
-    bewaarFout(melding);
-    return tekst("Error: " + error, cb);
-  } finally {
-    if (lock.hasLock()) lock.releaseLock();
-  }
-}
-
-// Schrijft de rij en controleert daarna dat hij er echt staat. Een appendRow die
-// "slaagt" zonder rij op te leveren — het patroon van augustus 2026 — wordt hier
-// alsnog als fout herkend in plaats van als succes gerapporteerd.
-function schrijfMetRetry(sheet, rij, datum, tijd) {
-  var wacht = EERSTE_WACHT_MS;
-  var laatsteFout;
-
-  for (var poging = 1; poging <= MAX_POGINGEN; poging++) {
-    try {
-      sheet.appendRow(rij);
-      SpreadsheetApp.flush();
-
-      var rijNr = sheet.getLastRow();
-      var terug = sheet.getRange(rijNr, 1, 1, 2).getDisplayValues()[0];
-      if (terug[0] !== datum || terug[1] !== tijd) {
-        throw new Error("Verificatie mislukt: rij " + rijNr + " bevat '" +
-                        terug[0] + " " + terug[1] + "' in plaats van '" + datum + " " + tijd + "'");
-      }
-      return rijNr;
-
-    } catch (err) {
-      laatsteFout = err;
-      console.warn("Schrijfpoging " + poging + "/" + MAX_POGINGEN + " mislukt: " + err);
-      if (poging < MAX_POGINGEN) {
-        Utilities.sleep(wacht);
-        wacht *= 2;
-      }
-    }
-  }
-  throw new Error("Na " + MAX_POGINGEN + " pogingen niet kunnen schrijven. Laatste fout: " + laatsteFout);
-}
-
-// Nieuwste fout vooraan, lijst afgekapt op FOUT_LOG_MAX.
-function bewaarFout(bericht) {
-  try {
-    var props = PropertiesService.getScriptProperties();
-    var lijst = JSON.parse(props.getProperty(FOUT_LOG_KEY) || "[]");
-    lijst.unshift({ tijd: new Date().toISOString(), fout: String(bericht) });
-    props.setProperty(FOUT_LOG_KEY, JSON.stringify(lijst.slice(0, FOUT_LOG_MAX)));
-  } catch (e) {
-    console.error("Kon fout niet wegschrijven naar ScriptProperties: " + e);
-  }
-}
-
-// Draai dit vanuit de GAS-editor om te zien wat er misging.
-function toonFouten() {
-  var lijst = JSON.parse(PropertiesService.getScriptProperties().getProperty(FOUT_LOG_KEY) || "[]");
-  if (!lijst.length) { Logger.log("Geen fouten geregistreerd."); return; }
-  Logger.log(lijst.length + " recente fout(en), nieuwste eerst:");
-  lijst.forEach(function (f) { Logger.log("  " + f.tijd + "  " + f.fout); });
-}
-
-function wisFouten() {
-  PropertiesService.getScriptProperties().deleteProperty(FOUT_LOG_KEY);
-  Logger.log("Foutenlijst gewist.");
-}
-
-// Zonder callback: platte tekst (handig om de URL in een tabblad te openen).
-// Met callback: JavaScript, zodat een <script>-tag het antwoord kan afleveren.
-function tekst(s, callback) {
-  if (callback) {
+    console.error("Fout bij loggen: " + error.toString());
     return ContentService
-      .createTextOutput(callback + "(" + JSON.stringify(String(s)) + ");")
-      .setMimeType(ContentService.MimeType.JAVASCRIPT);
+      .createTextOutput("Error: " + error.toString())
+      .setMimeType(ContentService.MimeType.TEXT);
   }
-  return ContentService.createTextOutput(s).setMimeType(ContentService.MimeType.TEXT);
 }
 
 // ISO 8601 weeknummer: week start maandag, week 1 bevat de eerste donderdag van het jaar.

@@ -6,10 +6,10 @@
 // React, ReactDOM, DS, and browser globals are accessible inside JSX.
 
 (function () {
-  const STAGING_VERSION = "0.14.1-staging";
+  const STAGING_VERSION = "0.15.0-staging";
   const ROOT_ID = "ds-logboek-staging-root";
   const STYLE_ID = "ds-logboek-staging-style";
-  const GAS_URL = "https://script.google.com/macros/s/AKfycbxb-OwLCFGlDQ48qz3KnGnmsgnVLWxuOjvEr7UG3M3z0WzO0kVsTKGd_8mZjtvHvPHnEg/exec";
+  const GAS_URL = "https://script.google.com/a/macros/coolblue.nl/s/AKfycbxb-OwLCFGlDQ48qz3KnGnmsgnVLWxuOjvEr7UG3M3z0WzO0kVsTKGd_8mZjtvHvPHnEg/exec";
 
   if (document.getElementById(ROOT_ID)) {
     document.getElementById(ROOT_ID).style.display = "block";
@@ -18,171 +18,6 @@
 
   // ── PAGE DETECTION ────────────────────────────────────────────
   var isBasicPage = window.location.pathname.toLowerCase().indexOf('/basic') !== -1;
-
-  // ── LOGGING MET ONTVANGSTBEVESTIGING ─────────────────────────
-  // Aanleiding: 10/11-08-2026 verdwenen ~50 logregels zonder dat iemand het
-  // merkte. De backend gaf HTTP 200 terug bij een mislukte schrijfactie en de
-  // client deed er .catch(function(){}) overheen. Beide kanten zwegen.
-  //
-  // Nu geldt: een regel wordt eerst lokaal vastgelegd en pas uit de buffer
-  // verwijderd als de backend bevestigt dat de rij geschreven én teruggelezen is.
-  // Zonder die bevestiging blijft hij staan, ziet de medewerker een rode melding,
-  // en wordt hij bij de volgende widget-start opnieuw aangeboden. De backend
-  // ontdubbelt op log-id, dus opnieuw aanbieden levert geen tweede rij op.
-  var LOG_URL = GAS_URL;
-  var LOG_BUFFER_KEY = 'ds_log_buffer';
-
-  var DSLog = (function() {
-
-    function lees() {
-      try {
-        var l = JSON.parse(localStorage.getItem(LOG_BUFFER_KEY) || '[]');
-        return Object.prototype.toString.call(l) === '[object Array]' ? l : [];
-      } catch (e) { return []; }
-    }
-
-    function schrijf(lijst) {
-      try { localStorage.setItem(LOG_BUFFER_KEY, JSON.stringify(lijst)); } catch (e) {}
-    }
-
-    function bewaar(entry) { var l = lees(); l.push(entry); schrijf(l); }
-
-    function verwijder(id) {
-      schrijf(lees().filter(function(x) { return x.id !== id; }));
-    }
-
-    // Google stuurt bij een mislukte content-redirect een complete HTML-pagina
-    // terug. Die hoort niet integraal in een toast.
-    function korteFout(txt) {
-      var t = String(txt || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
-      return t.length > 160 ? t.slice(0, 160) + '…' : t;
-    }
-
-    // Melding in het hoofddocument, niet in de widget-iframe: de widget is op het
-    // moment van verzenden al opgeruimd.
-    function toon(tekst, kleur, msAuto) {
-      var t = document.createElement('div');
-      t.style.cssText = 'position:fixed;bottom:20px;right:20px;z-index:2147483647;max-width:380px;' +
-        'background:' + kleur + ';color:#fff;font:13px/1.5 "Segoe UI",Arial,sans-serif;' +
-        'padding:12px 14px;border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,0.28);';
-      var sluit = document.createElement('span');
-      sluit.textContent = '✕';
-      sluit.style.cssText = 'cursor:pointer;float:right;font-weight:700;margin-left:12px;opacity:0.85;';
-      sluit.onclick = function() { t.remove(); };
-      t.appendChild(sluit);
-      t.appendChild(document.createTextNode(tekst));
-      document.body.appendChild(t);
-      if (msAuto) setTimeout(function() { t.remove(); }, msAuto);
-      return t;
-    }
-
-    // Verzenden via een <script>-tag (JSONP), niet via fetch. Apps Script serveert
-    // zijn output via een redirect naar googleusercontent.com, en die heeft de
-    // Google-sessiecookie nodig. Cross-origin fetch stuurt geen cookies mee en
-    // krijgt daar een 404 — de rij wordt dan wél geschreven, maar de bevestiging
-    // is onleesbaar. Een script-tag stuurt de cookie wel mee.
-    //
-    // Alleen een antwoord dat met 'Success' begint telt als bevestiging. Uitblijven
-    // van antwoord is expliciet géén bevestiging: dan weten we het niet, en dan
-    // houden we de regel vast.
-    var cbTeller = 0;
-
-    function verzend(entry) {
-      return new Promise(function(resolve) {
-        var naam = '__dsLogCb' + (++cbTeller) + '_' + Math.random().toString(36).slice(2, 8);
-        var el = document.createElement('script');
-        var afgerond = false, timer;
-
-        function af(res) {
-          if (afgerond) return;
-          afgerond = true;
-          clearTimeout(timer);
-          try { delete window[naam]; } catch (e) { window[naam] = undefined; }
-          if (el.parentNode) el.parentNode.removeChild(el);
-          resolve(res);
-        }
-
-        window[naam] = function(antwoord) {
-          var txt = String(antwoord || '');
-          if (txt.indexOf('Success') === 0) {
-            verwijder(entry.id);
-            af({ ok: true, tekst: txt });
-          } else {
-            af({ ok: false, tekst: txt || '(leeg antwoord)' });
-          }
-        };
-
-        timer = setTimeout(function() { af({ ok: false, tekst: 'Geen antwoord binnen 30 seconden' }); }, 30000);
-        el.onerror = function() { af({ ok: false, tekst: 'Verbinding met het logboek mislukt' }); };
-        el.src = LOG_URL + entry.params + '&callback=' + naam;
-        document.head.appendChild(el);
-      });
-    }
-
-    function nieuweId() {
-      return 'l' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
-    }
-
-    // Eén melding per pagina-sessie: bij herhaalde mislukkingen loopt de teller op
-    // in de bestaande toast. Tien losse rode blokken leest niemand meer.
-    var foutToast = null, foutAantal = 0;
-
-    function meldFout(reden) {
-      foutAantal++;
-      var regel = foutAantal === 1
-        ? '⚠ Geen bevestiging uit het logboek ontvangen. De regel is lokaal bewaard en wordt ' +
-          'opnieuw aangeboden zodra je de widget opent; dubbele rijen zijn uitgesloten. — ' + korteFout(reden)
-        : '⚠ ' + foutAantal + ' logregels zonder bevestiging. Ze zijn lokaal bewaard en worden ' +
-          'opnieuw aangeboden; dubbele rijen zijn uitgesloten. — ' + korteFout(reden);
-      if (foutToast && foutToast.isConnected) foutToast.lastChild.nodeValue = regel;
-      else foutToast = toon(regel, '#c0392b');
-    }
-
-    // bouwParams krijgt de log-id mee zodat de backend kan ontdubbelen.
-    function log(bouwParams, omschrijving) {
-      var entry = { id: nieuweId(), tijd: Date.now(), omschrijving: omschrijving || '' };
-      entry.params = bouwParams(entry.id);
-      bewaar(entry);
-
-      verzend(entry).then(function(res) {
-        if (res.ok) {
-          console.log('[DS Logboek] ' + res.tekst);
-          return;
-        }
-        console.error('[DS Logboek] geen bevestiging:', res.tekst);
-        meldFout(res.tekst);
-      });
-    }
-
-    // Bij elke widget-start: alles wat nog niet bevestigd is opnieuw aanbieden.
-    function verwerkBuffer() {
-      var wachtend = lees();
-      if (!wachtend.length) return;
-
-      var klaar = 0, gelukt = 0;
-
-      wachtend.forEach(function(entry) {
-        verzend(entry).then(function(res) {
-          klaar++;
-          if (res.ok) gelukt++; else console.error('[DS Logboek] herverzending mislukt:', res.tekst);
-          if (klaar < wachtend.length) return;
-
-          // Stilte bij succes. Wie de pagina sluit vlak na het loggen krijgt geen
-          // bevestiging meer binnen; die regel wordt hier alsnog bevestigd en dat
-          // is geen nieuws. Alleen wat níét lukt verdient de aandacht — anders
-          // wordt de melding dagelijkse ruis en klikt niemand hem nog serieus weg.
-          if (gelukt === wachtend.length) {
-            console.log('[DS Logboek] ' + gelukt + ' bewaarde logregel(s) alsnog bevestigd.');
-          } else {
-            toon('⚠ ' + (wachtend.length - gelukt) + ' van ' + wachtend.length + ' logregels konden nog ' +
-                 'steeds niet worden opgeslagen. Ze blijven bewaard en worden later opnieuw geprobeerd.', '#c0392b');
-          }
-        });
-      });
-    }
-
-    return { log: log, verwerkBuffer: verwerkBuffer, aantalWachtend: function() { return lees().length; } };
-  })();
 
   // ── DOM HELPERS ───────────────────────────────────────────────
   function basicField(labelText) {
@@ -819,7 +654,7 @@
   function ingangNaarVocab(r) { return INGANG_MAP[r] || r || ''; }
 
   // ── LOG PARAMS ────────────────────────────────────────────────
-  function bouwLogParams(cd, logId) {
+  function bouwLogParams(cd) {
     var dsW=berekenDsWaarde(cd);
     var probLog, redenGeenOplossing='', redenNextDay='', routeLog='', orderOplLog='';
     var logD1=cd.driver1, logD2=cd.driver2, logOB=cd.orderBron;
@@ -890,7 +725,7 @@
     var extraInfo=extraDetails.filter(function(d){ return d; }).join(' | ');
     var extraDienst=(cd.locatie==='Klantenservice'||cd.locatie==='Winkel')&&cd.ks_reden==='Nazorg nodig'?'Ja':'';
     var cat=berekenCategorie(cd);
-    return '?id='+encodeURIComponent(logId||Date.now())+'&user='+encodeURIComponent(cd.user)+'&route='+encodeURIComponent(cd.route)+'&depot='+encodeURIComponent(cd.depot)+'&driver1='+encodeURIComponent(logD1)+'&driver2='+encodeURIComponent(logD2)+'&orderBron='+encodeURIComponent(logOB)+'&product='+encodeURIComponent(prodLog)+'&probleem='+encodeURIComponent(probLog)+'&redenGeenOplossing='+encodeURIComponent(redenGeenOplossing)+'&redenNextDay='+encodeURIComponent(redenNextDay)+'&orderOplossing='+encodeURIComponent(orderOplLog)+'&geplandeRoute='+encodeURIComponent(routeLog)+'&dsWaarde='+encodeURIComponent(dsW)+'&bellerType='+encodeURIComponent(bellerLog)+'&tijdvak='+encodeURIComponent(cd.tijdvak)+'&aankomsttijd='+encodeURIComponent(cd.aankomsttijd)+'&extra_info='+encodeURIComponent(extraInfo)+'&extra_dienst='+encodeURIComponent(extraDienst)+'&categorie='+encodeURIComponent(cat)+'&locatie='+encodeURIComponent(logLocatie)+'&ingang='+encodeURIComponent(logIngang)+'&probleemCategorie='+encodeURIComponent(probleemCategorie(probLog));
+    return '?id='+Date.now()+'&user='+encodeURIComponent(cd.user)+'&route='+encodeURIComponent(cd.route)+'&depot='+encodeURIComponent(cd.depot)+'&driver1='+encodeURIComponent(logD1)+'&driver2='+encodeURIComponent(logD2)+'&orderBron='+encodeURIComponent(logOB)+'&product='+encodeURIComponent(prodLog)+'&probleem='+encodeURIComponent(probLog)+'&redenGeenOplossing='+encodeURIComponent(redenGeenOplossing)+'&redenNextDay='+encodeURIComponent(redenNextDay)+'&orderOplossing='+encodeURIComponent(orderOplLog)+'&geplandeRoute='+encodeURIComponent(routeLog)+'&dsWaarde='+encodeURIComponent(dsW)+'&bellerType='+encodeURIComponent(bellerLog)+'&tijdvak='+encodeURIComponent(cd.tijdvak)+'&aankomsttijd='+encodeURIComponent(cd.aankomsttijd)+'&extra_info='+encodeURIComponent(extraInfo)+'&extra_dienst='+encodeURIComponent(extraDienst)+'&categorie='+encodeURIComponent(cat)+'&locatie='+encodeURIComponent(logLocatie)+'&ingang='+encodeURIComponent(logIngang)+'&probleemCategorie='+encodeURIComponent(probleemCategorie(probLog));
   }
 
   // ── KLEMBORD ─────────────────────────────────────────────────
@@ -1157,7 +992,6 @@
       bepaalStappen: bepaalStappenPure,
       berekenCategorie: berekenCategorie,
       bouwLogParams: bouwLogParams,
-      DSLog: DSLog,
       kopieerNaarKlembord: kopieerNaarKlembord,
 
       parseToTourAlias: parseToTourAlias,
@@ -1406,11 +1240,11 @@ function App(){
               {isGep&&!isLogOnly?(
                 <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:6}}>
                   <button className="ds-btn ds-btn--lg" onClick={function(){DS.kopieerNaarKlembord(cd);}}>Klembord</button>
-                  <button className="ds-btn ds-btn--secondary ds-btn--lg" onClick={function(){DS.DSLog.log(function(id){return DS.bouwLogParams(cd,id);}, cd.orderBron || 'geen order');setLogDone(true);}}>Loggen</button>
-                  <button className="ds-btn ds-btn--primary ds-btn--lg" onClick={function(){DS.kopieerNaarKlembord(cd);DS.DSLog.log(function(id){return DS.bouwLogParams(cd,id);}, cd.orderBron || 'geen order');setLogDone(true);}}>Loggen + Klembord</button>
+                  <button className="ds-btn ds-btn--secondary ds-btn--lg" onClick={function(){fetch(DS.GAS_URL+DS.bouwLogParams(cd)).catch(function(){});setLogDone(true);}}>Loggen</button>
+                  <button className="ds-btn ds-btn--primary ds-btn--lg" onClick={function(){DS.kopieerNaarKlembord(cd);fetch(DS.GAS_URL+DS.bouwLogParams(cd)).catch(function(){});setLogDone(true);}}>Loggen + Klembord</button>
                 </div>
               ):(
-                <button className="ds-btn ds-btn--secondary ds-btn--lg" style={{width:'100%'}} onClick={function(){DS.DSLog.log(function(id){return DS.bouwLogParams(cd,id);}, cd.orderBron || 'geen order');setLogDone(true);}}>✓ Loggen</button>
+                <button className="ds-btn ds-btn--secondary ds-btn--lg" style={{width:'100%'}} onClick={function(){fetch(DS.GAS_URL+DS.bouwLogParams(cd)).catch(function(){});setLogDone(true);}}>✓ Loggen</button>
               )}
             </div>
           )}
@@ -1607,7 +1441,6 @@ root.render(<App/>);
       const compiled = window.Babel.transform(JSX_SOURCE, { presets: ["react"] }).code;
       // eslint-disable-next-line no-new-func
       new Function("React", "ReactDOM", "DS", compiled)(window.React, window.ReactDOM, DS);
-      DSLog.verwerkBuffer();
       console.log("[DS Logboek staging] mounted v" + STAGING_VERSION);
     } catch(err) {
       console.error("[DS Logboek staging] mount failed:", err);

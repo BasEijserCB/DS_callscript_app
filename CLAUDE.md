@@ -24,7 +24,7 @@ Uitzondering op de functionele regel: als uitdrukkelijk gevraagd wordt om een wi
 | `paste-loader-bookmarklet.js` | Leesbare broncode van de paste bookmarklet loader. Haalt `paste-bookmarklet.js` op, cached in localStorage (`ds_paste_prod_cache`), stale-while-revalidate. Toont oranje toast als nieuwe versie gedownload is. |
 | `install.html` | Installatiepagina. Bevat **beide** bookmarklets als sleepbare knoppen. |
 | `build.py` | Syntax-checkt `ds-logboek.js` en `paste-bookmarklet.js`, detecteert versienummer uit `ds-logboek.js` en synchroniseert `PASTE_VERSION` in `paste-bookmarklet.js`. |
-| `gas-backend.js` | Broncode van het Google Apps Script backend (`doGet`). Schrijft elke log-entry als rij naar het tabblad `DOEL_TABBLAD` (`Database`), met retry, terugleescontrole en ontdubbeling op log-id. Moet handmatig gekopieerd worden naar de GAS editor bij wijzigingen — een commit hier verandert niets in productie. |
+| `gas-backend.js` | Broncode van het Google Apps Script backend (`doGet`). Schrijft elke log-entry als rij naar de actieve Google Sheet. Moet handmatig gekopieerd worden naar de GAS editor bij wijzigingen — een commit hier verandert niets in productie. |
 | `staging/ds-logboek-staging.js` | Staging build van de widget: zelfde data-laag (scraping, flow engine, logging, clipboard) als `ds-logboek.js`, maar met een volledig nieuwe React+Babel UI (side-panel design). Bevat `STAGING_VERSION` constante (`vX.X.X-staging`). |
 | `staging/loader-staging-bookmarklet.js` | Loader bookmarklet voor de staging widget. Haalt `ds-logboek-staging.js` op via raw GitHub URL, cached in localStorage (`ds_app_staging_cache`), stale-while-revalidate. Toont eigen toast bij update. |
 | `staging/install-staging.html` | Installatiepagina voor de staging bookmarklet. |
@@ -53,6 +53,7 @@ Nieuwste bovenaan. Alleen `ds-logboek.js` versies (productie).
 
 | Versie | Wijziging |
 |---|---|
+| v1.36.0 | **Terugdraai van v1.34.0–v1.35.1.** De ontvangstbevestiging schreef elke logregel vier keer weg. `schrijfMetRetry()` controleerde de geschreven rij door kolom A en B terug te lezen met `getDisplayValues()` en te vergelijken met de weggeschreven strings — maar de sheet formatteert die cellen zelf, dus de vergelijking faalde altijd. Elke poging deed een eigen `appendRow`: vier rijen per gesprek, daarna een `Error` naar de client, die de regel in de buffer hield en bij elke widget-start opnieuw aanbood. Logging is terug op `fetch(...).catch(function(){})`, zonder buffer, zonder melding, zonder id. `gas-backend.js` is terug op de versie zonder retry, lock, ontdubbeling en foutenlogboek — **handmatig terugzetten in de GAS-editor is nodig**, een commit hier verandert niets in productie. Ook in staging (v0.15.0-staging). |
 | v1.35.1 | Fix: geslaagde herverzending is nu stil (alleen console). Wie de pagina sluit vlak na het loggen krijgt de bevestiging niet meer binnen; die regel wordt een sessie later alsnog bevestigd, en een ↻/✓-melding daarover zou dagelijkse ruis worden. Fix (backend): ontdubbeling verplaatst naar binnen de scriptlock — daarbuiten konden twee gelijktijdige herverzendingen van dezelfde id allebei een rij schrijven. Ook in staging (v0.14.1-staging). |
 | v1.35.0 | Fix: bevestiging werkte in de praktijk niet. `fetch` krijgt de output van een Apps Script web-app niet terug — de redirect naar `googleusercontent.com` vereist de sessiecookie, die cross-origin niet meegaat, en geeft anders een 404. De rij werd dus geschreven terwijl de client een fout meldde. Verzenden gaat nu via een `<script>`-tag (JSONP); `doGet` geeft JavaScript terug bij een `callback`-parameter. URL omgezet naar de anonieme vorm `macros/s/<ID>/exec`. Herhaalde waarschuwingen bundelen in één melding met teller. Ook in staging (v0.14.0-staging). |
 | v1.34.0 | Add: **logging met ontvangstbevestiging**. Elke logregel wordt eerst in `localStorage` (`ds_log_buffer`) vastgelegd en pas verwijderd als de backend bevestigt dat de rij geschreven én teruggelezen is. Zonder bevestiging blijft de regel staan, krijgt de medewerker een rode melding, en wordt hij bij de volgende widget-start opnieuw aangeboden (`DSLog.verwerkBuffer()`). De backend ontdubbelt op log-id via `CacheService` (6 uur), dus herverzending geeft geen dubbele rijen. Vervangt `fetch(...).catch(function(){})` — de constructie die het verlies van aug. 2026 onzichtbaar hield. Ook in staging (v0.13.0-staging). |
@@ -178,33 +179,15 @@ ds-logboek.js  (scrapet DOM → gespreksflow → twee outputs)
 
 **GAS backend** moet deployment staan op toegang "Iedereen" (niet "Iedereen binnen Coolblue") anders blokkeert CORS.
 
-### Logging-garantie (v1.34.0) — geen stille fouten meer
+### Logging — fire-and-forget (stand na v1.36.0)
 
-De keten client → GAS → sheet slikte vroeger fouten aan beide kanten: `doGet` ving zijn eigen exceptions af en gaf HTTP 200 met `"Error: ..."` terug, en de client deed daar `fetch(...).catch(function(){})` overheen. Een mislukte schrijfactie was daardoor van een geslaagde niet te onderscheiden — niet in de sheet, niet in de executielijst, en niet voor de medewerker. Dat is wat het incident van 10/11-08-2026 twee dagen onzichtbaar hield.
+De client stuurt elke logregel met `fetch(GAS_URL + bouwLogParams()).catch(function(){})` en kijkt niet naar het antwoord. Dat is bewust weer de huidige situatie, niet een vergetelheid: de poging om er ontvangstbevestiging omheen te bouwen (v1.34.0–v1.35.1) is op 14-08-2026 teruggedraaid omdat hij vier rijen per gesprek schreef.
 
-**Backend** (`gas-backend.js`):
+**Wat er misging, voor wie het opnieuw wil proberen.** De backend controleerde na `appendRow` of de rij er echt stond door kolom A en B terug te lezen met `getDisplayValues()` en te vergelijken met de weggeschreven datum- en tijdstring. De sheet formatteert die cellen zelf, dus de teruggelezen weergave kwam nooit exact overeen. Elke poging gold daardoor als mislukt, de retry-lus deed vier keer `appendRow` — vier identieke rijen — en gaf daarna `Error` terug. De client hield de regel dan in `localStorage['ds_log_buffer']` en bood hem bij elke widget-start opnieuw aan, wat er telkens vier bij deed. De ontdubbeling op log-id kwam niet aan bod: die zag alleen herhalingen, niet de vermenigvuldiging binnen één aanroep.
 
-- `getSheetByName(DOEL_TABBLAD)` in plaats van `getActiveSheet()` — het doel-tabblad hoort niet van UI-state af te hangen. Hernoem je het tabblad, dan moet de constante mee; `doGet` gooit dan een fout in plaats van ergens anders te schrijven.
-- `schrijfMetRetry()` doet tot 4 pogingen met oplopende wachttijd (500 ms, verdubbelend), en **leest na elke poging de geschreven rij terug**: komen kolom A en B niet overeen met de datum en tijd die weggeschreven zijn, dan telt het als mislukt. Een `appendRow` die "slaagt" zonder rij op te leveren wordt zo alsnog als fout herkend.
-- `LockService`-scriptlock rond de schrijfactie, zodat parallelle aanroepen niet dezelfde laatste rij bepalen.
-- Ontdubbeling op `id` via `CacheService` (6 uur), **binnen de scriptlock**. Nodig omdat de client niet-bevestigde regels opnieuw aanbiedt. De check hoort binnen de lock: daarbuiten komen twee gelijktijdige aanroepen met dezelfde id er allebei langs en schrijven ze allebei een rij.
-- De respons bevat het rijnummer (`"Success: Database rij 3695"`), en `console.log`/`console.error` loggen elke uitkomst. De executielijst laat daarmee zelf zien of en waar er geschreven is.
-- Elke fout gaat óók naar een eigen foutenlogboek in `ScriptProperties` (laatste 25, nieuwste eerst). Uitlezen met `toonFouten()` vanuit de GAS-editor, legen met `wisFouten()`. Nodig omdat de Cloud-logboeken bij een **standaard GCP-project** grijs staan en niet te openen zijn — precies waardoor de oorzaak van het incident onvindbaar bleef. `ScriptProperties` staat los van de sheet en blijft dus werken als juist het schrijven kapot is.
+De les is niet dat bevestiging onmogelijk is, maar dat de terugleescontrole op geformatteerde cellen moest vergelijken op ruwe waarden (`getValues()`), of simpelweg op het rijnummer dat `appendRow` oplevert. En dat een retry-lus rond een niet-idempotente `appendRow` de schade vermenigvuldigt in plaats van hem te herstellen: eerst controleren óf er iets geschreven is, dan pas opnieuw schrijven.
 
-**Client** (`ds-logboek.js` + staging, module `DSLog`):
-
-- Een logregel gaat **eerst** naar `localStorage['ds_log_buffer']`, daarna pas over de lijn. Crasht of sluit de pagina ertussenin, dan staat hij er nog.
-- Verzenden gaat via een **`<script>`-tag (JSONP)**, niet via `fetch`. Apps Script serveert zijn output via een redirect naar `script.googleusercontent.com`, en die heeft de Google-sessiecookie nodig. Cross-origin `fetch` stuurt cookies niet mee en krijgt daar een **404**: de rij wordt dan wél geschreven, maar de bevestiging is onleesbaar. Een script-tag stuurt de cookie wel mee. `doGet` geeft daarom JavaScript terug zodra er een `callback`-parameter is, en platte tekst zonder (handig om de URL in een tabblad te openen).
-- De URL is de anonieme vorm `script.google.com/macros/s/<ID>/exec`, niet de domeingebonden `/a/macros/coolblue.nl/s/<ID>/exec`.
-- Alleen een antwoord dat met `Success` begint telt als bevestiging en verwijdert de regel uit de buffer. Uitblijven van antwoord (30 s time-out, of `onerror`) is expliciet géén bevestiging: dan weten we het niet, dus houden we hem vast.
-- Mislukt het, dan verschijnt een rode melding in het hoofddocument (niet in de widget-iframe — die is op dat moment al opgeruimd) die niet vanzelf verdwijnt. Herhaalde mislukkingen binnen één pagina-sessie tellen op in dezelfde melding in plaats van nieuwe blokken te stapelen.
-- `DSLog.verwerkBuffer()` draait bij elke widget-start en biedt alles wat nog openstaat opnieuw aan. **Lukt dat, dan blijft het stil**; alleen mislukkingen geven een melding. Dat is bewust: wie de pagina sluit vlak na het loggen krijgt de bevestiging niet meer binnen, dus die regels worden routinematig een sessie later bevestigd. Een melding daarover zou dagelijkse ruis worden, en ruis maakt dat een echte waarschuwing wordt weggeklikt.
-- De widget sluiten breekt niets: de `<script>`-tag hangt in `document.head` van de DireXtion-pagina, niet in de widget-iframe, en de regel staat op dat moment al in de buffer. Alleen het sluiten van de héle pagina onderbreekt de verzending, en dat wordt door de buffer opgevangen.
-- De buffer verloopt **niet** vanzelf. Regels automatisch weggooien zou precies de stille fout terugbrengen die dit moest oplossen.
-
-Productie en staging delen bewust dezelfde buffersleutel, zodat de widget die het eerst opent de openstaande regels opruimt.
-
-**Let op bij diagnose vanuit de GAS-editor:** `getActiveSheet()` geeft daar het tabblad dat de ontwikkelaar het laatst open had, niet wat een web-app-executie ziet (die heeft geen UI-sessie). Conclusies over `doGet`-gedrag zijn niet te trekken uit een editor-run.
+**Restanten in het veld.** De sleutel `ds_log_buffer` staat nog in de localStorage van iedereen die met v1.34.0–v1.35.1 gewerkt heeft. De huidige code leest hem niet — dode data, ruimt zichzelf niet op. Wie nog een gecachete v1.35.1 in `ds_app_prod_cache` heeft, draait die bij de eerstvolgende klik nog één keer (stale-while-revalidate) en kan dan nog één ronde duplicaten produceren; de klik daarna is schoon.
 
 ### Incident 10/11-08-2026 — oorzaak niet gevonden (gesloten)
 
@@ -217,7 +200,7 @@ Tussen **10-08 13:58** (laatste geschreven rij) en **11-08 10:39** (eerste rij e
 
 Wat overblijft is iets in de omgeving — autorisatie, quota, of een serverstatus van het document — dat geen spoor in het bestand achterlaat. De `catch` in `doGet` schreef destijds wel `console.error`, maar die logs waren niet meer in te zien. Zonder foutmelding was verder zoeken gokken, en de zoektocht is bewust gestaakt ten gunste van de garanties hierboven.
 
-**Leerpunt voor volgende keer:** de status in de Apps Script-executielijst zegt niets. Een `doGet` die zijn eigen exception afvangt en netjes returnt, staat daar op "Voltooid". Sinds v1.34.0 logt elke uitvoering expliciet `Gelogd: ...` of `FOUT bij loggen: ...` — dát is het signaal, niet de statuskolom.
+**Leerpunt voor volgende keer:** de status in de Apps Script-executielijst zegt niets. Een `doGet` die zijn eigen exception afvangt en netjes returnt, staat daar op "Voltooid". Wie hier opnieuw naar kijkt, heeft dus eerst een expliciete `console.log`/`console.error` per uitvoering nodig — dát is het signaal, niet de statuskolom.
 
 **GAS backend kolommen** (`doGet` → `appendRow`):
 
@@ -378,8 +361,6 @@ parkeerSessie() / herstelSessie(staat) // sessie pauzeren/hervatten via localSto
 detecteerType(naam)             // detecteert merk + producttype via prefixTabel (voor coolbluebezorgt variant)
 artikelsoortNaarProduct(soort)  // converteert artikelsoort-tekst (uit Basic tabel) naar widget-productnaam
 isLogOnlyProduct()              // true als effectiefProduct() 'Fornuis' of 'Kookplaat' is — geen stop plannen
-DSLog.log(bouwParams, oms)      // logregel bufferen in localStorage + versturen; toont rode melding als de backend niet bevestigt
-DSLog.verwerkBuffer()           // draait bij widget-start; biedt alle niet-bevestigde regels opnieuw aan
 LEGACY_LABEL_ALIASES            // mapping van oude → nieuwe label-waarden; toegepast in herstelSessie() om geparkeerde sessies te migreren na hernoemen van keuze-opties. Huidig: 'Pakket niet meegenomen (manco)' + 'Pakje niet ingeladen' → 'Pakket niet meegenomen / niet ingeladen', plus eerder hernoemde uitkomsten
 ```
 
