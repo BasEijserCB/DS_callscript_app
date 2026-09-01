@@ -498,7 +498,7 @@
     return witgoedTypes.some(function(t){ return det.typeGuess.toLowerCase().includes(t); });
   }
 
-  var nextDayRedenen=['Geen geschikte routes beschikbaar (tijd)','Geen geschikte routes beschikbaar (afstand)','Klant vandaag geen tijd meer','Situatie bij de klant niet gereed voor service','Geen helden op het depot aanwezig','Geen BI ritten op de weg'];
+  var nextDayRedenen=['Geen geschikte routes beschikbaar (tijd)','Geen geschikte routes beschikbaar (afstand)','Klant vandaag geen tijd meer','Situatie bij de klant niet gereed voor service','Geen helden op het depot aanwezig','Geen BI ritten op de weg','Playbook VT/route nog de weg op'];
 
   function getOptiesVoorType(type) {
     var p = type.toLowerCase();
@@ -1238,7 +1238,7 @@
             '<span style="font-size:11px;color:'+(geenOrderMode?'#ff6600':'#aaa')+';">'+(geenOrderMode?'Gegevens gewist':'Geen order')+'</span>' +
           '</div>' : '') +
         '</div></div>' +
-        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.36.0' +
+        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.37.0' +
           (callData.user ? ' · <span style="color:#999;">'+callData.user+'</span> ' + (nameEditConfirm ? '<span style="color:#666;margin-left:4px;">Naam wissen?</span> <span id="btn-edit-name-yes" style="cursor:pointer;color:#c00;font-weight:600;margin-left:4px;">Ja</span> <span id="btn-edit-name-no" style="cursor:pointer;color:#666;margin-left:4px;">Nee</span>' : '<span id="btn-edit-name" title="Naam wijzigen" style="cursor:pointer;opacity:0.45;margin-left:1px;">✎</span>') : '') +
         '</div>' +
       '</div>';

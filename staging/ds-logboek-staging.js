@@ -6,7 +6,7 @@
 // React, ReactDOM, DS, and browser globals are accessible inside JSX.
 
 (function () {
-  const STAGING_VERSION = "0.15.0-staging";
+  const STAGING_VERSION = "0.16.0-staging";
   const ROOT_ID = "ds-logboek-staging-root";
   const STYLE_ID = "ds-logboek-staging-style";
   const GAS_URL = "https://script.google.com/a/macros/coolblue.nl/s/AKfycbxb-OwLCFGlDQ48qz3KnGnmsgnVLWxuOjvEr7UG3M3z0WzO0kVsTKGd_8mZjtvHvPHnEg/exec";
@@ -207,7 +207,7 @@
   }
 
   // ── PRODUCT HELPERS ──────────────────────────────────────────
-  var nextDayRedenen = ['Geen geschikte routes beschikbaar (tijd)','Geen geschikte routes beschikbaar (afstand)','Klant vandaag geen tijd meer','Situatie bij de klant niet gereed voor service','Geen helden op het depot aanwezig','Geen BI ritten op de weg'];
+  var nextDayRedenen = ['Geen geschikte routes beschikbaar (tijd)','Geen geschikte routes beschikbaar (afstand)','Klant vandaag geen tijd meer','Situatie bij de klant niet gereed voor service','Geen helden op het depot aanwezig','Geen BI ritten op de weg','Playbook VT/route nog de weg op'];
   function effectiefProduct(cd) { return cd.productVerfijnd||cd.product||''; }
   function skipDienstType(cd) {
     var prob=(cd.probleem||'').toLowerCase();
