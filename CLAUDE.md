@@ -12,10 +12,11 @@ Browsergebaseerde widget voor het Coolblue Delivery Support team. Draait bovenop
 | `loader-bookmarklet.js` | Leesbare broncode van de loader bookmarklet. Haalt `ds-logboek.js` op, cached in localStorage (`ds_app_prod_cache`), stale-while-revalidate met `{cache:'no-store'}` om CDN-cache te omzeilen. |
 | `paste-bookmarklet.js` | Volledige paste logica. Bevat `PASTE_VERSION` constante. Gehost op GitHub, geladen via raw URL door de paste loader. |
 | `paste-loader-bookmarklet.js` | Leesbare broncode van de paste bookmarklet loader. Haalt `paste-bookmarklet.js` op, cached in localStorage (`ds_paste_prod_cache`), stale-while-revalidate. Toont oranje toast als nieuwe versie gedownload is. |
-| `install.html` | Installatiepagina. Bevat **beide** bookmarklets als sleepbare knoppen. |
+| `install.html` | Installatiepagina voor de widget: de loader- en paste-bookmarklet als sleepbare knoppen, plus een doorverwijzing naar de installatiepagina van de Extra rijtijd-tool. |
 | `build.py` | Syntax-checkt `ds-logboek.js` en `paste-bookmarklet.js`, detecteert versienummer uit `ds-logboek.js` en synchroniseert `PASTE_VERSION` in `paste-bookmarklet.js`. |
 | `gas-backend.js` | Broncode van het Google Apps Script backend (`doGet`). Schrijft elke log-entry als rij naar de actieve Google Sheet. Moet handmatig gekopieerd worden naar de GAS editor bij wijzigingen — een commit hier verandert niets in productie. |
 | `tourtool/extra-rijtijd.js` | **Losse tool**, geen onderdeel van de widget. Draait op de Ritmonitor en berekent wat een extra stop aan rijtijd kost, per gat en over meerdere ritten. Eigen `RIJTIJD_VERSION`, los van de widgetversie. Zie "Extra rijtijd-tool". |
+| `tourtool/install-rijtijd.html` | Eigen installatiepagina voor de Extra rijtijd-tool: bookmarklet, instructie voor een eigen ORS-sleutel, gebruik en de regels die de tool zelf toepast. Bewust los van `install.html` — die gaat over de widget. Beide pagina's verwijzen naar elkaar en delen hetzelfde style-blok (gekopieerd, niet gedeeld). |
 | `tourtool/loader-rijtijd-bookmarklet.js` | Leesbare broncode van de loader voor de Extra rijtijd-tool. Eigen cache key (`ds_rijtijd_prod_cache`), groene toast, versie uit `RIJTIJD_VERSION`. Zelfde stale-while-revalidate als de andere twee. |
 | `tourtool/probe-ritmonitor.js` | Eenmalige recon van de Ritmonitor (frameworks, DOM, netwerk, viewmodels). Alleen lezen; bewaard als naslag voor als DireXtion verandert. |
 

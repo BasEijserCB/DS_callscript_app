@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Extra rijtijd — Installatie</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #f5f6f8;
+      color: #1a1a2e;
+      min-height: 100vh;
+      padding: 40px 20px;
+    }
+
+    .page {
+      max-width: 640px;
+      margin: 0 auto;
+    }
+
+    .header {
+      margin-bottom: 32px;
+    }
+
+    .header h1 {
+      font-size: 22px;
+      font-weight: 700;
+      color: #1a1a2e;
+    }
+
+    .header .subtitle {
+      font-size: 14px;
+      color: #666;
+      margin-top: 4px;
+    }
+
+    .version-badge {
+      display: inline-block;
+      background: #e8f4fd;
+      color: #0078c8;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 4px;
+      margin-top: 8px;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 10px;
+      padding: 24px;
+      margin-bottom: 16px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    }
+
+    .card h2 {
+      font-size: 15px;
+      font-weight: 700;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .step-number {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 22px;
+      height: 22px;
+      background: #0090e3;
+      color: #fff;
+      border-radius: 50%;
+      font-size: 12px;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .steps ol {
+      list-style: none;
+      counter-reset: steps;
+    }
+
+    .steps ol li {
+      padding: 8px 0 8px 0;
+      font-size: 14px;
+      line-height: 1.5;
+      color: #333;
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      border-bottom: 1px solid #f0f0f0;
+    }
+
+    .steps ol li:last-child {
+      border-bottom: none;
+    }
+
+    .steps ol li .num {
+      flex-shrink: 0;
+      width: 20px;
+      height: 20px;
+      background: #f0f0f0;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 700;
+      color: #555;
+      margin-top: 2px;
+    }
+
+    .bookmarklet-zone {
+      background: #f0f7ff;
+      border: 2px dashed #90c8f0;
+      border-radius: 8px;
+      padding: 20px;
+      text-align: center;
+      margin: 16px 0;
+    }
+
+    .bookmarklet-zone p {
+      font-size: 13px;
+      color: #555;
+      margin-bottom: 14px;
+    }
+
+    .bookmarklet-link {
+      display: inline-block;
+      background: #0090e3;
+      color: #fff !important;
+      text-decoration: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: grab;
+      user-select: none;
+      box-shadow: 0 2px 6px rgba(0,144,227,0.35);
+      transition: background 0.15s, box-shadow 0.15s;
+    }
+
+    .bookmarklet-link:hover {
+      background: #0078c8;
+      box-shadow: 0 3px 10px rgba(0,144,227,0.4);
+    }
+
+    .bookmarklet-link:active {
+      cursor: grabbing;
+    }
+
+    .drag-hint {
+      font-size: 12px;
+      color: #888;
+      margin-top: 10px;
+    }
+
+    .note {
+      background: #fffbea;
+      border-left: 3px solid #f5c518;
+      padding: 10px 14px;
+      border-radius: 0 6px 6px 0;
+      font-size: 13px;
+      color: #555;
+      margin-top: 12px;
+      line-height: 1.5;
+    }
+
+    .note strong { color: #333; }
+
+    .cache-code {
+      display: inline-block;
+      background: #1a1a2e;
+      color: #7ec8e3;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      padding: 6px 10px;
+      border-radius: 4px;
+      margin-top: 8px;
+      user-select: all;
+      cursor: text;
+      word-break: break-all;
+    }
+
+    .divider {
+      border: none;
+      border-top: 1px solid #eee;
+      margin: 8px 0;
+    }
+
+    footer {
+      text-align: center;
+      font-size: 12px;
+      color: #aaa;
+      margin-top: 32px;
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+
+    <div class="header">
+      <h1>Extra rijtijd</h1>
+      <p class="subtitle">Waar past een aftercare, en wat kost dat?</p>
+      <span class="version-badge">v1.0.0</span>
+    </div>
+
+    <!-- WAT DOET HET -->
+    <div class="card">
+      <h2>Waar is dit voor?</h2>
+      <p style="font-size:14px;color:#444;line-height:1.6;">
+        Als er een aftercare ingepland moet worden, is de vraag: in welke rit past die stop, en hoeveel loopt die rit daardoor uit? Deze tool draait op de <strong>Ritmonitor</strong>, scant de ritten in de lijst en rekent per gat uit wat het invoegen kost. Hij houdt daarbij rekening met de voorsprong of achterstand van elke rit, met welk netwerk het werk aankan, en met de stops die de bezorger al gehad heeft.
+      </p>
+      <div class="note" style="margin-top:16px;">
+        Deze tool staat <strong>los van de DS Logboek widget</strong>. Je hebt hem alleen nodig op het moment dat je een same day of next day bezoek moet inplannen. De widget zelf installeer je op de <a href="../install.html" style="color:#0078c8;">hoofdpagina</a>.
+      </div>
+    </div>
+
+    <!-- BOOKMARKLET -->
+    <div class="card">
+      <h2><span class="step-number">1</span> Bookmarklet installeren</h2>
+
+      <p style="font-size:14px;color:#444;margin-bottom:16px;line-height:1.5;">
+        Sleep de knop hieronder naar je bladwijzerbalk. Daarna klik je hem aan terwijl je op de Ritmonitor staat.
+      </p>
+
+      <div class="bookmarklet-zone">
+        <p>Sleep deze knop naar je bladwijzerbalk:</p>
+        <a class="bookmarklet-link" href="javascript:%28function%28%29%7B%20var%20CACHE%3D%27ds_rijtijd_prod_cache%27%3B%20var%20SRC%3D%27https%3A//raw.githubusercontent.com/BasEijserCB/DS_callscript_app/main/tourtool/extra-rijtijd.js%27%3B%20function%20getVersion%28code%29%7Bvar%20m%3Dcode%26%26code.match%28/RIJTIJD_VERSION%5Cs%2A%3D%5Cs%2A%5B%27%22%5D%28%5B%5E%27%22%5D%2B%29%5B%27%22%5D/%29%3Breturn%20m%3Fm%5B1%5D%3A%27%3F%27%3B%7D%20var%20cached%3DlocalStorage.getItem%28CACHE%29%3B%20if%28cached%29eval%28cached%29%3B%20fetch%28SRC%2B%27%3Ft%3D%27%2BDate.now%28%29%2C%7Bcache%3A%27no-store%27%7D%29%20.then%28function%28r%29%7Breturn%20r.ok%3Fr.text%28%29%3Anull%3B%7D%29%20.then%28function%28code%29%7B%20if%28%21code%7C%7Ccode%3D%3D%3Dcached%29return%3B%20localStorage.setItem%28CACHE%2Ccode%29%3B%20if%28%21cached%29%7Beval%28code%29%3Breturn%3B%7D%20var%20t%3Ddocument.createElement%28%27div%27%29%3B%20t.innerHTML%3D%27%E2%86%BB%20%3Cb%3EExtra%20rijtijd%20%27%2BgetVersion%28code%29%2B%27%20gedownload%3C/b%3E%3Cbr%3E%3Cspan%20style%3D%22font-weight%3A400%3B%22%3ENu%20actief%3A%20%27%2BgetVersion%28cached%29%2B%27%20%E2%80%94%20druk%20opnieuw%20om%20de%20nieuwe%20versie%20te%20laden%3C/span%3E%3Cbutton%20onclick%3D%22this.parentNode.remove%28%29%22%20style%3D%22position%3Aabsolute%3Btop%3A8px%3Bright%3A10px%3Bbackground%3Anone%3Bborder%3Anone%3Bcolor%3A%23fff%3Bfont-size%3A18px%3Bcursor%3Apointer%3Bline-height%3A1%3Bopacity%3A0.8%3B%22%3E%C3%97%3C/button%3E%27%3B%20t.style.cssText%3D%27position%3Afixed%3Bbottom%3A20px%3Bright%3A20px%3Bz-index%3A1000001%3Bbackground%3A%231a7f37%3Bcolor%3A%23fff%3Bpadding%3A12px%2036px%2012px%2014px%3Bborder-radius%3A8px%3Bfont%3A13px%20%22Segoe%20UI%22%2Csans-serif%3Bbox-shadow%3A0%204px%2016px%20rgba%280%2C0%2C0%2C.35%29%3Bmax-width%3A300px%3Bline-height%3A1.5%3B%27%3B%20document.body.appendChild%28t%29%3B%20%7D%29%20.catch%28function%28%29%7B%7D%29%3B%20%7D%29%28%29%3B">🚚  Extra rijtijd</a>
+        <p class="drag-hint">Zie je geen bladwijzerbalk? Druk op <strong>Ctrl+Shift+B</strong> (Windows) of <strong>Cmd+Shift+B</strong> (Mac).</p>
+      </div>
+
+      <div class="note">
+        <strong>Al geïnstalleerd?</strong> Sleep de knop opnieuw naar je bladwijzerbalk en kies "Vervangen" — of verwijder de oude bladwijzer eerst en sleep hem opnieuw.
+      </div>
+    </div>
+
+    <!-- ORS-SLEUTEL -->
+    <div class="card steps">
+      <h2><span class="step-number">2</span> Je eigen OpenRouteService-sleutel</h2>
+
+      <p style="font-size:14px;color:#444;margin-bottom:16px;line-height:1.5;">
+        De tool rekent rijtijden uit via OpenRouteService. Dat is gratis, maar het dagquotum hangt aan de sleutel: deel je er één met het hele team, dan is die halverwege de ochtend op en krijgt niemand nog een uitslag. Vandaar dat iedereen zijn eigen sleutel maakt. Je hoeft dit maar <strong>één keer per browser</strong> te doen.
+      </p>
+
+      <ol>
+        <li>
+          <span class="num">1</span>
+          <span>Ga naar <strong>openrouteservice.org</strong> en klik rechtsboven op <strong>Sign up</strong>.</span>
+        </li>
+        <li>
+          <span class="num">2</span>
+          <span>Maak een gratis account aan en <strong>bevestig de e-mail</strong> die je krijgt. Zonder die bevestiging werkt de sleutel niet.</span>
+        </li>
+        <li>
+          <span class="num">3</span>
+          <span>Log in en ga naar je <strong>Dashboard</strong>.</span>
+        </li>
+        <li>
+          <span class="num">4</span>
+          <span>Bij <strong>Request a token</strong>: kies het <strong>Free</strong>-plan, geef de token een naam (bijvoorbeeld <em>DS extra rijtijd</em>) en klik op <strong>Create token</strong>.</span>
+        </li>
+        <li>
+          <span class="num">5</span>
+          <span>De sleutel verschijnt in de lijst op je dashboard. Het is een lange tekenreeks die begint met <strong>eyJ</strong> — kopieer hem helemaal.</span>
+        </li>
+        <li>
+          <span class="num">6</span>
+          <span>Open de <strong>Ritmonitor</strong>, klik de <strong>Extra rijtijd</strong> bladwijzer, plak de sleutel in het oranje veld bovenaan het paneel en klik op <strong>Sleutel opslaan</strong>.</span>
+        </li>
+      </ol>
+
+      <div class="note" style="margin-top:16px;">
+        Het oranje veld verdwijnt zodra de sleutel is opgeslagen. Hij blijft in je browser staan, dus dit is eenmalig — tenzij je van computer wisselt of je browsergegevens wist. Zonder sleutel blijft de tool werken, maar dan via een testserver die daar niet voor bedoeld is; het paneel meldt dat dan onder de uitslag.
+      </div>
+    </div>
+
+    <!-- GEBRUIK -->
+    <div class="card steps">
+      <h2><span class="step-number">3</span> Hoe gebruik je het?</h2>
+      <ol>
+        <li>
+          <span class="num">1</span>
+          <span>Klik in de <strong>DS Logboek widget</strong> op <strong>"Adres klaarzetten voor reistijd-check"</strong>. Die knop staat bij elke uitkomstvraag waar same day of next day een optie is.</span>
+        </li>
+        <li>
+          <span class="num">2</span>
+          <span>Ga naar de <strong>Ritmonitor</strong> en klik de <strong>Extra rijtijd</strong> bladwijzer.</span>
+        </li>
+        <li>
+          <span class="num">3</span>
+          <span>Staat het adres er nog niet, klik dan op <strong>"Haal adres op"</strong>. Servicetijd, netwerken en de rit van de klant vullen zichzelf op basis van de taak.</span>
+        </li>
+        <li>
+          <span class="num">4</span>
+          <span>Klik op <strong>Bereken</strong>. Je krijgt per rit het beste gat te zien, met hoeveel die rit erdoor uitloopt.</span>
+        </li>
+        <li>
+          <span class="num">5</span>
+          <span>Klik een rit in de uitslag aan: DireXtion springt naar die rit en de stoplijst krijgt een kolom <strong>+ rijtijd</strong> op de regel van de stop waarná je invoegt.</span>
+        </li>
+      </ol>
+    </div>
+
+    <!-- HET GROTE GETAL -->
+    <div class="card">
+      <h2>Het grote getal is de uitloop</h2>
+      <p style="font-size:14px;color:#444;line-height:1.6;">
+        Dat is niet hoe lang de klus duurt, maar wat de rit er <strong>netto</strong> bij krijgt: de benodigde tijd min de voorsprong die de rit al heeft. Een rode <strong>+12 min</strong> betekent dat de rit twaalf minuten uitloopt. Een groene <strong>−19 min</strong> betekent dat het ruim past en er nog negentien minuten voorsprong overblijft. De opbouw — rijden plus service — staat op de regel eronder.
+      </p>
+      <div class="note" style="margin-top:16px;">
+        Groen betekent dus één ding: <strong>de rit loopt er niet door uit</strong>. Elke minuut uitloop is minstens oranje.
+      </div>
+    </div>
+
+    <!-- WAT DE TOOL ZELF UITSLUIT -->
+    <div class="card">
+      <h2>Wat de tool zelf al wegstreept</h2>
+      <p style="font-size:14px;color:#444;margin-bottom:12px;line-height:1.6;">
+        Niet elk gat in een rit is een echte optie. Dit filtert hij eruit voordat je het te zien krijgt:
+      </p>
+      <div class="steps">
+        <ol>
+          <li><span class="num">✕</span><span><strong>De eerstvolgende stop.</strong> Een toegevoegde stop is niet op tijd naar de werktelefoon van de held gesynchroniseerd. De stop daarna kan wel, maar krijgt het label <strong>⚠ krap</strong>.</span></li>
+          <li><span class="num">✕</span><span><strong>Stops die al gehad zijn.</strong> De laatste stop met een echte aankomsttijd — het ↑/↓-pijltje in de lijst — geldt als de huidige positie.</span></li>
+          <li><span class="num">✕</span><span><strong>De rit van de klant zelf.</strong> Die komt uit het logboek mee, en anders herkent de tool hem doordat het adres er als stop in staat.</span></li>
+          <li><span class="num">✕</span><span><strong>Netwerken die het werk niet aankunnen.</strong> Die vinkjes zet je zelf, of de taak uit het logboek zet ze voor je.</span></li>
+        </ol>
+      </div>
+      <div class="note" style="margin-top:16px;">
+        <strong>Staat een rit nog op het depot?</strong> Dan geldt de beperking op de eerstvolgende stop niet en zijn alle gaten beschikbaar — maar moet je wel de TL op het depot informeren nadat je hebt ingepland. De uitslag meldt dat bij die rit.
+      </div>
+    </div>
+
+    <!-- CACHE LEGEN -->
+    <div class="card">
+      <h2>Oude versie blijft hangen? Cache handmatig legen</h2>
+      <p style="font-size:14px;color:#444;margin-bottom:10px;line-height:1.5;">
+        De loader werkt zichzelf normaal automatisch bij. Als het toch niet lukt, plak dit in de browserconsole (F12) op de Ritmonitor en herlaad:
+      </p>
+      <div class="cache-code">localStorage.removeItem('ds_rijtijd_prod_cache')</div>
+      <div class="note" style="margin-top:16px;">
+        Je sleutel staat apart opgeslagen en blijft hierbij gewoon staan.
+      </div>
+    </div>
+
+    <footer>Extra rijtijd v1.0.0 — Coolblue Delivery Support — intern gebruik</footer>
+
+  </div>
+</body>
+</html>

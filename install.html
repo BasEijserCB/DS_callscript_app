@@ -247,68 +247,23 @@
     </div>
 
 
-    <!-- EXTRA RIJTIJD -->
+
+
+
+    <!-- VERWIJZING NAAR DE TOURTOOL -->
     <div class="card">
-      <h2><span class="step-number">3</span> Extra rijtijd installeren</h2>
-
-      <p style="font-size:14px;color:#444;margin-bottom:16px;line-height:1.5;">
-        Sleep de knop hieronder naar je bladwijzerbalk. Deze gebruik je op de <strong>Ritmonitor</strong>: hij zoekt uit in welke rit een aftercare past en wat die de planning kost. Los van de widget — je hebt hem alleen nodig als je een same day of next day bezoek moet inplannen.
+      <h2>Ook nodig: Extra rijtijd</h2>
+      <p style="font-size:14px;color:#444;line-height:1.6;">
+        Voor het inplannen van een aftercare is er een aparte tool die op de <strong>Ritmonitor</strong> uitrekent in welke rit die stop past en wat die de planning kost. Die staat los van de widget en heeft een eigen installatiepagina.
       </p>
-
-      <div class="bookmarklet-zone">
-        <p>Sleep deze knop naar je bladwijzerbalk:</p>
-        <a class="bookmarklet-link" href="javascript:%28function%28%29%7B%20var%20CACHE%3D%27ds_rijtijd_prod_cache%27%3B%20var%20SRC%3D%27https%3A//raw.githubusercontent.com/BasEijserCB/DS_callscript_app/main/tourtool/extra-rijtijd.js%27%3B%20function%20getVersion%28code%29%7Bvar%20m%3Dcode%26%26code.match%28/RIJTIJD_VERSION%5Cs%2A%3D%5Cs%2A%5B%27%22%5D%28%5B%5E%27%22%5D%2B%29%5B%27%22%5D/%29%3Breturn%20m%3Fm%5B1%5D%3A%27%3F%27%3B%7D%20var%20cached%3DlocalStorage.getItem%28CACHE%29%3B%20if%28cached%29eval%28cached%29%3B%20fetch%28SRC%2B%27%3Ft%3D%27%2BDate.now%28%29%2C%7Bcache%3A%27no-store%27%7D%29%20.then%28function%28r%29%7Breturn%20r.ok%3Fr.text%28%29%3Anull%3B%7D%29%20.then%28function%28code%29%7B%20if%28%21code%7C%7Ccode%3D%3D%3Dcached%29return%3B%20localStorage.setItem%28CACHE%2Ccode%29%3B%20if%28%21cached%29%7Beval%28code%29%3Breturn%3B%7D%20var%20t%3Ddocument.createElement%28%27div%27%29%3B%20t.innerHTML%3D%27%E2%86%BB%20%3Cb%3EExtra%20rijtijd%20%27%2BgetVersion%28code%29%2B%27%20gedownload%3C/b%3E%3Cbr%3E%3Cspan%20style%3D%22font-weight%3A400%3B%22%3ENu%20actief%3A%20%27%2BgetVersion%28cached%29%2B%27%20%E2%80%94%20druk%20opnieuw%20om%20de%20nieuwe%20versie%20te%20laden%3C/span%3E%3Cbutton%20onclick%3D%22this.parentNode.remove%28%29%22%20style%3D%22position%3Aabsolute%3Btop%3A8px%3Bright%3A10px%3Bbackground%3Anone%3Bborder%3Anone%3Bcolor%3A%23fff%3Bfont-size%3A18px%3Bcursor%3Apointer%3Bline-height%3A1%3Bopacity%3A0.8%3B%22%3E%C3%97%3C/button%3E%27%3B%20t.style.cssText%3D%27position%3Afixed%3Bbottom%3A20px%3Bright%3A20px%3Bz-index%3A1000001%3Bbackground%3A%231a7f37%3Bcolor%3A%23fff%3Bpadding%3A12px%2036px%2012px%2014px%3Bborder-radius%3A8px%3Bfont%3A13px%20%22Segoe%20UI%22%2Csans-serif%3Bbox-shadow%3A0%204px%2016px%20rgba%280%2C0%2C0%2C.35%29%3Bmax-width%3A300px%3Bline-height%3A1.5%3B%27%3B%20document.body.appendChild%28t%29%3B%20%7D%29%20.catch%28function%28%29%7B%7D%29%3B%20%7D%29%28%29%3B">🚚  Extra rijtijd</a>
-        <p class="drag-hint">Zie je geen bladwijzerbalk? Druk op <strong>Ctrl+Shift+B</strong> (Windows) of <strong>Cmd+Shift+B</strong> (Mac).</p>
-      </div>
-
-      <div class="note">
-        <strong>Eerste keer:</strong> het paneel vraagt om een eigen OpenRouteService-sleutel. Die is gratis en in twee minuten geregeld &mdash; hieronder staat hoe.
-      </div>
-    </div>
-
-    <!-- ORS-SLEUTEL -->
-    <div class="card steps">
-      <h2><span class="step-number">4</span> Je eigen OpenRouteService-sleutel</h2>
-
-      <p style="font-size:14px;color:#444;margin-bottom:16px;line-height:1.5;">
-        De Extra rijtijd-tool rekent rijtijden uit via OpenRouteService. Dat is gratis, maar het dagquotum hangt aan de sleutel: deel je er één met het hele team, dan is die halverwege de ochtend op en krijgt niemand nog een uitslag. Vandaar dat iedereen zijn eigen sleutel maakt. Je hoeft dit maar <strong>één keer per browser</strong> te doen.
-      </p>
-
-      <ol>
-        <li>
-          <span class="num">1</span>
-          <span>Ga naar <strong>openrouteservice.org</strong> en klik rechtsboven op <strong>Sign up</strong>.</span>
-        </li>
-        <li>
-          <span class="num">2</span>
-          <span>Maak een gratis account aan en <strong>bevestig de e-mail</strong> die je krijgt. Zonder die bevestiging werkt de sleutel niet.</span>
-        </li>
-        <li>
-          <span class="num">3</span>
-          <span>Log in en ga naar je <strong>Dashboard</strong>.</span>
-        </li>
-        <li>
-          <span class="num">4</span>
-          <span>Bij <strong>Request a token</strong>: kies het <strong>Free</strong>-plan, geef de token een naam (bijvoorbeeld <em>DS extra rijtijd</em>) en klik op <strong>Create token</strong>.</span>
-        </li>
-        <li>
-          <span class="num">5</span>
-          <span>De sleutel verschijnt in de lijst op je dashboard. Het is een lange tekenreeks die begint met <strong>eyJ</strong> &mdash; kopieer hem helemaal.</span>
-        </li>
-        <li>
-          <span class="num">6</span>
-          <span>Open de <strong>Ritmonitor</strong>, klik de <strong>Extra rijtijd</strong> bladwijzer, plak de sleutel in het oranje veld bovenaan het paneel en klik op <strong>Sleutel opslaan</strong>.</span>
-        </li>
-      </ol>
-
       <div class="note" style="margin-top:16px;">
-        Het oranje veld verdwijnt zodra de sleutel is opgeslagen. Hij blijft in je browser staan, dus dit is eenmalig &mdash; tenzij je van computer wisselt of je browsergegevens wist. Zonder sleutel blijft de tool werken, maar dan via een testserver die daar niet voor bedoeld is; het paneel meldt dat dan onder de uitslag.
+        <a href="tourtool/install-rijtijd.html" style="color:#0078c8;font-weight:600;">🚚 Naar de installatiepagina van Extra rijtijd &rarr;</a>
       </div>
     </div>
 
     <!-- HOE GEBRUIK JE HET -->
     <div class="card steps">
-      <h2><span class="step-number">5</span> Hoe gebruik je de paste bookmarklet?</h2>
+      <h2><span class="step-number">3</span> Hoe gebruik je de paste bookmarklet?</h2>
       <ol>
         <li>
           <span class="num">1</span>
@@ -335,7 +290,7 @@
 
     <!-- WAT WORDT INGEVULD -->
     <div class="card">
-      <h2><span class="step-number">6</span> Wat wordt er automatisch ingevuld?</h2>
+      <h2><span class="step-number">4</span> Wat wordt er automatisch ingevuld?</h2>
       <div class="steps">
         <ol>
           <li><span class="num">✓</span><span>Naam, telefoon, e-mail, postcode, adres, woonplaats</span></li>
@@ -358,7 +313,7 @@
       <div class="cache-code">localStorage.removeItem('ds_app_prod_cache')</div>
     </div>
 
-    <footer>DS Logboek v1.18.1 — Coolblue Delivery Support — intern gebruik</footer>
+    <footer>DS Logboek v1.40.1 — Coolblue Delivery Support — intern gebruik</footer>
 
   </div>
 </body>
