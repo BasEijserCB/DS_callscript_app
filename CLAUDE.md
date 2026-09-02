@@ -15,7 +15,8 @@ Browsergebaseerde widget voor het Coolblue Delivery Support team. Draait bovenop
 | `install.html` | Installatiepagina. Bevat **beide** bookmarklets als sleepbare knoppen. |
 | `build.py` | Syntax-checkt `ds-logboek.js` en `paste-bookmarklet.js`, detecteert versienummer uit `ds-logboek.js` en synchroniseert `PASTE_VERSION` in `paste-bookmarklet.js`. |
 | `gas-backend.js` | Broncode van het Google Apps Script backend (`doGet`). Schrijft elke log-entry als rij naar de actieve Google Sheet. Moet handmatig gekopieerd worden naar de GAS editor bij wijzigingen — een commit hier verandert niets in productie. |
-| `tourtool/extra-rijtijd.js` | **Losse tool**, geen onderdeel van de widget. Draait op de Ritmonitor en berekent wat een extra stop aan rijtijd kost, per gat en over meerdere ritten. Console-snippet, geen bookmarklet. Zie "Extra rijtijd-tool". |
+| `tourtool/extra-rijtijd.js` | **Losse tool**, geen onderdeel van de widget. Draait op de Ritmonitor en berekent wat een extra stop aan rijtijd kost, per gat en over meerdere ritten. Eigen `RIJTIJD_VERSION`, los van de widgetversie. Zie "Extra rijtijd-tool". |
+| `tourtool/loader-rijtijd-bookmarklet.js` | Leesbare broncode van de loader voor de Extra rijtijd-tool. Eigen cache key (`ds_rijtijd_prod_cache`), groene toast, versie uit `RIJTIJD_VERSION`. Zelfde stale-while-revalidate als de andere twee. |
 | `tourtool/probe-ritmonitor.js` | Eenmalige recon van de Ritmonitor (frameworks, DOM, netwerk, viewmodels). Alleen lezen; bewaard als naslag voor als DireXtion verandert. |
 
 ---
@@ -31,6 +32,8 @@ De loader bookmarklet haalt de nieuwe `ds-logboek.js` automatisch op in de achte
 ```javascript
 localStorage.removeItem('ds_app_prod_cache')
 ```
+
+`build.py` syntax-checkt ook `tourtool/extra-rijtijd.js`, maar synchroniseert `RIJTIJD_VERSION` bewust **niet**: die tool heeft een eigen levenscyclus. Hoog hem met de hand op bij elke wijziging, anders ziet niemand de updatetoast.
 
 **Versienummer** alleen ophogen bij wijzigingen aan `ds-logboek.js` — zonder te vragen. Patch voor bugfix, minor voor nieuwe feature. `build.py` synchroniseert `PASTE_VERSION` in `paste-bookmarklet.js` automatisch naar hetzelfde versienummer.
 
@@ -246,7 +249,9 @@ Wat er inmiddels wél mee kan: kolom Y splitst de groep naar `Onderweg` / `Bij d
 
 ## Extra rijtijd-tool (`tourtool/`) — los van de widget
 
-Beantwoordt één vraag: als we deze aftercare tussen twee stops proppen, hoeveel rijtijd kost dat? Draait op de **Ritmonitor** (`coolblue.dirextion.nl/ModuleTourMonitor`), plakken in de console. Deelt geen code met `ds-logboek.js`.
+Beantwoordt één vraag: als we deze aftercare tussen twee stops proppen, hoeveel rijtijd kost dat? Draait op de **Ritmonitor** (`coolblue.dirextion.nl/ModuleTourMonitor`) via een eigen loader-bookmarklet. Deelt geen code met `ds-logboek.js`.
+
+**De ORS-sleutel staat niet in het bestand.** Dat bestand gaat naar GitHub en wordt door de loader opgehaald, dus een sleutel erin zou publiek zijn. Hij staat in `localStorage` (`rijtijd_ors_key`) en wordt gezet via een veld dat het paneel alleen toont zolang er geen sleutel is. Iedereen zet dus zijn eigen sleutel, één keer per browser. Lokaal staat er een gitignored `tourtool/zet-ors-sleutel.local.js` om dat in één plak te doen.
 
 **Waar de data vandaan komt.** De Ritmonitor is Durandal + Knockout + DevExtreme met SignalR voor live updates; klikken op een rit doet géén XHR. Bruikbare ingangen, gevonden met `probe-ritmonitor.js`:
 
@@ -257,7 +262,21 @@ Beantwoordt één vraag: als we deze aftercare tussen twee stops proppen, hoevee
 | `/ModuleTourMonitor/TourMonitor/GetTours?filter=…&stateFilter=…&orderField=…&skip=&take=` | Volledige gefilterde rittenlijst. Valt terug op `ko.contextFor(rij).$root.tours()` (alleen de ~16 geladen ritten). |
 | `ko.contextFor($('table.tourlist tr.icons')).$root` | Viewmodel: `tours`, `selectTourId()`, `tourFilter`, `sortProperty`. |
 
-Elke visit heeft `PlanCoordinates` (lat/lon), `SequenceNumber`, `TourId`, `IsActivity`, tijdvenster en plan-/werkelijke aankomst- en vertrektijden. Geocoden van routestops is dus niet nodig — alleen het nieuwe adres gaat langs Nominatim.
+Elke visit heeft `PlanCoordinates` (lat/lon), `SequenceNumber`, `TourId`, `IsActivity`, tijdvenster en plan-/werkelijke aankomst- en vertrektijden. Geocoden van routestops is dus niet nodig — alleen het nieuwe adres wordt opgezocht.
+
+**Externe calls lopen via `externFetch()`.** Alle drie de calls naar buiten (PDOK, Nominatim, OSRM) gaan door één functie met `referrerPolicy: 'no-referrer'` en `credentials: 'omit'`. Daarmee staat `coolblue.dirextion.nl` niet meer in hun logs en gaat er nooit een cookie mee. De **Origin-header gaat wél mee** — die hoort bij CORS en is vanuit de browser niet weg te krijgen zonder het antwoord onleesbaar te maken; volledig anoniem kan alleen via een eigen proxy of een zelf gedraaide OSRM. De DireXtion-calls houden bewust `credentials: 'same-origin'`, want die hebben de sessiecookie nodig.
+
+Uitzondering: **Nominatim gaat via `nominatimFetch()`, zonder `no-referrer`.** Hun gebruiksvoorwaarden vragen dat je je identificeert, en een User-Agent kun je vanuit de browser niet zetten — dus dat moet via de Referer. Cookies gaan er nog steeds niet heen, en het blijft bij één verzoek per Bereken, ruim binnen hun limiet van één per seconde.
+
+**Router: OpenRouteService, met de OSRM-demo als vangnet.** `matrix()` kiest op `ORS_KEY` bovenaan het bestand. Is die gevuld, dan gaat het naar OpenRouteService (`POST /v2/matrix/driving-car`, sleutel in de `Authorization`-header); is hij leeg, dan naar `router.project-osrm.org`. Allebei leveren `durations[i][j]` in seconden, dus de rest van de tool merkt het verschil niet.
+
+Dat onderscheid bestaat omdat de OSRM-demoserver door het OSRM-project uitdrukkelijk bestemd is voor ontwikkelen en testen, niet voor dagelijks operationeel gebruik. Zolang `ORS_KEY` leeg is, meldt de tool dat zelf onder de uitslag — die afwijking hoort niet stil te zijn. De sleutel staat leesbaar in een script dat in de console geplakt wordt en is dus geen geheim; bij een gratis sleutel is dat te overzien en hij is opnieuw te genereren.
+
+Let op bij het eerste gebruik: de ORS-call is een `POST` met een eigen header, en dat vraagt een CORS-preflight. Dat is een strengere test van de CSP van DireXtion dan de bestaande GET-calls. Wordt hij geblokkeerd, dan verschijnt de bestaande CSP-melding en moet de berekening alsnog naar een eigen pagina of proxy.
+
+Voor later: OSRM zelf draaien (container met een NL-extract) lost naleving, privacy én beschikbaarheid in één keer op, en is sneller dan een gedeelde server.
+
+**Geocoderen: PDOK eerst, Nominatim als vangnet.** De hele berekening hangt aan dat ene punt: zit het adres 200 m verkeerd, dan klopt geen enkele omweg in de lijst. PDOK Locatieserver is de officiële BAG-bron en zit op huisnummerniveau altijd goed, maar kent alleen Nederland; Nominatim zit op NL-adressen er soms een straat naast. Levert PDOK niets op (BE/DE, of een adres dat de BAG niet kent), dan valt `geocode()` terug op Nominatim. Welke bron het werd en welk adres hij vond, staat onder de uitslag — een misser is daarmee zichtbaar in plaats van stil.
 
 **Rekenregels.** Per gat: `t(A→X) + t(X→B) − t(A→B)`, alle drie via dezelfde engine (publieke OSRM-demoserver). Alleen gaten vanaf de huidige positie van de bezorger tellen mee: de laatste stop met een echte `RealArrivalDatestamp` (de ↑/↓-pijltjes in de lijst) is waar de rit nu is. Ritten met **voorsprong** (gepland min werkelijk) komen boven: `netto = max(0, benodigde tijd − voorsprong)`. Voorafgaand aan het routeren worden ritten hemelsbreed gefilterd; alleen de zes dichtstbijzijnde gaan echt de router in — dat houdt het aantal calls naar een publieke demoserver fatsoenlijk.
 

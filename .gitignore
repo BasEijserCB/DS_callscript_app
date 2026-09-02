@@ -2,3 +2,6 @@
 
 # Sheet-exports — alleen lokaal, horen niet in de repo (zie mapping-kolom-J.tsv voor de mapping zelf)
 *.xlsx
+
+# Lokale sleutels — nooit committen
+*.local.js

@@ -5,7 +5,8 @@ DS Logboek — Buildscript
 Gebruik: python3 build.py
 
 Wat het doet:
-1. Voert node --check uit op ds-logboek.js en paste-bookmarklet.js
+1. Voert node --check uit op ds-logboek.js, paste-bookmarklet.js en
+   tourtool/extra-rijtijd.js
 2. Detecteert versienummer uit ds-logboek.js
 3. Synchroniseert PASTE_VERSION in paste-bookmarklet.js naar hetzelfde versienummer
 
@@ -32,6 +33,9 @@ def syntax_check(filename):
 
 syntax_check('ds-logboek.js')
 syntax_check('paste-bookmarklet.js')
+# Losse tool met een eigen versienummer (RIJTIJD_VERSION); die wordt hier
+# bewust niet gesynchroniseerd, alleen gecontroleerd.
+syntax_check('tourtool/extra-rijtijd.js')
 
 # ── STAP 2: EXTRACT VERSION ──────────────────────────────────────────────────
 
@@ -59,5 +63,5 @@ else:
 # ── KLAAR ─────────────────────────────────────────────────────────────────────
 
 print('\nBuild geslaagd.')
-print(f'  ds-logboek.js + paste-bookmarklet.js → pushen naar GitHub')
+print(f'  ds-logboek.js + paste-bookmarklet.js + tourtool/extra-rijtijd.js → pushen naar GitHub')
 print(f'  Loader haalt automatisch nieuwe versies op via stale-while-revalidate.')
