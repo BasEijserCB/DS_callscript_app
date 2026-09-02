@@ -6,7 +6,7 @@
 // React, ReactDOM, DS, and browser globals are accessible inside JSX.
 
 (function () {
-  const STAGING_VERSION = "0.16.0-staging";
+  const STAGING_VERSION = "0.17.0-staging";
   const ROOT_ID = "ds-logboek-staging-root";
   const STYLE_ID = "ds-logboek-staging-style";
   const GAS_URL = "https://script.google.com/a/macros/coolblue.nl/s/AKfycbxb-OwLCFGlDQ48qz3KnGnmsgnVLWxuOjvEr7UG3M3z0WzO0kVsTKGd_8mZjtvHvPHnEg/exec";
@@ -982,6 +982,39 @@
 
   // ── REACT APP ─────────────────────────────────────────────────
   function runApp(scraped) {
+    // ── REISTIJD-HANDOFF (naar de losse "Extra rijtijd"-tool) ──
+    // De same day / next day keuze hangt af van welke route nog ruimte heeft,
+    // dus die afweging valt vóór het loggen — en dus voordat
+    // kopieerNaarKlembord() een payload schrijft. Deze knop zet alvast alleen
+    // het adres + de taak klaar. localStorage werkt tussen Basic en de
+    // Ritmonitor (zelfde origin), het klembord ook vanaf de consumer portal.
+    var REISTIJD_KEY = 'ds_reistijd_verzoek';
+    var REISTIJD_TRIGGERS = ['Same day gepland','Next day gepland','Same day visit gepland','Next day visit gepland'];
+
+    function publiceerReistijdVerzoek(cd) {
+      var v = {
+        _soort: 'ds-reistijd',
+        adres: scraped.adres || '',
+        postcode: (scraped.pc || '').trim(),
+        plaats: '',
+        zoekterm: [scraped.adres, scraped.pc].filter(function (x) { return !!x; }).join(', '),
+        taak: cd.probleem || '',
+        dienstType: cd.dienstType || '',
+        product: effectiefProduct(cd),
+        orderBron: cd.orderBron || '',
+        time: Date.now()
+      };
+      if (!v.zoekterm) return null;
+      var json = JSON.stringify(v), ok = false;
+      try { localStorage.setItem(REISTIJD_KEY, json); ok = true; } catch (e) {}
+      try {
+        var p = navigator.clipboard.writeText(json);
+        if (p && p.catch) p.catch(function () {});
+        ok = true;
+      } catch (e) {}
+      return ok ? v : null;
+    }
+
     var DS = {
       scraped: scraped,
       isBasicPage: isBasicPage,
@@ -1004,11 +1037,29 @@
       artikelsoortNaarProduct: artikelsoortNaarProduct,
       isLogOnlyProduct: isLogOnlyProduct,
       alleProbleemOpties: alleProbleemOpties,
+      publiceerReistijdVerzoek: publiceerReistijdVerzoek,
+      REISTIJD_TRIGGERS: REISTIJD_TRIGGERS,
       version: STAGING_VERSION,
     };
 
     const JSX_SOURCE = `
 const {useState,useEffect,useRef} = React;
+
+function ReistijdKnop(props){
+  const [msg,setMsg]=useState(null);
+  return (
+    <div style={{marginTop:12,paddingTop:12,borderTop:'1px solid rgba(128,145,165,.25)'}}>
+      <button className="ds-btn ds-btn--ghost" style={{width:'100%'}} onClick={function(){
+        var v=DS.publiceerReistijdVerzoek(props.cd);
+        setMsg(v?('\u2713 '+v.zoekterm+' klaargezet \u2014 open de Ritmonitor en klik Bereken.')
+                :'Klaarzetten niet gelukt \u2014 kopieer het adres handmatig.');
+      }}>\u{1F69A} Adres klaarzetten voor reistijd-check</button>
+      <div className="ds-hint" style={{marginTop:6,lineHeight:1.4,display:'block'}}>
+        {msg||'Voor de Extra rijtijd-tool op de Ritmonitor: welke route heeft ruimte?'}
+      </div>
+    </div>
+  );
+}
 
 function artikelsoortNaarProd(soort){
   var m={wasmachine:'Wasmachine',wasdroogcombinatie:'Wasdroogcombinatie',droger:'Droger',koelkast:'Koelkast / Vriezer','inbouw koelkast':'Koelkast / Vriezer',vriezer:'Koelkast / Vriezer','inbouw vriezer':'Koelkast / Vriezer','koel-vries combo':'Koelkast / Vriezer',vaatwasser:'Vaatwasser','inbouw vaatwasser':'Vaatwasser',televisie:'Televisie',soundbar:'Soundbar',oven:'Oven / Magnetron',magnetron:'Oven / Magnetron','combi-oven':'Combi-oven',kookplaat:'Kookplaat',fornuis:'Fornuis',afzuigkap:'Afzuigkap'};
@@ -1426,6 +1477,7 @@ function App(){
         <div>
           <div className="ds-h4">{stap.label}</div>
           {stepBody}
+          {(stap.opties||[]).some(function(o){return DS.REISTIJD_TRIGGERS.indexOf(o)!==-1;})&&<ReistijdKnop cd={cd}/>}
         </div>
       </div>
       <div className="ds-footer">{canBack&&<button className="ds-btn ds-btn--ghost" onClick={goBack}>← Terug</button>}<span className="ds-hint">{DS.version}{cd.user&&<React.Fragment> · <span style={{color:'#8a99ab'}}>{cd.user}</span> {nameConfirm?<React.Fragment><span style={{color:'#566879',marginLeft:4}}>Naam wissen?</span> <span onClick={confirmResetName} style={{cursor:'pointer',color:'#c0392b',fontWeight:600,marginLeft:4}}>Ja</span> <span onClick={cancelResetName} style={{cursor:'pointer',color:'#8a99ab',marginLeft:4}}>Nee</span></React.Fragment>:<span onClick={resetName} title="Naam wijzigen" style={{cursor:'pointer',opacity:0.45,marginLeft:1}}>✎</span>}</React.Fragment>}</span></div>

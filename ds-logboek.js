@@ -1238,7 +1238,7 @@
             '<span style="font-size:11px;color:'+(geenOrderMode?'#ff6600':'#aaa')+';">'+(geenOrderMode?'Gegevens gewist':'Geen order')+'</span>' +
           '</div>' : '') +
         '</div></div>' +
-        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.37.0' +
+        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.38.0' +
           (callData.user ? ' · <span style="color:#999;">'+callData.user+'</span> ' + (nameEditConfirm ? '<span style="color:#666;margin-left:4px;">Naam wissen?</span> <span id="btn-edit-name-yes" style="cursor:pointer;color:#c00;font-weight:600;margin-left:4px;">Ja</span> <span id="btn-edit-name-no" style="cursor:pointer;color:#666;margin-left:4px;">Nee</span>' : '<span id="btn-edit-name" title="Naam wijzigen" style="cursor:pointer;opacity:0.45;margin-left:1px;">✎</span>') : '') +
         '</div>' +
       '</div>';
@@ -2111,6 +2111,7 @@
       stap.opties.forEach(function(o){ var b=idoc.createElement('button'); b.className='ux-btn'; b.innerText=o; b.onclick=function(){ handleSelect(o); }; container.appendChild(b); });
     }
 
+    renderReistijdKnop(stap, container);
     renderAndersSection(stap, handleSelect);
   }
 
@@ -2326,6 +2327,88 @@
   }
 
   // ── KLEMBORD ALLEEN ─────────────────────────────────────────
+  // ── REISTIJD-HANDOFF (naar de losse "Extra rijtijd"-tool) ────
+  // De same day / next day keuze hangt af van welke route nog ruimte heeft.
+  // Die afweging maak je dus VOORDAT er gelogd wordt, en dus voordat
+  // kopieerNaarKlembord() een payload schrijft. Deze knop zet daarom alvast
+  // alleen het adres + de taak klaar:
+  //   localStorage → werkt tussen Basic en de Ritmonitor (zelfde origin)
+  //   klembord     → werkt ook vanaf de consumer portal (andere origin)
+  // De reistijd-tool leest localStorage als eerste en valt terug op klembord.
+  var REISTIJD_KEY = 'ds_reistijd_verzoek';
+  var REISTIJD_TRIGGERS = ['Same day gepland','Next day gepland','Same day visit gepland','Next day visit gepland'];
+
+  // Bewust los van kopieerNaarKlembord(): die zit in het kritieke pad van de
+  // paste-bookmarklet en blijft ongemoeid.
+  function scrapeAdresVoorReistijd() {
+    var pc, plaats, adres;
+    if (isBasicPage) {
+      pc     = basicField('Postcode');
+      plaats = basicField('Woonplaats').replace(/^\s*\d{4,5}\s*[A-Z]{0,2}\s+/i, '').trim();
+      adres  = basicField('Adres');
+    } else {
+      var gs = function(s){ var el=document.querySelector("[data-bind*='"+s+"']"); return el?el.innerText.trim():''; };
+      pc     = gs('Static.Visit.PostalCode');
+      plaats = (gs('Static.Visit.City')||gs('City')||'').replace(/^\s*\d{4,5}\s*[A-Z]{0,2}\s+/i, '').trim();
+      adres  = gs('Static.Visit.Address')||gs('ConsigneeAddress')||'';
+    }
+    return { adres: adres, postcode: (pc||'').replace(/\s+/g,' ').trim(), plaats: plaats };
+  }
+
+  function bouwReistijdVerzoek() {
+    var a = scrapeAdresVoorReistijd();
+    return {
+      _soort: 'ds-reistijd',
+      adres: a.adres, postcode: a.postcode, plaats: a.plaats,
+      zoekterm: [a.adres, a.postcode, a.plaats].filter(function(x){ return !!x; }).join(', '),
+      taak: callData.probleem || '',
+      dienstType: callData.dienstType || '',
+      product: effectiefProduct(),
+      orderBron: callData.orderBron || '',
+      time: Date.now()
+    };
+  }
+
+  function publiceerReistijdVerzoek() {
+    var v = bouwReistijdVerzoek();
+    if (!v.zoekterm) return null;
+    var json = JSON.stringify(v), gelukt = false;
+    try { localStorage.setItem(REISTIJD_KEY, json); gelukt = true; } catch (e) {}
+    try {
+      var p = navigator.clipboard.writeText(json);
+      if (p && p.catch) p.catch(function(){});
+      gelukt = true;
+    } catch (e) {}
+    return gelukt ? v : null;
+  }
+
+  // Verschijnt onder elke uitkomstvraag waar same day / next day een optie is.
+  function renderReistijdKnop(stap, container) {
+    if (!stap || !stap.opties || !stap.opties.some) return;
+    if (!stap.opties.some(function(o){ return REISTIJD_TRIGGERS.indexOf(o) !== -1; })) return;
+    var wrap = idoc.createElement('div');
+    wrap.style.cssText = 'margin-top:10px;padding-top:10px;border-top:1px solid #DDDDDD;';
+    var btn = idoc.createElement('button');
+    btn.className = 'ux-btn';
+    btn.style.cssText = 'background:#F2F7FC;color:#285dab;border:1px solid #cce9f9;font-size:12px;';
+    btn.innerText = '\uD83D\uDE9A Adres klaarzetten voor reistijd-check';
+    var melding = idoc.createElement('div');
+    melding.style.cssText = 'font-size:11px;color:#999999;margin-top:5px;line-height:1.4;';
+    melding.innerText = 'Voor de Extra rijtijd-tool op de Ritmonitor: welke route heeft ruimte?';
+    btn.onclick = function() {
+      var v = publiceerReistijdVerzoek();
+      if (v) {
+        melding.textContent = '\u2713 ' + v.zoekterm + ' klaargezet \u2014 open de Ritmonitor en klik Bereken.';
+        melding.style.color = '#008a00';
+      } else {
+        melding.textContent = 'Klaarzetten niet gelukt \u2014 kopieer het adres handmatig.';
+        melding.style.color = '#D50000';
+      }
+    };
+    wrap.appendChild(btn); wrap.appendChild(melding);
+    container.appendChild(wrap);
+  }
+
   function kopieerNaarKlembord() {
     var rawPC, cleanPC='', name, ph, email, address, city;
     if (isBasicPage) {

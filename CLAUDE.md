@@ -28,6 +28,8 @@ Uitzondering op de functionele regel: als uitdrukkelijk gevraagd wordt om een wi
 | `staging/ds-logboek-staging.js` | Staging build van de widget: zelfde data-laag (scraping, flow engine, logging, clipboard) als `ds-logboek.js`, maar met een volledig nieuwe React+Babel UI (side-panel design). Bevat `STAGING_VERSION` constante (`vX.X.X-staging`). |
 | `staging/loader-staging-bookmarklet.js` | Loader bookmarklet voor de staging widget. Haalt `ds-logboek-staging.js` op via raw GitHub URL, cached in localStorage (`ds_app_staging_cache`), stale-while-revalidate. Toont eigen toast bij update. |
 | `staging/install-staging.html` | Installatiepagina voor de staging bookmarklet. |
+| `tourtool/extra-rijtijd.js` | **Losse tool**, geen onderdeel van de widget. Draait op de Ritmonitor en berekent wat een extra stop aan rijtijd kost, per gat en over meerdere ritten. Console-snippet, geen bookmarklet. Zie "Extra rijtijd-tool". |
+| `tourtool/probe-ritmonitor.js` | Eenmalige recon van de Ritmonitor (frameworks, DOM, netwerk, viewmodels). Alleen lezen; bewaard als naslag voor als DireXtion verandert. |
 
 ---
 
@@ -53,6 +55,7 @@ Nieuwste bovenaan. Alleen `ds-logboek.js` versies (productie).
 
 | Versie | Wijziging |
 |---|---|
+| v1.38.0 | Add: knop **"Adres klaarzetten voor reistijd-check"** onder elke uitkomstvraag waar `Same day gepland` / `Next day gepland` (of de visit-varianten) een optie is. Publiceert adres + taak naar `localStorage['ds_reistijd_verzoek']` én het klembord, zodat `tourtool/extra-rijtijd.js` op de Ritmonitor weet welk adres het moet doorrekenen. Bewust vóór het loggen: de same day / next day keuze hangt juist af van die uitslag, dus de klembord-payload van `kopieerNaarKlembord()` bestaat op dat moment nog niet. Eén hook in de renderer (`renderReistijdKnop`, aangeroepen naast `renderAndersSection`) dekt alle zeven uitkomstschermen. `kopieerNaarKlembord()` is niet aangeraakt — de adresscrape is bewust gedupliceerd in `scrapeAdresVoorReistijd()` om het kritieke pad van de paste-bookmarklet met rust te laten. Ook in staging (v0.17.0-staging). |
 | v1.37.0 | Add: extra reden bij "Waarom niet same day?" (`next_day_reden`, kolom L): `'Playbook VT/route nog de weg op'`. Alleen een nieuwe waarde in de lijst `nextDayRedenen`; geen flow-, categorie- of vocabulairewijziging. Ook in staging (v0.16.0-staging). |
 | v1.36.0 | **Terugdraai van v1.34.0–v1.35.1.** De ontvangstbevestiging schreef elke logregel vier keer weg. `schrijfMetRetry()` controleerde de geschreven rij door kolom A en B terug te lezen met `getDisplayValues()` en te vergelijken met de weggeschreven strings — maar de sheet formatteert die cellen zelf, dus de vergelijking faalde altijd. Elke poging deed een eigen `appendRow`: vier rijen per gesprek, daarna een `Error` naar de client, die de regel in de buffer hield en bij elke widget-start opnieuw aanbood. Logging is terug op `fetch(...).catch(function(){})`, zonder buffer, zonder melding, zonder id. `gas-backend.js` is terug op de versie zonder retry, lock, ontdubbeling en foutenlogboek — **handmatig terugzetten in de GAS-editor is nodig**, een commit hier verandert niets in productie. Ook in staging (v0.15.0-staging). |
 | v1.35.1 | Fix: geslaagde herverzending is nu stil (alleen console). Wie de pagina sluit vlak na het loggen krijgt de bevestiging niet meer binnen; die regel wordt een sessie later alsnog bevestigd, en een ↻/✓-melding daarover zou dagelijkse ruis worden. Fix (backend): ontdubbeling verplaatst naar binnen de scriptlock — daarbuiten konden twee gelijktijdige herverzendingen van dezelfde id allebei een rij schrijven. Ook in staging (v0.14.1-staging). |
@@ -274,6 +277,35 @@ Wat er inmiddels wél mee kan: kolom Y splitst de groep naar `Onderweg` / `Bij d
 `Vraag over service` (331 rijen, 9,7%) is bewust géén onderdeel van deze bucket: dat is een expliciete keuze in de onderweg-flow, geen escape-knop, en staat als eigen waarde in de groep `Onderweg`.
 
 ---
+
+## Extra rijtijd-tool (`tourtool/`) — los van de widget
+
+Beantwoordt één vraag: als we deze aftercare tussen twee stops proppen, hoeveel rijtijd kost dat? Draait op de **Ritmonitor** (`coolblue.dirextion.nl/ModuleTourMonitor`), plakken in de console. Deelt geen code met `ds-logboek.js`.
+
+**Waar de data vandaan komt.** De Ritmonitor is Durandal + Knockout + DevExtreme met SignalR voor live updates; klikken op een rit doet géén XHR. Bruikbare ingangen, gevonden met `probe-ritmonitor.js`:
+
+| Bron | Wat |
+|---|---|
+| `$('#visit-grid-container').dxDataGrid('instance').getDataSource()` | Stops van de geselecteerde rit. **`store().load()` gebruiken, niet `items()`** — het grid pagineert op 20 rijen. |
+| `/ModuleTourMonitor/TourMonitor/GetVisitsWithExecutionStateByTour?tourId=<id>` | Stops van élke rit, `{Data:[…],Success:true}`. Same-origin GET, enige parameter is `tourId`. Zo scant de tool meerdere ritten zonder de UI aan te raken. |
+| `/ModuleTourMonitor/TourMonitor/GetTours?filter=…&stateFilter=…&orderField=…&skip=&take=` | Volledige gefilterde rittenlijst. Valt terug op `ko.contextFor(rij).$root.tours()` (alleen de ~16 geladen ritten). |
+| `ko.contextFor($('table.tourlist tr.icons')).$root` | Viewmodel: `tours`, `selectTourId()`, `tourFilter`, `sortProperty`. |
+
+Elke visit heeft `PlanCoordinates` (lat/lon), `SequenceNumber`, `TourId`, `IsActivity`, tijdvenster en plan-/werkelijke aankomst- en vertrektijden. Geocoden van routestops is dus niet nodig — alleen het nieuwe adres gaat langs Nominatim.
+
+**Rekenregels.** Per gat: `t(A→X) + t(X→B) − t(A→B)`, alle drie via dezelfde engine (publieke OSRM-demoserver). Alleen gaten vanaf de huidige positie van de bezorger tellen mee: de laatste stop met een echte `RealArrivalDatestamp` (de ↑/↓-pijltjes in de lijst) is waar de rit nu is. Ritten met **voorsprong** (gepland min werkelijk) komen boven: `netto = max(0, benodigde tijd − voorsprong)`. Voorafgaand aan het routeren worden ritten hemelsbreed gefilterd; alleen de zes dichtstbijzijnde gaan echt de router in — dat houdt het aantal calls naar een publieke demoserver fatsoenlijk.
+
+**Servicetijd.** Optioneel veld. Leeg = alleen rijtijd. Ingevuld = rijtijd + service, en dat totaal wordt overal gebruikt. `SERVICETIJDEN` in `extra-rijtijd.js` mapt de kolom J-taken naar minuten; **staat nu volledig op `null`** (= onbekend, veld blijft leeg). Vullen is een data-wijziging, geen codewijziging. Overweging voor later: die tabel hoort eigenlijk in de Google Sheet, zodat planners hem kunnen bijstellen zonder commit.
+
+**Koppeling met het logboek (v1.38.0).** Het logboek publiceert bij de uitkomstvraag `ds_reistijd_verzoek`:
+
+```javascript
+{ _soort:'ds-reistijd', adres, postcode, plaats, zoekterm, taak, dienstType, product, orderBron, time }
+```
+
+naar `localStorage` (werkt Basic ↔ Ritmonitor, zelfde origin) én het klembord (nodig vanaf de consumer portal, andere origin). De tool leest localStorage eerst, luistert op het `storage`-event zodat het adres live binnenkomt, en heeft een linkje "Adres uit DS Logboek halen" dat op het klembord terugvalt. Verzoeken ouder dan 30 minuten worden bij het opstarten genegeerd.
+
+**Waarom geen Chrome-extensie.** Die is niet toegestaan, en voor deze koppeling ook niet nodig: cross-tab communicatie kan via localStorage (zelfde origin) en het klembord (cross-origin). Een extensie zou wél helpen bij auto-injectie, gedeelde opslag over origins heen, en het omzeilen van CSP/CORS voor externe API's — dat laatste is het echte risico hier. Blokkeert DireXtion ooit `connect-src`, dan meldt de tool dat expliciet en moet de berekening naar een eigen pagina verhuizen.
 
 ## Clipboard payload (ds-logboek.js → paste-bookmarklet.js)
 
