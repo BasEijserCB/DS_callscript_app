@@ -64,7 +64,7 @@
 (function () {
   'use strict';
 
-  var RIJTIJD_VERSION = 'v1.4.0';
+  var RIJTIJD_VERSION = 'v1.4.1';
 
   var PANEL_ID = 'extra-rijtijd-panel';
   var PIL_ID = 'extra-rijtijd-pil';
@@ -816,11 +816,12 @@
     bewaar(KEY_NETWERKEN, lijst);
   }
 
-  // Na een berekening is het invulblok bijzaak: de ranglijst is waar het om
-  // gaat, en die stond bij vier velden plus vier vinkjes ruim onder de vouw.
-  // Het blok klapt daarom dicht tot één regel met wat er is doorgerekend, en
-  // gaat weer open zodra je erop klikt, op Wissen drukt, of het logboek een
-  // nieuw adres aanlevert.
+  // Direct na een berekening is het invulblok bijzaak: de ranglijst is waar
+  // het om gaat, en die stond bij vier velden plus vier vinkjes ruim onder de
+  // vouw. Het blok klapt daarom dicht tot één regel met wat er is doorgerekend,
+  // en gaat weer open zodra je erop klikt, op Wissen drukt, of het logboek een
+  // nieuw adres aanlevert. Bij het opstarten staat het altijd open — zie de
+  // aanroep onderaan.
   function samenvatting() {
     var adres = (document.getElementById('er-adres') || {}).value || '';
     var st = parseInt((document.getElementById('er-servicetijd') || {}).value, 10);
@@ -1143,7 +1144,12 @@
     });
   });
 
-  vouwForm(!resultaten.length);
+  // Altijd open beginnen, ook met bewaarde resultaten in beeld. Dichtklappen
+  // is het gevolg van een berekening die je zojuist deed — geen toestand waar
+  // je in belandt. Wie de tool opent wil een nieuw adres invoeren, en dan
+  // horen het adresveld en de knop "Adres uit DS Logboek" er te staan in
+  // plaats van verstopt achter een klik op de samenvattingsbalk.
+  vouwForm(true);
   render();
   console.log('[Extra rijtijd] geladen — scant alle ritten, voorsprong telt mee');
 })();
