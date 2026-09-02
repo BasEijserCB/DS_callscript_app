@@ -48,6 +48,7 @@ Tot en met v1.38.0 bestond er een parallelle staging build (`staging/ds-logboek-
 
 | Versie | Wijziging |
 |---|---|
+| v1.41.1 | Fix: de knopvarianten in de "Anders"-lijst waren hun kleur kwijt na v1.41.0. `.advies-btn` (oranje), `.advies-knop` (bleekgroen) en `.afwijkend-knop` (bleekgeel) hebben dezelfde specificiteit als `.ux-btn`, dus de volgorde bepaalt wie wint — en het style-blok zette `DS_WIDGET` vóór `DS_UI`, waardoor de gedeelde `.ux-btn` ze alle drie overschreef en elke knop weer blauw werd. Nu `DS_UI.join('') + DS_WIDGET.join('')`: eerst de gedeelde basis, daarna de widget-eigen varianten. |
 | v1.41.0 | Refactor (alleen vormgeving): het style-blok is gesplitst in `DS_UI` (42 regels die letterlijk ook in `tourtool/extra-rijtijd.js` staan) en `DS_WIDGET` (14 widget-eigen regels). Daarmee delen de widget en de Extra rijtijd-tool hun knoppen, velden, meldingsblokken en kleuren; `build.py` faalt als de twee kopieën uiteenlopen. Verder: paneelbreedte 340 → 360px (gelijk aan het rijtijd-paneel), de twee formaatknoppen in de kop gebruiken `.toggle-btn` in plaats van de verwijderde `.resize-btn`, de versiestrip onderaan is `.version-bar`, en losse inline kleuren (`#666`, `#888`, `#E63946`, `#C1121F`, `#FFE6E6`, `#FFD54F`, `#5D4037`, `#E0E0E0`, `#D50000`, `#008a00`) zijn op tokens gezet. De Fornuis/Kookplaat-melding gebruikt nu `.warning-box`, het "vermeld altijd"-blokje `.park-melding`. Geen flow-, log- of vocabulairewijziging. |
 | v1.40.1 | Fix: het reistijd-verzoek stuurde `callData.probleem` ongewijzigd mee — het flow-label, niet de kolom J-waarde. `'Milieuretour / Pick-up ophalen'` matchte daardoor niets in de tabel `TAKEN` van `tourtool/extra-rijtijd.js` (die op het vocabulaire gesleuteld is), en servicetijd én netwerken bleven leeg. `bouwReistijdVerzoek()` draait het label nu door `taakNaarVocab()`, dezelfde normalisatie die `bouwLogParams()` voor kolom J gebruikt. |
 | v1.40.0 | Add: `formaatTV` in het reistijd-verzoek. Bij TV-taken bepaalt het formaat welk netwerk het werk mag doen — vanaf 55 inch alleen BI, daaronder 1X of BI — en dat onderscheid kon `tourtool/extra-rijtijd.js` niet maken zonder dit veld. Alleen een extra veld in `bouwReistijdVerzoek()`. |
@@ -291,6 +292,8 @@ comm -23 <(grep -oE '#[0-9a-fA-F]{6}' tourtool/extra-rijtijd.js | sort -u) \
 ```
 
 Die regel hoort niets op te leveren. De widget heeft nog wel eigen tinten die de tool niet kent: de oranje `.advies-btn` (`#fff3eb` / `#ffe8d6` / `#cc5200`) en de bleke `.advies-knop` / `.afwijkend-knop` (`#F0FFF0` / `#b2dfb2`, `#FFFFF0` / `#e0e0a0`). Die staan bewust apart — met de tokengroenen en -gelen zouden ze niet meer te onderscheiden zijn van `.ux-btn.selected`.
+
+**Let op de volgorde.** Deze varianten hebben dezelfde specificiteit als `.ux-btn` (één klasse), dus wint wie later staat. De widget zet daarom `DS_UI` eerst en `DS_WIDGET` erna; andersom overschrijft de gedeelde `.ux-btn` hun kleur en wordt elke knop in de "Anders"-lijst weer blauw. In de rijtijd-tool speelt dit niet: de regels in `DS_PANEEL` dragen een `#id` en winnen sowieso.
 
 | Rol | Token |
 |---|---|

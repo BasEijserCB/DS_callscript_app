@@ -287,7 +287,12 @@
     '.afwijkend-knop{background:#FFFFF0;border-color:#e0e0a0;}'
   ];
 
-  idoc.head.innerHTML = '<style>' + DS_WIDGET.join('') + DS_UI.join('') + '</style>';
+  // Volgorde telt: DS_WIDGET komt ná DS_UI. De knopvarianten daarin
+  // (.advies-btn, .advies-knop, .afwijkend-knop) hebben dezelfde
+  // specificiteit als .ux-btn, dus alleen als ze later staan winnen ze —
+  // anders overschrijft de gedeelde .ux-btn hun kleur en wordt elke knop
+  // in de "Anders"-lijst weer blauw.
+  idoc.head.innerHTML = '<style>' + DS_UI.join('') + DS_WIDGET.join('') + '</style>';
 
   var appContainer = idoc.createElement('div');
   idoc.body.appendChild(appContainer);
@@ -1268,7 +1273,7 @@
             '<span style="font-size:11px;color:'+(geenOrderMode?'#ff6600':'#999999')+';">'+(geenOrderMode?'Gegevens gewist':'Geen order')+'</span>' +
           '</div>' : '') +
         '</div></div>' +
-        '<div class="version-bar">DS Logboek v1.41.0' +
+        '<div class="version-bar">DS Logboek v1.41.1' +
           (callData.user ? ' · <span style="color:#999999;">'+callData.user+'</span> ' + (nameEditConfirm ? '<span style="color:#999999;margin-left:4px;">Naam wissen?</span> <span id="btn-edit-name-yes" style="cursor:pointer;color:#E50000;font-weight:600;margin-left:4px;">Ja</span> <span id="btn-edit-name-no" style="cursor:pointer;color:#999999;margin-left:4px;">Nee</span>' : '<span id="btn-edit-name" title="Naam wijzigen" style="cursor:pointer;opacity:0.45;margin-left:1px;">✎</span>') : '') +
         '</div>' +
       '</div>';
