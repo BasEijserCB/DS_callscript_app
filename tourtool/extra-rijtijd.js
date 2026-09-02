@@ -64,7 +64,7 @@
 (function () {
   'use strict';
 
-  var RIJTIJD_VERSION = 'v1.3.0';
+  var RIJTIJD_VERSION = 'v1.4.0';
 
   var PANEL_ID = 'extra-rijtijd-panel';
   var PIL_ID = 'extra-rijtijd-pil';
@@ -916,9 +916,6 @@
     '#' + PANEL_ID + ' .header{border-radius:8px 8px 0 0;}',
     '#' + PANEL_ID + ' .version-bar{border-radius:0 0 8px 8px;}',
     '#' + PANEL_ID + ' .er-veld{margin-bottom:10px;}',
-    '#' + PANEL_ID + ' .er-labelrij{display:flex;justify-content:space-between;align-items:baseline;gap:8px;}',
-    '#' + PANEL_ID + ' .er-labelrij .section-label{margin-bottom:5px;}',
-    '#' + PANEL_ID + ' .er-uit-logboek{margin:0 0 5px;font-size:11px;white-space:nowrap;}',
     '#' + PANEL_ID + ' .er-samenvatting{display:flex;justify-content:space-between;align-items:baseline;' +
       'gap:10px;cursor:pointer;margin-bottom:10px;}',
     '#' + PANEL_ID + ' .er-samenvatting:hover{border-color:#0090e3;}',
@@ -999,12 +996,9 @@
         '<span class="toggle-link er-sam-link">Wijzigen</span></div>' +
       '<div id="er-form">' +
       '<div class="er-veld">' +
-        '<div class="er-labelrij">' +
-          '<label class="section-label" for="er-adres">Nieuwe stop \u2014 adres</label>' +
-          '<span class="toggle-link er-uit-logboek" id="er-logboek" ' +
-            'title="Adres overnemen uit het DS Logboek">\u2193 uit DS Logboek</span>' +
-        '</div>' +
+        '<label class="section-label" for="er-adres">Nieuwe stop \u2014 adres</label>' +
         '<input type="text" id="er-adres" placeholder="Kerkstraat 12, 2101 AB Heemstede">' +
+        '<button class="ux-btn er-haal" id="er-logboek">\u2193 Adres uit DS Logboek</button>' +
       '</div>' +
       '<div class="er-twee">' +
         '<div><label class="section-label">Servicetijd (min)</label>' +
@@ -1052,10 +1046,6 @@
   pil.innerHTML = '<span class="er-pil-icoon">★</span><span id="er-pil-tekst">Extra rijtijd</span>';
   document.body.appendChild(pil);
 
-  // Een net binnengekomen adres uit het logboek weegt zwaarder dan bewaarde
-  // resultaten: dan hoort het formulier open te staan, niet dichtgeklapt.
-  var versVerzoek = false;
-
   var adresInput = document.getElementById('er-adres');
   var serviceInput = document.getElementById('er-servicetijd');
   var eigenRitInput = document.getElementById('er-eigenrit');
@@ -1075,39 +1065,44 @@
     status('Sleutel opgeslagen \u2014 rijtijden lopen nu via OpenRouteService.');
   };
 
-  // Het logboek zet het adres klaar op het moment van de same day / next day
-  // keuze. Zelfde origin (Basic \u2194 Ritmonitor) gaat via localStorage;
-  // vanaf de consumer portal komt het via het klembord binnen.
-  try {
-    var bewaardVerzoek = leesVerzoek(localStorage.getItem(REISTIJD_KEY));
-    if (bewaardVerzoek && (Date.now() - (bewaardVerzoek.time || 0)) < 30 * 60 * 1000) {
-      versVerzoek = pasVerzoekToe(bewaardVerzoek, 'logboek');
-    }
-  } catch (e) {}
+  // Eén weg naar binnen, ongeacht waar het logboek draait. Het publiceert het
+  // verzoek naar localStorage én naar het klembord. localStorage werkt alleen
+  // op dezelfde origin (Basic \u2194 Ritmonitor) en zou zichzelf kunnen invullen;
+  // het klembord werkt overal maar mag alleen na een gebruikersactie gelezen
+  // worden. Dat zou twee verschillende ervaringen opleveren: op Basic staat
+  // het adres er ineens, vanaf de consumer portal moet je klikken. Daarom
+  // loopt het overal via deze knop — ook waar het automatisch zou kunnen.
+  // Geen automatische invulling, geen storage-listener.
+  var VERZOEK_MAX_MIN = 30;
 
-  // Live: het logboek publiceert vanuit een ander tabblad.
-  window.addEventListener('storage', function (e) {
-    if (e.key !== REISTIJD_KEY || !e.newValue) return;
-    var v = leesVerzoek(e.newValue);
-    if (v) { pasVerzoekToe(v, 'logboek'); toonPil(false); }
-  });
+  function versGenoeg(v) {
+    return !!v && (Date.now() - (v.time || 0)) < VERZOEK_MAX_MIN * 60 * 1000;
+  }
+
+  function teOud() {
+    status('Het klaargezette adres is ouder dan ' + VERZOEK_MAX_MIN +
+           ' minuten \u2014 zet het opnieuw klaar in het logboek.', true);
+  }
+
+  function nietsKlaar() {
+    status('Nog geen adres klaargezet. Klik in het logboek eerst op ' +
+           '"Adres klaarzetten voor reistijd-check".', true);
+  }
 
   document.getElementById('er-logboek').onclick = function (e) {
     e.preventDefault();
     var v = null;
     try { v = leesVerzoek(localStorage.getItem(REISTIJD_KEY)); } catch (er) {}
-    if (v) { pasVerzoekToe(v, 'logboek'); return; }
+    if (versGenoeg(v)) { pasVerzoekToe(v, 'logboek'); return; }
     if (navigator.clipboard && navigator.clipboard.readText) {
       navigator.clipboard.readText().then(function (t) {
         var w = leesVerzoek(t);
-        if (w) pasVerzoekToe(w, 'klembord');
-        else status('Nog geen adres klaargezet. Klik in het logboek eerst op "Adres klaarzetten voor reistijd-check".', true);
+        if (versGenoeg(w)) { pasVerzoekToe(w, 'klembord'); return; }
+        if (w || v) teOud(); else nietsKlaar();
       }).catch(function () {
         status('Klembord lezen mag niet \u2014 plak het adres handmatig.', true);
       });
-    } else {
-      status('Geen adres gevonden.', true);
-    }
+    } else if (v) { teOud(); } else { nietsKlaar(); }
   };
 
   panel.querySelector('.er-samenvatting').onclick = function () { vouwForm(true); };
@@ -1148,7 +1143,7 @@
     });
   });
 
-  vouwForm(versVerzoek || !resultaten.length);
+  vouwForm(!resultaten.length);
   render();
   console.log('[Extra rijtijd] geladen — scant alle ritten, voorsprong telt mee');
 })();

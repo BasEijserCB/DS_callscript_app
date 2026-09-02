@@ -1273,7 +1273,7 @@
             '<span style="font-size:11px;color:'+(geenOrderMode?'#ff6600':'#999999')+';">'+(geenOrderMode?'Gegevens gewist':'Geen order')+'</span>' +
           '</div>' : '') +
         '</div></div>' +
-        '<div class="version-bar">DS Logboek v1.41.1' +
+        '<div class="version-bar">DS Logboek v1.41.2' +
           (callData.user ? ' · <span style="color:#999999;">'+callData.user+'</span> ' + (nameEditConfirm ? '<span style="color:#999999;margin-left:4px;">Naam wissen?</span> <span id="btn-edit-name-yes" style="cursor:pointer;color:#E50000;font-weight:600;margin-left:4px;">Ja</span> <span id="btn-edit-name-no" style="cursor:pointer;color:#999999;margin-left:4px;">Nee</span>' : '<span id="btn-edit-name" title="Naam wijzigen" style="cursor:pointer;opacity:0.45;margin-left:1px;">✎</span>') : '') +
         '</div>' +
       '</div>';
@@ -2438,7 +2438,7 @@
     btn.onclick = function() {
       var v = publiceerReistijdVerzoek();
       if (v) {
-        melding.textContent = '\u2713 ' + v.zoekterm + ' klaargezet \u2014 open de Ritmonitor en klik Bereken.';
+        melding.textContent = '\u2713 ' + v.zoekterm + ' klaargezet \u2014 open de Ritmonitor en klik op "Adres uit DS Logboek".';
         melding.style.color = '#155724';
       } else {
         melding.textContent = 'Klaarzetten niet gelukt \u2014 kopieer het adres handmatig.';

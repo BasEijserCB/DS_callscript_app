@@ -48,6 +48,7 @@ Tot en met v1.38.0 bestond er een parallelle staging build (`staging/ds-logboek-
 
 | Versie | Wijziging |
 |---|---|
+| v1.41.2 | Update: de bevestiging onder "Adres klaarzetten voor reistijd-check" zei "open de Ritmonitor en klik Bereken". Dat klopte niet meer sinds `tourtool/extra-rijtijd.js` v1.4.0 het adres niet meer automatisch invult; de tekst verwijst nu naar de knop "Adres uit DS Logboek". Alleen een meldingstekst. |
 | v1.41.1 | Fix: de knopvarianten in de "Anders"-lijst waren hun kleur kwijt na v1.41.0. `.advies-btn` (oranje), `.advies-knop` (bleekgroen) en `.afwijkend-knop` (bleekgeel) hebben dezelfde specificiteit als `.ux-btn`, dus de volgorde bepaalt wie wint — en het style-blok zette `DS_WIDGET` vóór `DS_UI`, waardoor de gedeelde `.ux-btn` ze alle drie overschreef en elke knop weer blauw werd. Nu `DS_UI.join('') + DS_WIDGET.join('')`: eerst de gedeelde basis, daarna de widget-eigen varianten. |
 | v1.41.0 | Refactor (alleen vormgeving): het style-blok is gesplitst in `DS_UI` (42 regels die letterlijk ook in `tourtool/extra-rijtijd.js` staan) en `DS_WIDGET` (14 widget-eigen regels). Daarmee delen de widget en de Extra rijtijd-tool hun knoppen, velden, meldingsblokken en kleuren; `build.py` faalt als de twee kopieën uiteenlopen. Verder: paneelbreedte 340 → 360px (gelijk aan het rijtijd-paneel), de twee formaatknoppen in de kop gebruiken `.toggle-btn` in plaats van de verwijderde `.resize-btn`, de versiestrip onderaan is `.version-bar`, en losse inline kleuren (`#666`, `#888`, `#E63946`, `#C1121F`, `#FFE6E6`, `#FFD54F`, `#5D4037`, `#E0E0E0`, `#D50000`, `#008a00`) zijn op tokens gezet. De Fornuis/Kookplaat-melding gebruikt nu `.warning-box`, het "vermeld altijd"-blokje `.park-melding`. Geen flow-, log- of vocabulairewijziging. |
 | v1.40.1 | Fix: het reistijd-verzoek stuurde `callData.probleem` ongewijzigd mee — het flow-label, niet de kolom J-waarde. `'Milieuretour / Pick-up ophalen'` matchte daardoor niets in de tabel `TAKEN` van `tourtool/extra-rijtijd.js` (die op het vocabulaire gesleuteld is), en servicetijd én netwerken bleven leeg. `bouwReistijdVerzoek()` draait het label nu door `taakNaarVocab()`, dezelfde normalisatie die `bouwLogParams()` voor kolom J gebruikt. |
@@ -321,7 +322,7 @@ Beantwoordt één vraag: als we deze aftercare tussen twee stops proppen, hoevee
 
 **Vormgeving: één gedeeld stijlblok (v1.2.0).** De tool en de widget dragen allebei een letterlijk identieke lijst `DS_UI` — 42 CSS-regels met de onderdelen die ze delen: `.header`, `.content`, `label`, `.section-label`, `input`, `.ux-btn` (+ `.selected`), `.action-btn`, `.submit-btn`, `.back-btn`, `.info-box`, `.warning-box`, `.park-melding`, `.summary-box`, `.status-bar`, `.toggle-btn`, `.close-btn`, `.toggle-link`, `.footer`, `.version-bar` en `.pill-blue/-green/-amber`. Ze kunnen die code niet importeren: het zijn twee losse bestanden die elk apart door een bookmarklet geladen worden. Zie de sectie **Gedeelde stijl** hierboven.
 
-Wat per tool verschilt staat in een eigen lijst: `DS_WIDGET` (14 regels — het iframe-document, de twee-koloms weergave, de knopvarianten in de "Anders"-lijst) en `DS_PANEEL` (48 regels — de omhulling, de uitslaglijst, de samenvattingsbalk, het pilletje).
+Wat per tool verschilt staat in een eigen lijst: `DS_WIDGET` (14 regels — het iframe-document, de twee-koloms weergave, de knopvarianten in de "Anders"-lijst) en `DS_PANEEL` (45 regels — de omhulling, de uitslaglijst, de samenvattingsbalk, het pilletje).
 
 **De ORS-sleutel staat niet in het bestand.** Dat bestand gaat naar GitHub en wordt door de loader opgehaald, dus een sleutel erin zou publiek zijn. Hij staat in `localStorage` (`rijtijd_ors_key`) en wordt gezet via een veld dat het paneel alleen toont zolang er geen sleutel is. Iedereen zet dus zijn eigen sleutel, één keer per browser. Lokaal staat er een gitignored `tourtool/zet-ors-sleutel.local.js` om dat in één plak te doen.
 
@@ -401,7 +402,7 @@ Let op: `41` voor TV + Soundbar ophangen én installeren is minder dan de `42` v
 
 **Het invulblok klapt dicht na een berekening (v1.3.0).** Vier velden plus vier netwerkvinkjes namen zo'n 270px in beslag, waardoor de ranglijst — waar het de tool om te doen is — onder de vouw begon. Zodra `scan()` slaagt vouwt het formulier zich op tot één `.status-bar`-regel met wat er is doorgerekend (`Kaakberg 2, 1121RG Landsmeer · 37 min service · 2M, BI`) plus een "Wijzigen"-link. Klikken op die balk vouwt hem weer open; dat gebeurt ook bij **Wissen** en zodra het logboek een nieuw adres aanlevert — een binnengekomen adres hoort zichtbaar te zijn, niet weggeklapt. Bij het opstarten begint het paneel compact als er nog bewaarde resultaten staan (`vouwForm(versVerzoek || !resultaten.length)`).
 
-De knop "Haal adres op" is daarbij een linkje "↓ uit DS Logboek" op de labelregel geworden in plaats van een knop over de volle breedte; dat scheelt nog eens een regel. Samen halveert dit ongeveer de ruimte boven de uitslag.
+De knop "↓ Adres uit DS Logboek" staat gewoon onder het adresveld; dat mag, want in ingeklapte toestand is hij toch niet zichtbaar. (In v1.3.0 was hij even een linkje op de labelregel — teruggedraaid in v1.4.0.)
 
 **Servicetijd.** Optioneel veld, start altijd op leeg (= 0). Leeg = alleen rijtijd. Ingevuld = rijtijd + service, en dat totaal wordt overal gebruikt: ranglijst, groot getal, kolom in de stoplijst, pilletje. De waarde komt uit `TAKEN[taak].minuten`. Overweging voor later: die tabel hoort eigenlijk in de Google Sheet, zodat planners hem kunnen bijstellen zonder commit.
 
@@ -416,7 +417,13 @@ De knop "Haal adres op" is daarbij een linkje "↓ uit DS Logboek" op de labelre
 { _soort:'ds-reistijd', adres, postcode, plaats, zoekterm, taak, dienstType, product, orderBron, time }
 ```
 
-naar `localStorage` (werkt Basic ↔ Ritmonitor, zelfde origin) én het klembord (nodig vanaf de consumer portal, andere origin). De tool leest localStorage eerst, luistert op het `storage`-event zodat het adres live binnenkomt, en heeft een linkje "Adres uit DS Logboek halen" dat op het klembord terugvalt. Verzoeken ouder dan 30 minuten worden bij het opstarten genegeerd.
+naar `localStorage` (werkt Basic ↔ Ritmonitor, zelfde origin) én het klembord (nodig vanaf de consumer portal, andere origin).
+
+**Eén weg naar binnen (v1.4.0).** De tool haalt het verzoek uitsluitend op via de knop **"↓ Adres uit DS Logboek"** onder het adresveld. Die probeert eerst `localStorage`, dan het klembord, en negeert verzoeken ouder dan `VERZOEK_MAX_MIN` (30 minuten) — met een aparte melding voor "te oud" en "nog niets klaargezet".
+
+Tot v1.3.0 vulde de tool zichzelf: bij het opstarten las hij `localStorage`, en een `storage`-listener nam een adres live over zodra het logboek in een ander tabblad publiceerde. Dat werkte alleen op dezelfde origin. Vanaf de consumer portal kán dat niet — een klembordlezing mag pas na een gebruikersactie — dus stond het adres er op Basic ineens en moest je er vanaf de portal om vragen. Twee ervaringen voor dezelfde handeling. Het automatisch invullen en de `storage`-listener zijn daarom weg: liever overal één klik dan ergens nul en elders één.
+
+Wie dat ooit terugdraait: het probleem is niet de listener maar de asymmetrie. Automatisch invullen op beide bronnen kan alleen als de klembordlezing zonder gebruikersactie mag, en dat staat de browser niet toe.
 
 **Waarom geen Chrome-extensie.** Die is niet toegestaan, en voor deze koppeling ook niet nodig: cross-tab communicatie kan via localStorage (zelfde origin) en het klembord (cross-origin). Een extensie zou wél helpen bij auto-injectie, gedeelde opslag over origins heen, en het omzeilen van CSP/CORS voor externe API's — dat laatste is het echte risico hier. Blokkeert DireXtion ooit `connect-src`, dan meldt de tool dat expliciet en moet de berekening naar een eigen pagina verhuizen.
 
