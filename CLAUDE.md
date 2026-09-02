@@ -34,7 +34,7 @@ De loader bookmarklet haalt de nieuwe `ds-logboek.js` automatisch op in de achte
 localStorage.removeItem('ds_app_prod_cache')
 ```
 
-`build.py` syntax-checkt ook `tourtool/extra-rijtijd.js`, maar synchroniseert `RIJTIJD_VERSION` bewust **niet**: die tool heeft een eigen levenscyclus. Hoog hem met de hand op bij elke wijziging, anders ziet niemand de updatetoast.
+`build.py` vergelijkt daarnaast het gedeelde stijlblok `DS_UI` in `ds-logboek.js` en `tourtool/extra-rijtijd.js` en stopt met exitcode 1 als de twee kopieën uiteengelopen zijn — zie **Gedeelde stijl**. Hij syntax-checkt ook `tourtool/extra-rijtijd.js`, maar synchroniseert `RIJTIJD_VERSION` bewust **niet**: die tool heeft een eigen levenscyclus. Hoog hem met de hand op bij elke wijziging, anders ziet niemand de updatetoast.
 
 **Versienummer** alleen ophogen bij wijzigingen aan `ds-logboek.js` — zonder te vragen. Patch voor bugfix, minor voor nieuwe feature. `build.py` synchroniseert `PASTE_VERSION` in `paste-bookmarklet.js` automatisch naar hetzelfde versienummer.
 
@@ -48,6 +48,7 @@ Tot en met v1.38.0 bestond er een parallelle staging build (`staging/ds-logboek-
 
 | Versie | Wijziging |
 |---|---|
+| v1.41.0 | Refactor (alleen vormgeving): het style-blok is gesplitst in `DS_UI` (42 regels die letterlijk ook in `tourtool/extra-rijtijd.js` staan) en `DS_WIDGET` (14 widget-eigen regels). Daarmee delen de widget en de Extra rijtijd-tool hun knoppen, velden, meldingsblokken en kleuren; `build.py` faalt als de twee kopieën uiteenlopen. Verder: paneelbreedte 340 → 360px (gelijk aan het rijtijd-paneel), de twee formaatknoppen in de kop gebruiken `.toggle-btn` in plaats van de verwijderde `.resize-btn`, de versiestrip onderaan is `.version-bar`, en losse inline kleuren (`#666`, `#888`, `#E63946`, `#C1121F`, `#FFE6E6`, `#FFD54F`, `#5D4037`, `#E0E0E0`, `#D50000`, `#008a00`) zijn op tokens gezet. De Fornuis/Kookplaat-melding gebruikt nu `.warning-box`, het "vermeld altijd"-blokje `.park-melding`. Geen flow-, log- of vocabulairewijziging. |
 | v1.40.1 | Fix: het reistijd-verzoek stuurde `callData.probleem` ongewijzigd mee — het flow-label, niet de kolom J-waarde. `'Milieuretour / Pick-up ophalen'` matchte daardoor niets in de tabel `TAKEN` van `tourtool/extra-rijtijd.js` (die op het vocabulaire gesleuteld is), en servicetijd én netwerken bleven leeg. `bouwReistijdVerzoek()` draait het label nu door `taakNaarVocab()`, dezelfde normalisatie die `bouwLogParams()` voor kolom J gebruikt. |
 | v1.40.0 | Add: `formaatTV` in het reistijd-verzoek. Bij TV-taken bepaalt het formaat welk netwerk het werk mag doen — vanaf 55 inch alleen BI, daaronder 1X of BI — en dat onderscheid kon `tourtool/extra-rijtijd.js` niet maken zonder dit veld. Alleen een extra veld in `bouwReistijdVerzoek()`. |
 | v1.39.0 | Add: `route` (de rit van de klant zelf) in het reistijd-verzoek, zodat `tourtool/extra-rijtijd.js` die rit als kandidaat kan uitsluiten én uit het netwerkprefix kan afleiden welke andere netwerken het werk aankunnen. Alleen een extra veld in `bouwReistijdVerzoek()`; geen flow-, log- of vocabulairewijziging. |
@@ -248,9 +249,76 @@ Wat er inmiddels wél mee kan: kolom Y splitst de groep naar `Onderweg` / `Bij d
 
 ---
 
+## Gedeelde stijl — `DS_UI` in twee bestanden
+
+`ds-logboek.js` en `tourtool/extra-rijtijd.js` zien er hetzelfde uit omdat ze allebei dezelfde lijst met CSS-regels bevatten, teken voor teken gelijk:
+
+```javascript
+var DS_UI = [
+  '.header{...}',
+  '.ux-btn{...}',
+  ...
+];
+```
+
+**Waarom gekopieerd en niet gedeeld.** Beide bestanden worden los van elkaar door een eigen bookmarklet uit GitHub gehaald en met `eval` uitgevoerd. Er is geen bundler, geen module, geen derde bestand dat allebei kunnen laden — een import zou een extra netwerkverzoek en een extra faalpunt zijn in code die op andermans pagina draait. Kopiëren is hier de eenvoudigste werkende oplossing; de prijs is dat kopieën uit elkaar lopen.
+
+**Daarom bewaakt `build.py` het.** Stap 1b knipt het `DS_UI`-blok uit beide bestanden en vergelijkt ze. Lopen ze uiteen, dan drukt hij een unified diff af en stopt met exitcode 1. Dat is de enige plek waar dit opgemerkt kan worden, dus draai `build.py` vóór elke push.
+
+**Twee toepassingen, één verschil.** De widget rendert in een eigen iframe-document en gebruikt de regels kaal:
+
+```javascript
+idoc.head.innerHTML = '<style>' + DS_WIDGET.join('') + DS_UI.join('') + '</style>';
+```
+
+Het rijtijd-paneel hangt in de DireXtion-pagina zelf, dus daar moet elke regel gescopet worden — anders herstijlt `label{...}` de hele Ritmonitor:
+
+```javascript
+var css = DS_UI.map(function (regel) {
+  return '#' + PANEL_ID + ' ' + regel;
+}).join('') + DS_PANEEL.join('');
+```
+
+Gevolg voor die scoping: **regels in `DS_UI` mogen geen `#id` of `@media` bevatten**, want daar gaat het voorzetten van een prefix mis. Alles wat een id nodig heeft hoort in `DS_WIDGET` of `DS_PANEEL`.
+
+**Bij het toevoegen van een onderdeel:** hoort het bij allebei, zet het in `DS_UI` van beide bestanden. Hoort het bij één, zet het in `DS_WIDGET` of `DS_PANEEL` — en in dat laatste geval mét de `'#' + PANEL_ID + ' '`-prefix, die wordt daar niet automatisch gezet.
+
+**Het palet.** Elke kleur in `tourtool/extra-rijtijd.js` komt ook voor in `ds-logboek.js`; dat is te controleren met
+
+```bash
+comm -23 <(grep -oE '#[0-9a-fA-F]{6}' tourtool/extra-rijtijd.js | sort -u) \
+         <(grep -oE '#[0-9a-fA-F]{6}' ds-logboek.js | sort -u)
+```
+
+Die regel hoort niets op te leveren. De widget heeft nog wel eigen tinten die de tool niet kent: de oranje `.advies-btn` (`#fff3eb` / `#ffe8d6` / `#cc5200`) en de bleke `.advies-knop` / `.afwijkend-knop` (`#F0FFF0` / `#b2dfb2`, `#FFFFF0` / `#e0e0a0`). Die staan bewust apart — met de tokengroenen en -gelen zouden ze niet meer te onderscheiden zijn van `.ux-btn.selected`.
+
+| Rol | Token |
+|---|---|
+| Accent / primaire knop | `#0090e3`, hover `#007bc4` |
+| Donkerblauwe tekst (koppen, ritnaam) | `#285dab` |
+| Blauw vlak / rand | `#F2F7FC` / `#cce9f9` |
+| Neutrale rand · gedempt · tekst | `#DDDDDD` · `#999999` · `#333333` |
+| Groen (tekst · vlak · rand) | `#155724` · `#d4edda` · `#00B900` |
+| Rood (tekst en rand · vlak) | `#E50000` · `#fff0f0` |
+| Amber (tekst · vlak · rand) | `#856404` · `#fff8e1` · `#ffc107` |
+| Oranje (accentknop, ster) | `#ff6600` |
+| Grijs vlak (versiestrip, chip) | `#F3F3F3` |
+| Type | 17/700 kop · 14/600 vraag · 13 tekst en knop · 12 blok · 11 klein · 10 uppercase kapje |
+| Hoek | paneel 10 · knop 8 · veld en blok 6 · pil 4 |
+
+Beide panelen zijn 360px breed (de widget 600px in brede modus).
+
+**Wat bewust verschillend blijft: de toastkleuren van de drie loaders.** Blauw (`#285dab`, widget), oranje (`#e67e22`, paste) en groen (`#1a7f37`, rijtijd). Dat is geen slordigheid maar een signaal — aan de kleur zie je welke tool een update binnenhaalde. Niet gelijktrekken.
+
+---
+
 ## Extra rijtijd-tool (`tourtool/`) — los van de widget
 
 Beantwoordt één vraag: als we deze aftercare tussen twee stops proppen, hoeveel rijtijd kost dat? Draait op de **Ritmonitor** (`coolblue.dirextion.nl/ModuleTourMonitor`) via een eigen loader-bookmarklet. Deelt geen code met `ds-logboek.js`.
+
+**Vormgeving: één gedeeld stijlblok (v1.2.0).** De tool en de widget dragen allebei een letterlijk identieke lijst `DS_UI` — 42 CSS-regels met de onderdelen die ze delen: `.header`, `.content`, `label`, `.section-label`, `input`, `.ux-btn` (+ `.selected`), `.action-btn`, `.submit-btn`, `.back-btn`, `.info-box`, `.warning-box`, `.park-melding`, `.summary-box`, `.status-bar`, `.toggle-btn`, `.close-btn`, `.toggle-link`, `.footer`, `.version-bar` en `.pill-blue/-green/-amber`. Ze kunnen die code niet importeren: het zijn twee losse bestanden die elk apart door een bookmarklet geladen worden. Zie de sectie **Gedeelde stijl** hierboven.
+
+Wat per tool verschilt staat in een eigen lijst: `DS_WIDGET` (14 regels — het iframe-document, de twee-koloms weergave, de knopvarianten in de "Anders"-lijst) en `DS_PANEEL` (42 regels — de omhulling, de uitslaglijst, het pilletje).
 
 **De ORS-sleutel staat niet in het bestand.** Dat bestand gaat naar GitHub en wordt door de loader opgehaald, dus een sleutel erin zou publiek zijn. Hij staat in `localStorage` (`rijtijd_ors_key`) en wordt gezet via een veld dat het paneel alleen toont zolang er geen sleutel is. Iedereen zet dus zijn eigen sleutel, één keer per browser. Lokaal staat er een gitignored `tourtool/zet-ors-sleutel.local.js` om dat in één plak te doen.
 

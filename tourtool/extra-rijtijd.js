@@ -64,7 +64,7 @@
 (function () {
   'use strict';
 
-  var RIJTIJD_VERSION = 'v1.0.0';
+  var RIJTIJD_VERSION = 'v1.2.0';
 
   var PANEL_ID = 'extra-rijtijd-panel';
   var PIL_ID = 'extra-rijtijd-pil';
@@ -642,8 +642,8 @@
   // uitloop is minstens oranje — anders vervaagt precies het onderscheid
   // waar de ranglijst op sorteert.
   function kleurUitloop(u) {
-    if (u <= 0) return '#1a7f37';              // past binnen de voorsprong
-    return u <= UITLOOP_ROOD ? '#b25e00' : '#b42318';
+    if (u <= 0) return '#155724';            // past binnen de voorsprong
+    return u <= UITLOOP_ROOD ? '#856404' : '#E50000';
   }
   function uitloopTekst(u) { return (u > 0 ? '+' : (u < 0 ? '\u2212' : '')) + Math.abs(u) + ' min'; }
 
@@ -713,7 +713,7 @@
     var el = document.getElementById('er-status');
     if (!el) return;
     el.textContent = tekst || '';
-    el.style.color = fout ? '#b42318' : '#666';
+    el.className = fout ? 'er-status fout' : 'er-status';
   }
   function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]; }); }
 
@@ -727,7 +727,7 @@
     var body = document.getElementById('er-resultaten');
     if (body) {
       if (!resultaten.length) {
-        body.innerHTML = '<div class="er-leeg">Nog niets berekend.</div>';
+        body.innerHTML = '<div class="er-status">Nog niets berekend.</div>';
       } else {
         var html = '';
         var rangen = resultaten.map(function (r) { return r.rang; });
@@ -740,18 +740,18 @@
             : g.extra + ' min rijden';
           html += '<div class="er-rij" data-tour="' + r.tourId + '" title="Klik om deze rit te openen">' +
             '<div class="er-rij-kop"><span class="er-rit">' + esc(r.rit) +
-              (gemengd && r.rang === minRang ? ' <span class="er-voorkeur">lichtste ploeg</span>' : '') +
+              (gemengd && r.rang === minRang ? ' <span class="pill pill-green">lichtste ploeg</span>' : '') +
               (idx === 0 ? ' <span class="er-ster">★</span>' : '') + '</span>' +
             '<span class="er-uitloop"><span class="er-getal" style="color:' + kleurUitloop(g.uitloop) + '">' +
               uitloopTekst(g.uitloop) + '</span>' +
-              '<span class="er-bijschrift">' + (g.uitloop > 0 ? 'uitloop' : 'speling over') + '</span></span></div>' +
-            '<div class="er-rij-sub"><span class="er-seq">' + g.vanSeq + ' → ' + g.naarSeq + '</span> ' +
+              '<span class="section-label">' + (g.uitloop > 0 ? 'uitloop' : 'speling over') + '</span></span></div>' +
+            '<div class="er-rij-sub"><span class="pill pill-blue">' + g.vanSeq + ' → ' + g.naarSeq + '</span> ' +
             esc(g.van) + ' → ' + esc(g.naar) +
-            (g.risico ? ' <span class="er-risico">\u26A0 krap</span>' : '') + '</div>' +
+            (g.risico ? ' <span class="pill pill-amber">\u26A0 krap</span>' : '') + '</div>' +
             '<div class="er-opbouw">' + opbouw + ' · <span class="' +
-              (r.voorsprong > 0 ? 'er-voor' : (r.voorsprong < 0 ? 'er-achter' : '')) + '">' +
+              (r.voorsprong > 0 ? 'er-goed' : (r.voorsprong < 0 ? 'er-slecht' : '')) + '">' +
               voorsprongTekst(r.voorsprong) + '</span></div>' +
-            (r.onderweg ? '' : '<div class="er-depot">\u2691 Rit staat nog op het depot \u2014 informeer de TL na het inplannen</div>') +
+            (r.onderweg ? '' : '<div class="park-melding er-depot">\u2691 Rit staat nog op het depot \u2014 informeer de TL na het inplannen</div>') +
             '<div class="er-detail">' + g.basis + ' \u2192 ' + g.via + ' min rijden \u00b7 ' +
             r.afstand + ' km \u00b7 vanaf stop ' + r.vanafSeq +
             (r.overgeslagen ? ' (' + r.overgeslagen + ' gehad)' : '') + '</div></div>';
@@ -765,9 +765,9 @@
         if (overslag.netwerken && overslag.netwerken.length < NETWERKEN.length) {
           uitleg.push('alleen ' + overslag.netwerken.join(', '));
         }
-        if (uitleg.length) html += '<div class="er-overslag">' + uitleg.join(' \u00b7 ') + '</div>';
+        if (uitleg.length) html += '<div class="er-status">' + uitleg.join(' \u00b7 ') + '</div>';
         if (overslag.orsLoos) {
-          html += '<div class="er-depot">\u2691 Nog geen OpenRouteService-sleutel \u2014 ' +
+          html += '<div class="park-melding er-depot">\u2691 Nog geen OpenRouteService-sleutel \u2014 ' +
                   'rijtijden komen van de OSRM-demoserver, die daar niet voor bedoeld is. ' +
                   'Vul ORS_KEY in bovenaan het bestand.</div>';
         }
@@ -793,11 +793,24 @@
     return uit;
   }
 
+  // Het vinkje stuurt de klasse .selected aan, dezelfde die de widget voor een
+  // gekozen knop gebruikt. Zo staat de groene keuzekleur op één plek (DS_UI).
+  function markeerNetwerken() {
+    NETWERKEN.forEach(function (n) {
+      var vak = document.getElementById('er-net-' + n);
+      var lbl = document.getElementById('er-net-lbl-' + n);
+      if (!vak || !lbl) return;
+      if (vak.checked) { if (lbl.className.indexOf(' selected') === -1) lbl.className += ' selected'; }
+      else lbl.className = lbl.className.replace(' selected', '');
+    });
+  }
+
   function zetNetwerken(lijst) {
     NETWERKEN.forEach(function (n) {
       var el = document.getElementById('er-net-' + n);
       if (el) el.checked = lijst.indexOf(n) !== -1;
     });
+    markeerNetwerken();
     bewaar(KEY_NETWERKEN, lijst);
   }
 
@@ -806,71 +819,126 @@
     document.getElementById(PANEL_ID).style.display = aan ? 'none' : 'block';
   }
 
-  var css =
-    '#' + PANEL_ID + '{position:fixed;top:70px;right:20px;width:355px;max-height:82vh;overflow:auto;background:#fff;' +
-      'border:1px solid #ccc;border-radius:8px;box-shadow:0 6px 24px rgba(0,0,0,.25);font:13px "Segoe UI",system-ui,sans-serif;color:#222;z-index:999999}' +
-    '#' + PANEL_ID + ' .er-kop{background:#285dab;color:#fff;padding:10px 12px;font-weight:600;border-radius:7px 7px 0 0;display:flex;justify-content:space-between;align-items:center;gap:6px}' +
-    '#' + PANEL_ID + ' .er-kop button{background:none;border:none;color:#fff;font-size:17px;cursor:pointer;line-height:1;padding:0 3px;opacity:.85}' +
-    '#' + PANEL_ID + ' .er-kop button:hover{opacity:1}' +
-    '#' + PANEL_ID + ' .er-body{padding:12px}' +
-    '#' + PANEL_ID + ' .er-versie{font-weight:400;opacity:.7;font-size:11px;margin-left:4px}' +
-    '#' + PANEL_ID + ' .er-sleutel{background:#fdf1e3;border:1px solid #f0d9b5;border-radius:5px;' +
-      'padding:10px;margin-bottom:12px}' +
-    '#' + PANEL_ID + ' .er-sleutel-hint{font-size:11px;color:#8a6a3a;margin-top:6px;line-height:1.4}' +
-    '#' + PANEL_ID + ' label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:#666;margin:2px 0 3px}' +
-    '#' + PANEL_ID + ' input{width:100%;box-sizing:border-box;padding:7px 8px;border:1px solid #bbb;border-radius:4px;font:13px inherit}' +
-    '#' + PANEL_ID + ' .er-haal{width:100%;margin-top:6px;padding:7px;border:1px solid #cce9f9;border-radius:4px;' +
-      'background:#F2F7FC;color:#285dab;font:600 12px inherit;cursor:pointer}' +
-    '#' + PANEL_ID + ' .er-haal:hover{background:#e6f0fa}' +
-    '#' + PANEL_ID + ' .er-twee{display:flex;gap:8px;margin-top:8px}' +
-    '#' + PANEL_ID + ' .er-twee > div{flex:1;min-width:0}' +
-    '#' + PANEL_ID + ' .er-netwerken{display:flex;gap:6px;margin-top:2px}' +
-    '#' + PANEL_ID + ' .er-net{flex:1;display:flex;align-items:center;justify-content:center;gap:5px;margin:0;' +
-      'padding:6px 4px;border:1px solid #ccc;border-radius:4px;font:600 12px inherit;color:#444;' +
-      'cursor:pointer;text-transform:none;letter-spacing:0;background:#fafafa}' +
-    '#' + PANEL_ID + ' .er-net:has(input:checked){background:#F2F7FC;border-color:#0090e3;color:#285dab}' +
-    '#' + PANEL_ID + ' .er-net input{width:auto;margin:0;cursor:pointer}' +
-    '#' + PANEL_ID + ' .er-overslag{margin-top:10px;font-size:11px;color:#999;line-height:1.4;font-style:italic}' +
-    '#' + PANEL_ID + ' .er-knoppen{display:flex;gap:8px;margin-top:10px}' +
-    '#' + PANEL_ID + ' .er-knoppen button{flex:1;padding:8px;border:none;border-radius:4px;cursor:pointer;font:600 13px inherit}' +
-    '#' + PANEL_ID + ' .er-bereken{background:#285dab;color:#fff}' +
-    '#' + PANEL_ID + ' .er-wis{background:#eee;color:#444;flex:0 0 70px}' +
-    '#' + PANEL_ID + ' #er-status{margin-top:8px;font-size:12px;color:#666;min-height:16px}' +
-    '#' + PANEL_ID + ' .er-rij{padding:8px;margin:6px -8px 0;border-radius:5px;cursor:pointer;border-bottom:1px solid #f0f0f0}' +
-    '#' + PANEL_ID + ' .er-rij:hover{background:#f4f7fc}' +
-    '#' + PANEL_ID + ' .er-rij-kop{display:flex;justify-content:space-between;align-items:baseline;gap:8px}' +
-    '#' + PANEL_ID + ' .er-rit{font-weight:600;color:#285dab}' +
-    '#' + PANEL_ID + ' .er-uitloop{text-align:right;line-height:1.15;white-space:nowrap}' +
-    '#' + PANEL_ID + ' .er-getal{display:block;font-weight:700;font-size:15px}' +
-    '#' + PANEL_ID + ' .er-bijschrift{display:block;font-size:9px;color:#aaa;text-transform:uppercase;letter-spacing:.04em}' +
-    '#' + PANEL_ID + ' .er-rij-sub{margin-top:3px;line-height:1.35}' +
-    '#' + PANEL_ID + ' .er-seq{display:inline-block;background:#eef2f8;color:#285dab;border-radius:3px;padding:1px 5px;font-size:11px;font-weight:600}' +
-    '#' + PANEL_ID + ' .er-opbouw{font-size:11px;color:#666;margin-top:3px}' +
-    '#' + PANEL_ID + ' .er-voor{color:#1a7f37;font-weight:600}' +
-    '#' + PANEL_ID + ' .er-achter{color:#b42318;font-weight:600}' +
-    '#' + PANEL_ID + ' .er-past{color:#1a7f37;font-weight:600}' +
-    '#' + PANEL_ID + ' .er-detail{color:#aaa;font-size:11px;margin-top:2px}' +
-    '#' + PANEL_ID + ' .er-ster{color:#b8860b}' +
-    '#' + PANEL_ID + ' .er-depot{margin-top:4px;font-size:11px;color:#b25e00;background:#fdf1e3;' +
-      'border-radius:3px;padding:3px 6px;line-height:1.35}' +
-    '#' + PANEL_ID + ' .er-risico{display:inline-block;background:#fdf1e3;color:#b25e00;border-radius:3px;' +
-      'padding:1px 5px;font-size:10px;font-weight:600;white-space:nowrap}' +
-    '#' + PANEL_ID + ' .er-voorkeur{display:inline-block;background:#e7f4ea;color:#1a7f37;border-radius:3px;' +
-      'padding:1px 5px;font-size:10px;font-weight:600;vertical-align:1px}' +
-    '#' + PANEL_ID + ' .er-leeg{color:#999;font-size:12px;padding:8px 0}' +
-    '#' + PANEL_ID + ' .er-uitleg{margin-top:14px;font-size:11px;color:#888}' +
-    '#' + PANEL_ID + ' .er-uitleg summary{cursor:pointer;color:#285dab;font-weight:600;list-style:none;outline:none}' +
-    '#' + PANEL_ID + ' .er-uitleg summary::-webkit-details-marker{display:none}' +
-    '#' + PANEL_ID + ' .er-uitleg summary:before{content:"\u25B8 "}' +
-    '#' + PANEL_ID + ' .er-uitleg[open] summary:before{content:"\u25BE "}' +
-    '#' + PANEL_ID + ' .er-uitleg ul{margin:7px 0 0;padding-left:15px;line-height:1.45}' +
-    '#' + PANEL_ID + ' .er-uitleg li{margin-bottom:4px}' +
-    '#' + PANEL_ID + ' .er-uitleg b{color:#555;font-weight:600}' +
-    '#' + PIL_ID + '{position:fixed;top:70px;right:20px;display:none;align-items:center;gap:8px;background:#fff;border:1px solid #ccc;' +
-      'border-left:4px solid #285dab;border-radius:6px;box-shadow:0 3px 12px rgba(0,0,0,.2);padding:7px 10px;cursor:pointer;' +
-      'font:600 12px "Segoe UI",system-ui,sans-serif;color:#222;z-index:999999;max-width:300px}' +
-    '#' + PIL_ID + ':hover{background:#f7f9fc}' +
-    '#' + PIL_ID + ' .er-pil-icoon{color:#285dab;font-weight:700}';
+  // ── DS UI · gedeelde stijl ────────────────────────────────────
+  // Deze lijst staat LETTERLIJK ook in het andere bestand (ds-logboek.js ↔
+  // tourtool/extra-rijtijd.js). De widget draait in een eigen iframe-document
+  // en gebruikt de regels kaal; het rijtijd-paneel hangt in de DireXtion-pagina
+  // zelf en zet er per regel '#<paneel-id> ' voor, anders lekken ze naar
+  // DireXtion. build.py vergelijkt beide lijsten teken voor teken en faalt als
+  // ze uit elkaar lopen — wijzig dus altijd allebei.
+  //
+  // Tokens: blauw #0090e3 (hover #007bc4) · donkerblauw #285dab · oranje #ff6600
+  //   vlak #F2F7FC / rand #cce9f9 · rand #DDDDDD · gedempt #999999 · tekst #333333
+  //   groen #155724 tekst / #d4edda vlak / #00B900 rand · rood #E50000
+  //   amber #856404 tekst / #fff8e1 vlak / #ffc107 rand
+  // Type:  17/700 kop · 14/600 vraag · 13 tekst en knop · 12 blok · 11 klein
+  //        10 uppercase kapje (.6px spatiëring)
+  // Maat:  14 padding · 10 blokafstand · 8 stapel · 5 dicht
+  // Hoek:  10 paneel · 8 knop · 6 veld en blok · 4 pil
+  var DS_UI = [
+    '.header{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-bottom:1px solid #DDDDDD;flex-shrink:0;background:#fff;}',
+    '.header-title{color:#285dab;font-size:17px;font-weight:700;}',
+    '.header-actions{display:flex;gap:6px;align-items:center;}',
+    '.close-btn{font-size:16px;background:none;border:none;color:#999999;cursor:pointer;padding:0 4px;line-height:1;font-weight:300;}',
+    '.close-btn:hover{color:#333333;}',
+    '.toggle-btn{font-size:10px;background:#F3F3F3;border:1px solid #DDDDDD;color:#999999;padding:3px 9px;border-radius:4px;cursor:pointer;font-family:inherit;}',
+    '.toggle-btn:hover{border-color:#0090e3;color:#0090e3;}',
+    '.content{flex-shrink:0;padding:14px;}',
+    '.status-bar{font-size:11px;background:#F2F7FC;border:1px solid #cce9f9;padding:8px 12px;border-radius:6px;margin-bottom:12px;color:#285dab;}',
+    '.status-line{display:block;margin-bottom:2px;}',
+    'label{font-size:14px;font-weight:600;color:#333333;display:block;margin-bottom:8px;}',
+    '.section-label{display:block;font-size:10px;font-weight:400;color:#999999;text-transform:uppercase;letter-spacing:0.6px;margin-bottom:6px;}',
+    'input[type=text],input[type=number]{width:100%;padding:9px 11px;border:1px solid #DDDDDD;border-radius:6px;font-size:14px;font-family:inherit;box-sizing:border-box;color:#333333;background:#fff;outline:none;}',
+    'input[type=text]:focus,input[type=number]:focus{border-color:#0090e3;}',
+    '.ux-btn{width:100%;text-align:left;padding:9px 13px;margin-bottom:5px;border:1px solid #DDDDDD;border-radius:8px;background:#F2F7FC;cursor:pointer;font-size:13px;font-family:inherit;color:#333333;font-weight:500;transition:0.12s;}',
+    '.ux-btn:hover{border-color:#0090e3;}',
+    '.ux-btn.selected{background:#d4edda;border-color:#00B900;color:#155724;font-weight:600;}',
+    '.btn-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:0;}',
+    '.btn-grid .ux-btn{margin-bottom:0;font-size:12px;padding:8px 10px;}',
+    '.action-btn{width:100%;padding:11px;border:none;border-radius:8px;background:#0090e3;color:#fff;font-weight:600;cursor:pointer;font-size:14px;font-family:inherit;margin-top:8px;}',
+    '.action-btn:hover{background:#007bc4;}',
+    '.submit-btn{background:#00B900;}',
+    '.submit-btn:hover{background:#009900;}',
+    '.back-btn{width:100%;padding:9px;background:#fff;border:1px solid #DDDDDD;border-radius:8px;color:#DDDDDD;font-size:13px;font-family:inherit;cursor:default;}',
+    '.back-btn.active{border-color:#0090e3;color:#0090e3;cursor:pointer;}',
+    '.back-btn.active:hover{background:#F2F7FC;}',
+    '.info-box{font-size:12px;background:#F2F7FC;border:1px solid #cce9f9;border-left:4px solid #0090e3;padding:10px 12px;border-radius:6px;color:#285dab;margin-bottom:10px;line-height:1.5;}',
+    '.warning-box{font-size:12px;background:#fff0f0;border:1px solid #E50000;border-left:4px solid #E50000;padding:10px 12px;border-radius:6px;color:#E50000;margin-bottom:10px;line-height:1.5;}',
+    '.park-melding{font-size:12px;background:#fff8e1;border:1px solid #ffc107;border-left:4px solid #ffc107;padding:10px 12px;border-radius:6px;color:#856404;margin-bottom:10px;line-height:1.5;}',
+    '.park-melding b{color:#533f03;}',
+    '.summary-box{font-size:12px;background:#F2F7FC;border-left:4px solid #cce9f9;padding:12px;border-radius:6px;color:#333333;margin-bottom:10px;line-height:1.6;}',
+    '.section-divider{border:none;border-top:1px solid #DDDDDD;margin:10px 0 8px;}',
+    '.toggle-link{font-size:12px;color:#0090e3;text-align:center;margin:6px 0;cursor:pointer;}',
+    '.toggle-link:hover{text-decoration:underline;}',
+    '.footer{padding:10px 14px;border-top:1px solid #DDDDDD;flex-shrink:0;background:#fff;}',
+    '.footer-inner{display:flex;flex-direction:column;gap:6px;}',
+    '.footer-hint{font-size:11px;color:#999999;text-align:center;line-height:1.4;}',
+    '.version-bar{text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;}',
+    '.pill{display:inline-block;border-radius:4px;padding:1px 6px;font-size:11px;font-weight:600;white-space:nowrap;}',
+    '.pill-blue{background:#F2F7FC;color:#285dab;}',
+    '.pill-green{background:#d4edda;color:#155724;}',
+    '.pill-amber{background:#fff8e1;color:#856404;}'
+  ];
+
+  // ── Alleen dit paneel ─────────────────────────────────────────
+  // De omhulling en de uitslaglijst; alles wat de widget ook kent staat
+  // hierboven in DS_UI. Elke regel hier is al voorzien van de #id-prefix.
+  var DS_PANEEL = [
+    '#' + PANEL_ID + '{position:fixed;top:70px;right:20px;width:360px;max-height:82vh;overflow:auto;' +
+      'background:#fff;border:2px solid #0090e3;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.18);' +
+      'font-family:"Segoe UI",Arial,sans-serif;font-size:13px;color:#333333;z-index:999999;}',
+    '#' + PANEL_ID + ' .header{border-radius:8px 8px 0 0;}',
+    '#' + PANEL_ID + ' .version-bar{border-radius:0 0 8px 8px;}',
+    '#' + PANEL_ID + ' .er-veld{margin-bottom:10px;}',
+    '#' + PANEL_ID + ' .er-haal{text-align:center;margin:6px 0 0;}',
+    '#' + PANEL_ID + ' .er-twee{display:flex;gap:8px;margin-bottom:10px;}',
+    '#' + PANEL_ID + ' .er-twee > div{flex:1;min-width:0;}',
+    '#' + PANEL_ID + ' .er-netwerken{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-bottom:0;}',
+    '#' + PANEL_ID + ' .er-net{width:auto;margin-bottom:0;display:flex;align-items:center;justify-content:center;' +
+      'gap:5px;padding:8px 4px;font-size:12px;text-align:center;text-transform:none;letter-spacing:0;}',
+    '#' + PANEL_ID + ' .er-net input{width:auto;margin:0;padding:0;cursor:pointer;}',
+    '#' + PANEL_ID + ' .er-knoppen{display:flex;gap:8px;margin-top:10px;}',
+    '#' + PANEL_ID + ' .er-knoppen .action-btn{flex:1;margin-top:0;}',
+    '#' + PANEL_ID + ' .er-knoppen .back-btn{flex:0 0 82px;padding:11px 0;}',
+    '#' + PANEL_ID + ' .er-status{margin-top:10px;font-size:11px;color:#999999;line-height:1.4;min-height:15px;}',
+    '#' + PANEL_ID + ' .er-status.fout{color:#E50000;}',
+    '#' + PANEL_ID + ' .er-rij{padding:9px 8px;margin:0 -8px;border-bottom:1px solid #DDDDDD;border-radius:6px;cursor:pointer;}',
+    '#' + PANEL_ID + ' .er-rij:hover{background:#F2F7FC;}',
+    '#' + PANEL_ID + ' .er-rij-kop{display:flex;justify-content:space-between;align-items:baseline;gap:8px;}',
+    '#' + PANEL_ID + ' .er-rit{font-size:13px;font-weight:600;color:#285dab;}',
+    '#' + PANEL_ID + ' .er-uitloop{text-align:right;line-height:1.15;white-space:nowrap;}',
+    '#' + PANEL_ID + ' .er-getal{display:block;font-size:17px;font-weight:700;}',
+    '#' + PANEL_ID + ' .er-uitloop .section-label{margin-bottom:0;text-align:right;}',
+    '#' + PANEL_ID + ' .er-rij-sub{margin-top:4px;font-size:12px;line-height:1.4;}',
+    '#' + PANEL_ID + ' .er-opbouw{margin-top:3px;font-size:11px;color:#999999;}',
+    '#' + PANEL_ID + ' .er-detail{margin-top:2px;font-size:11px;color:#999999;}',
+    '#' + PANEL_ID + ' .er-goed{color:#155724;font-weight:600;}',
+    '#' + PANEL_ID + ' .er-slecht{color:#E50000;font-weight:600;}',
+    '#' + PANEL_ID + ' .er-ster{color:#ff6600;}',
+    '#' + PANEL_ID + ' .er-depot{margin:6px 0 0;padding:6px 9px;font-size:11px;}',
+    '#' + PANEL_ID + ' .er-sleutel-hint{margin-top:6px;font-size:11px;color:#856404;line-height:1.5;}',
+    '#' + PANEL_ID + ' .er-uitleg{margin-top:14px;font-size:11px;color:#999999;}',
+    '#' + PANEL_ID + ' .er-uitleg summary{cursor:pointer;color:#0090e3;font-size:12px;font-weight:600;list-style:none;outline:none;}',
+    '#' + PANEL_ID + ' .er-uitleg summary:hover{text-decoration:underline;}',
+    '#' + PANEL_ID + ' .er-uitleg summary::-webkit-details-marker{display:none;}',
+    '#' + PANEL_ID + ' .er-uitleg summary:before{content:"\u25B8 ";}',
+    '#' + PANEL_ID + ' .er-uitleg[open] summary:before{content:"\u25BE ";}',
+    '#' + PANEL_ID + ' .er-uitleg ul{margin:7px 0 0;padding-left:15px;line-height:1.45;}',
+    '#' + PANEL_ID + ' .er-uitleg li{margin-bottom:4px;}',
+    '#' + PANEL_ID + ' .er-uitleg b{color:#333333;font-weight:600;}',
+    '#' + PIL_ID + '{position:fixed;top:70px;right:20px;display:none;align-items:center;gap:8px;' +
+      'background:#fff;border:1px solid #DDDDDD;border-left:4px solid #0090e3;border-radius:8px;' +
+      'box-shadow:0 8px 24px rgba(0,0,0,0.18);padding:8px 11px;cursor:pointer;' +
+      'font:600 12px "Segoe UI",Arial,sans-serif;color:#333333;z-index:999999;max-width:300px;}',
+    '#' + PIL_ID + ':hover{background:#F2F7FC;}',
+    '#' + PIL_ID + ' .er-pil-icoon{color:#ff6600;font-weight:700;}'
+  ];
+
+  // DS_UI staat kaal in ds-logboek.js (eigen iframe-document); hier moet elke
+  // regel gescopet worden, anders herstijlt hij de DireXtion-pagina eromheen.
+  var css = DS_UI.map(function (regel) {
+    return '#' + PANEL_ID + ' ' + regel;
+  }).join('') + DS_PANEEL.join('');
 
   var stijl = document.createElement('style');
   stijl.textContent = css;
@@ -879,34 +947,44 @@
   var panel = document.createElement('div');
   panel.id = PANEL_ID;
   panel.innerHTML =
-    '<div class="er-kop"><span>Extra rijtijd <span class="er-versie">' + RIJTIJD_VERSION + '</span></span><span>' +
-      '<button class="er-klein" title="Inklappen tot pilletje">&minus;</button>' +
-      '<button class="er-sluit" title="Sluiten">&times;</button></span></div>' +
-    '<div class="er-body">' +
-      '<div id="er-sleutel" class="er-sleutel" style="display:none">' +
-        '<label>OpenRouteService-sleutel</label>' +
-        '<input id="er-orskey" placeholder="plak hier je sleutel">' +
-        '<button class="er-haal" id="er-orsopslaan">Sleutel opslaan</button>' +
+    '<div class="header"><span class="header-title">Extra rijtijd</span>' +
+      '<div class="header-actions">' +
+        '<button class="toggle-btn er-klein" title="Inklappen tot pilletje">\u2212</button>' +
+        '<button class="close-btn er-sluit" title="Sluiten">\u2715</button>' +
+      '</div></div>' +
+    '<div class="content">' +
+      '<div id="er-sleutel" class="park-melding er-sleutel" style="display:none">' +
+        '<label class="section-label">OpenRouteService-sleutel</label>' +
+        '<input type="text" id="er-orskey" placeholder="plak hier je sleutel">' +
+        '<button class="ux-btn er-haal" id="er-orsopslaan">Sleutel opslaan</button>' +
         '<div class="er-sleutel-hint">Gratis via openrouteservice.org \u2192 Dashboard. ' +
           'Zonder sleutel lopen de rijtijden via de OSRM-demoserver, die daar niet ' +
           'voor bedoeld is.</div>' +
       '</div>' +
-      '<label>Nieuwe stop — adres</label>' +
-      '<input id="er-adres" placeholder="Kerkstraat 12, 2101 AB Heemstede">' +
-      '<button class="er-haal" id="er-logboek">\u2193 Haal adres op</button>' +
+      '<div class="er-veld">' +
+        '<label class="section-label">Nieuwe stop \u2014 adres</label>' +
+        '<input type="text" id="er-adres" placeholder="Kerkstraat 12, 2101 AB Heemstede">' +
+        '<button class="ux-btn er-haal" id="er-logboek">\u2193 Haal adres op</button>' +
+      '</div>' +
       '<div class="er-twee">' +
-        '<div><label>Servicetijd (min)</label><input id="er-servicetijd" type="number" min="0" step="5" placeholder="0"></div>' +
-        '<div><label>Eigen rit</label><input id="er-eigenrit" placeholder="bijv. 2M-NLRO-07"></div>' +
+        '<div><label class="section-label">Servicetijd (min)</label>' +
+          '<input id="er-servicetijd" type="number" min="0" step="5" placeholder="0"></div>' +
+        '<div><label class="section-label">Eigen rit</label>' +
+          '<input type="text" id="er-eigenrit" placeholder="bijv. 2M-NLRO-07"></div>' +
       '</div>' +
-      '<label>Netwerken die de aftercare mogen doen</label>' +
-      '<div class="er-netwerken">' +
-        NETWERKEN.map(function (n) {
-          return '<label class="er-net"><input type="checkbox" id="er-net-' + n + '"> ' + n + '</label>';
-        }).join('') +
+      '<div class="er-veld">' +
+        '<label class="section-label">Netwerken die de aftercare mogen doen</label>' +
+        '<div class="er-netwerken">' +
+          NETWERKEN.map(function (n) {
+            return '<label class="ux-btn er-net" id="er-net-lbl-' + n + '">' +
+              '<input type="checkbox" id="er-net-' + n + '"> ' + n + '</label>';
+          }).join('') +
+        '</div>' +
       '</div>' +
-      '<div class="er-knoppen"><button class="er-bereken">Bereken</button>' +
-      '<button class="er-wis" title="Resultaten wissen">Wissen</button></div>' +
-      '<div id="er-status"></div><div id="er-resultaten"></div>' +
+      '<div class="er-knoppen">' +
+        '<button class="action-btn er-bereken">Bereken</button>' +
+        '<button class="back-btn active er-wis" title="Resultaten wissen">Wissen</button></div>' +
+      '<div id="er-status" class="er-status"></div><div id="er-resultaten"></div>' +
       '<details class="er-uitleg"><summary>Hoe werkt dit?</summary><ul>' +
         '<li><b>Ritten</b> \u2014 alle ritten uit de lijst; de ' + MAX_ROUTE_RITTEN +
           ' dichtstbijzijnde gaan echt de router in.</li>' +
@@ -924,7 +1002,8 @@
         '<li><b>Rijtijden</b> \u2014 OpenRouteService met eigen sleutel, of de OSRM-demo ' +
           'zolang die sleutel ontbreekt. Geen actuele filedruk.</li>' +
       '</ul></details>' +
-    '</div>';
+    '</div>' +
+    '<div class="version-bar">Extra rijtijd ' + RIJTIJD_VERSION + '</div>';
   document.body.appendChild(panel);
 
   var pil = document.createElement('div');
@@ -1015,7 +1094,10 @@
   // Vinkjes meteen onthouden, niet pas bij Bereken.
   NETWERKEN.forEach(function (n) {
     var el = document.getElementById('er-net-' + n);
-    if (el) el.addEventListener('change', function () { bewaar(KEY_NETWERKEN, gekozenNetwerken()); });
+    if (el) el.addEventListener('change', function () {
+      markeerNetwerken();
+      bewaar(KEY_NETWERKEN, gekozenNetwerken());
+    });
   });
 
   render();

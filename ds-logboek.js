@@ -199,65 +199,95 @@
   wrapper.id = 'ds-combi-wrapper';
   // Op Basic links-onder zodat het de interface minder verstoort; op consumer portal rechts-boven
   var wrapperPos = 'bottom:20px;left:20px;';
-  wrapper.style.cssText = 'position:fixed;' + wrapperPos + 'width:340px;background:#fff;border:2px solid #0090e3;box-shadow:0 8px 24px rgba(0,0,0,0.18);z-index:999999;border-radius:10px;overflow:hidden;';
+  wrapper.style.cssText = 'position:fixed;' + wrapperPos + 'width:360px;background:#fff;border:2px solid #0090e3;box-shadow:0 8px 24px rgba(0,0,0,0.18);z-index:999999;border-radius:10px;overflow:hidden;';
   var iframe = document.createElement('iframe');
   iframe.style.cssText = 'width:100%;height:620px;border:none;background:#fff;display:block;';
   wrapper.appendChild(iframe); document.body.appendChild(wrapper);
   var idoc = iframe.contentDocument || iframe.contentWindow.document;
 
-  idoc.head.innerHTML = '<style>' +
-    'html,body{height:100%;margin:0;padding:0;overflow:hidden;font-family:"Segoe UI",Arial,sans-serif;color:#333333;}' +
-    '.app{display:flex;flex-direction:column;height:100%;}' +
-    '.header{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-bottom:1px solid #DDDDDD;flex-shrink:0;background:#fff;}' +
-    '.header-title{color:#285dab;font-size:17px;font-weight:700;}' +
-    '.header-actions{display:flex;gap:6px;align-items:center;}' +
-    '.toggle-btn{font-size:10px;background:#F3F3F3;border:1px solid #DDDDDD;color:#999999;padding:3px 9px;border-radius:4px;cursor:pointer;}' +
-    '.close-btn{font-size:16px;background:none;border:none;color:#999999;cursor:pointer;padding:0 4px;line-height:1;font-weight:300;}' +
-    '.close-btn:hover{color:#333333;}' +
-    '.content{flex-shrink:0;padding:14px;}' +
-    '.status-bar{font-size:11px;background:#F2F7FC;border:1px solid #cce9f9;padding:8px 12px;border-radius:6px;margin-bottom:12px;color:#285dab;}' +
-    '.status-line{display:block;margin-bottom:2px;}' +
-    '.footer{padding:10px 14px;border-top:1px solid #DDDDDD;flex-shrink:0;background:#fff;}' +
-    '.footer-inner{display:flex;flex-direction:column;gap:6px;}' +
-    '.footer-hint{font-size:11px;color:#999999;text-align:center;line-height:1.4;}' +
-    '.back-btn{width:100%;padding:9px;background:#fff;border:1px solid #DDDDDD;border-radius:8px;color:#DDDDDD;font-size:13px;cursor:default;}' +
-    '.back-btn.active{border-color:#0090e3;color:#0090e3;cursor:pointer;}' +
-    '.back-btn.active:hover{background:#F2F7FC;}' +
-    'label{font-size:14px;font-weight:600;color:#333333;display:block;margin-bottom:8px;}' +
-    'input[type=text]{width:100%;padding:9px 11px;border:1px solid #DDDDDD;border-radius:6px;font-size:14px;box-sizing:border-box;color:#333333;outline:none;}' +
-    'input[type=text]:focus{border-color:#0090e3;}' +
-    '.ux-btn{width:100%;text-align:left;padding:9px 13px;margin-bottom:5px;border:1px solid #DDDDDD;border-radius:8px;background:#F2F7FC;cursor:pointer;font-size:13px;color:#333333;font-weight:500;transition:0.12s;}' +
-    '.btn-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:0;}' +
-    '.btn-grid .ux-btn{margin-bottom:0;font-size:12px;padding:8px 10px;}' +
-    '.ux-btn.selected{background:#d4edda;border-color:#00B900;color:#155724;font-weight:600;}' +
-    '.advies-btn{background:#fff3eb;border-color:#ff6600;color:#ff6600;}' +
-    '.advies-btn:hover{background:#ffe8d6;border-color:#cc5200;color:#cc5200;}' +
-    '.action-btn{width:100%;padding:11px;border:none;border-radius:8px;background:#0090e3;color:white;font-weight:600;cursor:pointer;font-size:14px;margin-top:8px;}' +
-    '.action-btn:hover{background:#007bc4;}' +
-    '.submit-btn{background:#00B900;}' +
-    '.submit-btn:hover{background:#009900;}' +
-    '.summary-box{font-size:12px;background:#F2F7FC;padding:12px;border-radius:8px;border-left:4px solid #cce9f9;margin-bottom:10px;color:#333333;line-height:1.6;}' +
-    '.warning-box{font-size:12px;background:#fff0f0;border:1px solid #E50000;border-left:4px solid #E50000;padding:10px 12px;border-radius:6px;color:#E50000;margin-bottom:10px;line-height:1.5;}' +
-    '.controle-box{background:#F2F7FC;border:1px solid #cce9f9;border-left:4px solid #0090e3;border-radius:6px;padding:10px 12px;margin-bottom:10px;}' +
-    '.controle-title{font-size:11px;font-weight:700;color:#285dab;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;}' +
-    '.controle-item{font-size:13px;color:#285dab;margin-bottom:5px;line-height:1.4;}' +
-    '.controle-item:last-child{margin-bottom:0;}' +
-    '.info-box{font-size:12px;background:#F2F7FC;border:1px solid #cce9f9;border-left:4px solid #0090e3;padding:10px 12px;border-radius:6px;color:#285dab;margin-bottom:10px;line-height:1.5;}' +
-    '.section-divider{border:none;border-top:1px solid #DDDDDD;margin:10px 0 8px;}' +
-    '.section-label{font-size:10px;color:#999999;text-transform:uppercase;letter-spacing:0.6px;margin-bottom:6px;}' +
-    '.toggle-link{font-size:12px;color:#0090e3;text-align:center;margin:6px 0;cursor:pointer;}' +
-    '.toggle-link:hover{text-decoration:underline;}' +
-    '.park-melding{background:#fff8e1;border:1px solid #ffc107;border-left:4px solid #ffc107;border-radius:6px;padding:10px 12px;font-size:12px;color:#856404;margin-bottom:12px;line-height:1.5;}' +
-    '.park-melding b{color:#533f03;}' +
-    '.main-row{display:flex;flex:1;min-height:0;overflow:hidden;}' +
-    '.main-row .content{flex:1;overflow-y:auto;min-width:0;padding:14px;}' +
-    '.sidebar{flex:1;border-left:2px solid #DDDDDD;overflow-y:auto;background:#FAFAFA;padding:8px 10px;box-sizing:border-box;font-size:12px;}' +
-    '.anders-scroll{flex:1;overflow-y:auto;min-height:0;padding:8px 14px;box-sizing:border-box;border-top:1px solid #DDDDDD;}' +
-    '.resize-btn{font-size:11px;background:#F3F3F3;border:1px solid #DDDDDD;color:#666;padding:3px 8px;border-radius:4px;cursor:pointer;font-weight:600;}' +
-    '.resize-btn:hover{background:#E8E8E8;}' +
-    '.advies-knop{background:#F0FFF0;border-color:#b2dfb2;}' +
-    '.afwijkend-knop{background:#FFFFF0;border-color:#e0e0a0;}' +
-    '</style>';
+  // ── DS UI · gedeelde stijl ────────────────────────────────────
+  // Deze lijst staat LETTERLIJK ook in het andere bestand (ds-logboek.js ↔
+  // tourtool/extra-rijtijd.js). De widget draait in een eigen iframe-document
+  // en gebruikt de regels kaal; het rijtijd-paneel hangt in de DireXtion-pagina
+  // zelf en zet er per regel '#<paneel-id> ' voor, anders lekken ze naar
+  // DireXtion. build.py vergelijkt beide lijsten teken voor teken en faalt als
+  // ze uit elkaar lopen — wijzig dus altijd allebei.
+  //
+  // Tokens: blauw #0090e3 (hover #007bc4) · donkerblauw #285dab · oranje #ff6600
+  //   vlak #F2F7FC / rand #cce9f9 · rand #DDDDDD · gedempt #999999 · tekst #333333
+  //   groen #155724 tekst / #d4edda vlak / #00B900 rand · rood #E50000
+  //   amber #856404 tekst / #fff8e1 vlak / #ffc107 rand
+  // Type:  17/700 kop · 14/600 vraag · 13 tekst en knop · 12 blok · 11 klein
+  //        10 uppercase kapje (.6px spatiëring)
+  // Maat:  14 padding · 10 blokafstand · 8 stapel · 5 dicht
+  // Hoek:  10 paneel · 8 knop · 6 veld en blok · 4 pil
+  var DS_UI = [
+    '.header{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-bottom:1px solid #DDDDDD;flex-shrink:0;background:#fff;}',
+    '.header-title{color:#285dab;font-size:17px;font-weight:700;}',
+    '.header-actions{display:flex;gap:6px;align-items:center;}',
+    '.close-btn{font-size:16px;background:none;border:none;color:#999999;cursor:pointer;padding:0 4px;line-height:1;font-weight:300;}',
+    '.close-btn:hover{color:#333333;}',
+    '.toggle-btn{font-size:10px;background:#F3F3F3;border:1px solid #DDDDDD;color:#999999;padding:3px 9px;border-radius:4px;cursor:pointer;font-family:inherit;}',
+    '.toggle-btn:hover{border-color:#0090e3;color:#0090e3;}',
+    '.content{flex-shrink:0;padding:14px;}',
+    '.status-bar{font-size:11px;background:#F2F7FC;border:1px solid #cce9f9;padding:8px 12px;border-radius:6px;margin-bottom:12px;color:#285dab;}',
+    '.status-line{display:block;margin-bottom:2px;}',
+    'label{font-size:14px;font-weight:600;color:#333333;display:block;margin-bottom:8px;}',
+    '.section-label{display:block;font-size:10px;font-weight:400;color:#999999;text-transform:uppercase;letter-spacing:0.6px;margin-bottom:6px;}',
+    'input[type=text],input[type=number]{width:100%;padding:9px 11px;border:1px solid #DDDDDD;border-radius:6px;font-size:14px;font-family:inherit;box-sizing:border-box;color:#333333;background:#fff;outline:none;}',
+    'input[type=text]:focus,input[type=number]:focus{border-color:#0090e3;}',
+    '.ux-btn{width:100%;text-align:left;padding:9px 13px;margin-bottom:5px;border:1px solid #DDDDDD;border-radius:8px;background:#F2F7FC;cursor:pointer;font-size:13px;font-family:inherit;color:#333333;font-weight:500;transition:0.12s;}',
+    '.ux-btn:hover{border-color:#0090e3;}',
+    '.ux-btn.selected{background:#d4edda;border-color:#00B900;color:#155724;font-weight:600;}',
+    '.btn-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:0;}',
+    '.btn-grid .ux-btn{margin-bottom:0;font-size:12px;padding:8px 10px;}',
+    '.action-btn{width:100%;padding:11px;border:none;border-radius:8px;background:#0090e3;color:#fff;font-weight:600;cursor:pointer;font-size:14px;font-family:inherit;margin-top:8px;}',
+    '.action-btn:hover{background:#007bc4;}',
+    '.submit-btn{background:#00B900;}',
+    '.submit-btn:hover{background:#009900;}',
+    '.back-btn{width:100%;padding:9px;background:#fff;border:1px solid #DDDDDD;border-radius:8px;color:#DDDDDD;font-size:13px;font-family:inherit;cursor:default;}',
+    '.back-btn.active{border-color:#0090e3;color:#0090e3;cursor:pointer;}',
+    '.back-btn.active:hover{background:#F2F7FC;}',
+    '.info-box{font-size:12px;background:#F2F7FC;border:1px solid #cce9f9;border-left:4px solid #0090e3;padding:10px 12px;border-radius:6px;color:#285dab;margin-bottom:10px;line-height:1.5;}',
+    '.warning-box{font-size:12px;background:#fff0f0;border:1px solid #E50000;border-left:4px solid #E50000;padding:10px 12px;border-radius:6px;color:#E50000;margin-bottom:10px;line-height:1.5;}',
+    '.park-melding{font-size:12px;background:#fff8e1;border:1px solid #ffc107;border-left:4px solid #ffc107;padding:10px 12px;border-radius:6px;color:#856404;margin-bottom:10px;line-height:1.5;}',
+    '.park-melding b{color:#533f03;}',
+    '.summary-box{font-size:12px;background:#F2F7FC;border-left:4px solid #cce9f9;padding:12px;border-radius:6px;color:#333333;margin-bottom:10px;line-height:1.6;}',
+    '.section-divider{border:none;border-top:1px solid #DDDDDD;margin:10px 0 8px;}',
+    '.toggle-link{font-size:12px;color:#0090e3;text-align:center;margin:6px 0;cursor:pointer;}',
+    '.toggle-link:hover{text-decoration:underline;}',
+    '.footer{padding:10px 14px;border-top:1px solid #DDDDDD;flex-shrink:0;background:#fff;}',
+    '.footer-inner{display:flex;flex-direction:column;gap:6px;}',
+    '.footer-hint{font-size:11px;color:#999999;text-align:center;line-height:1.4;}',
+    '.version-bar{text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;}',
+    '.pill{display:inline-block;border-radius:4px;padding:1px 6px;font-size:11px;font-weight:600;white-space:nowrap;}',
+    '.pill-blue{background:#F2F7FC;color:#285dab;}',
+    '.pill-green{background:#d4edda;color:#155724;}',
+    '.pill-amber{background:#fff8e1;color:#856404;}'
+  ];
+
+  // ── Alleen de widget ──────────────────────────────────────────
+  // Wat hier staat heeft geen tegenhanger in het rijtijd-paneel: het
+  // iframe-document zelf, de twee-koloms weergave en de gekleurde
+  // knopvarianten in de "Anders"-lijst.
+  var DS_WIDGET = [
+    'html,body{height:100%;margin:0;padding:0;overflow:hidden;font-family:"Segoe UI",Arial,sans-serif;font-size:13px;color:#333333;}',
+    '.app{display:flex;flex-direction:column;height:100%;}',
+    '.controle-box{background:#F2F7FC;border:1px solid #cce9f9;border-left:4px solid #0090e3;border-radius:6px;padding:10px 12px;margin-bottom:10px;}',
+    '.controle-title{font-size:10px;font-weight:700;color:#285dab;text-transform:uppercase;letter-spacing:0.6px;margin-bottom:8px;}',
+    '.controle-item{font-size:13px;color:#285dab;margin-bottom:5px;line-height:1.4;}',
+    '.controle-item:last-child{margin-bottom:0;}',
+    '.main-row{display:flex;flex:1;min-height:0;overflow:hidden;}',
+    '.main-row .content{flex:1;overflow-y:auto;min-width:0;padding:14px;}',
+    '.sidebar{flex:1;border-left:1px solid #DDDDDD;overflow-y:auto;background:#FAFAFA;padding:8px 10px;box-sizing:border-box;font-size:12px;}',
+    '.anders-scroll{flex:1;overflow-y:auto;min-height:0;padding:8px 14px;box-sizing:border-box;border-top:1px solid #DDDDDD;}',
+    '.advies-btn{background:#fff3eb;border-color:#ff6600;color:#ff6600;}',
+    '.advies-btn:hover{background:#ffe8d6;border-color:#cc5200;color:#cc5200;}',
+    '.advies-knop{background:#F0FFF0;border-color:#b2dfb2;}',
+    '.afwijkend-knop{background:#FFFFF0;border-color:#e0e0a0;}'
+  ];
+
+  idoc.head.innerHTML = '<style>' + DS_WIDGET.join('') + DS_UI.join('') + '</style>';
 
   var appContainer = idoc.createElement('div');
   idoc.body.appendChild(appContainer);
@@ -277,7 +307,7 @@
   // Apply initial sizing
   dsHeight = clampHeight(dsHeight);
   iframe.style.height = dsHeight + 'px';
-  wrapper.style.width = dsWide ? '600px' : '340px';
+  wrapper.style.width = dsWide ? '600px' : '360px';
 
   // ── PARKEER FUNCTIE ───────────────────────────────────────────
   var PARK_KEY = 'ds_park_' + scrapedOrder;
@@ -1184,7 +1214,7 @@
       } else {
         // Toon type prominent als dat bekend is, model als secundair
         if (callData.product) {
-          h+='<span class="status-line">Apparaat: <b>'+callData.product+'</b> <span style="font-weight:400;color:#666;font-size:11px;">('+callData.model+')</span></span>';
+          h+='<span class="status-line">Apparaat: <b>'+callData.product+'</b> <span style="font-weight:400;color:#999999;font-size:11px;">('+callData.model+')</span></span>';
         } else {
           h+='<span class="status-line">Model: <b>'+callData.model+'</b></span>';
         }
@@ -1223,8 +1253,8 @@
         '<div class="header">' +
           '<span class="header-title">DS Logboek</span>' +
           '<div class="header-actions">' +
-            '<button class="resize-btn" id="btn-height">\u2195 ' + (dsHeight===620?'S':dsHeight===760?'M':'L') + '</button>' +
-            '<button class="resize-btn" id="btn-wide">' + (dsWide?'\u2b0c 2K':'\u2194') + '</button>' +
+            '<button class="toggle-btn" id="btn-height">\u2195 ' + (dsHeight===620?'S':dsHeight===760?'M':'L') + '</button>' +
+            '<button class="toggle-btn" id="btn-wide">' + (dsWide?'\u2b0c 2K':'\u2194') + '</button>' +
             '<button class="close-btn" id="btn-close">\u2715</button>' +
           '</div>' +
         '</div>' +
@@ -1232,14 +1262,14 @@
         '<div class="footer"><div class="footer-inner" style="display:flex;flex-direction:row;justify-content:space-between;align-items:center;gap:8px;">' +
           '<button class="' + backClass + '" id="btn-terug" style="flex:1;">\u2190 Terug</button>' +
           (scrapedOrder ? '<div id="geen-order-toggle" style="display:flex;align-items:center;gap:6px;cursor:pointer;user-select:none;flex-shrink:0;">' +
-            '<div style="position:relative;width:30px;height:17px;border-radius:9px;background:'+(geenOrderMode?'#ff6600':'#ccc')+';transition:background 0.18s;">' +
+            '<div style="position:relative;width:30px;height:17px;border-radius:9px;background:'+(geenOrderMode?'#ff6600':'#DDDDDD')+';transition:background 0.18s;">' +
               '<div style="position:absolute;top:2px;left:'+(geenOrderMode?'13px':'2px')+';width:13px;height:13px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,0.25);transition:left 0.18s;"></div>' +
             '</div>' +
-            '<span style="font-size:11px;color:'+(geenOrderMode?'#ff6600':'#aaa')+';">'+(geenOrderMode?'Gegevens gewist':'Geen order')+'</span>' +
+            '<span style="font-size:11px;color:'+(geenOrderMode?'#ff6600':'#999999')+';">'+(geenOrderMode?'Gegevens gewist':'Geen order')+'</span>' +
           '</div>' : '') +
         '</div></div>' +
-        '<div style="text-align:center;padding:5px 14px;background:#F3F3F3;border-top:1px solid #DDDDDD;font-size:11px;color:#999999;flex-shrink:0;">DS Logboek v1.40.1' +
-          (callData.user ? ' · <span style="color:#999;">'+callData.user+'</span> ' + (nameEditConfirm ? '<span style="color:#666;margin-left:4px;">Naam wissen?</span> <span id="btn-edit-name-yes" style="cursor:pointer;color:#c00;font-weight:600;margin-left:4px;">Ja</span> <span id="btn-edit-name-no" style="cursor:pointer;color:#666;margin-left:4px;">Nee</span>' : '<span id="btn-edit-name" title="Naam wijzigen" style="cursor:pointer;opacity:0.45;margin-left:1px;">✎</span>') : '') +
+        '<div class="version-bar">DS Logboek v1.41.0' +
+          (callData.user ? ' · <span style="color:#999999;">'+callData.user+'</span> ' + (nameEditConfirm ? '<span style="color:#999999;margin-left:4px;">Naam wissen?</span> <span id="btn-edit-name-yes" style="cursor:pointer;color:#E50000;font-weight:600;margin-left:4px;">Ja</span> <span id="btn-edit-name-no" style="cursor:pointer;color:#999999;margin-left:4px;">Nee</span>' : '<span id="btn-edit-name" title="Naam wijzigen" style="cursor:pointer;opacity:0.45;margin-left:1px;">✎</span>') : '') +
         '</div>' +
       '</div>';
 
@@ -1256,7 +1286,7 @@
     idoc.getElementById('btn-wide').onclick = function() {
       dsWide = !dsWide;
       localStorage.setItem('ds_wide', dsWide ? '1' : '0');
-      wrapper.style.width = dsWide ? '600px' : '340px';
+      wrapper.style.width = dsWide ? '600px' : '360px';
       renderApp();
     };
     var editNameBtn = idoc.getElementById('btn-edit-name');
@@ -1461,7 +1491,7 @@
       if (productLabel) {
         // Klikbaar maken zodat de gebruiker de automatische apparaatdetectie kan overrulen
         var chipKlikbaar = !meerdereProducten && callData.product;
-        productChip = '<div' + (chipKlikbaar ? ' id="ds-product-chip" title="Klik om het apparaat handmatig te kiezen" style="cursor:pointer;' : ' style="') + 'font-size:11px; color:#666; background:#F3F3F3; border:1px solid #E0E0E0; border-radius:12px; padding:3px 8px; display:inline-block; margin-bottom:8px;">' + productLabel + (chipKlikbaar ? ' <span style="opacity:0.55;">✎</span>' : '') + '</div>';
+        productChip = '<div' + (chipKlikbaar ? ' id="ds-product-chip" title="Klik om het apparaat handmatig te kiezen" style="cursor:pointer;' : ' style="') + 'font-size:11px; color:#999999; background:#F3F3F3; border:1px solid #DDDDDD; border-radius:12px; padding:3px 8px; display:inline-block; margin-bottom:8px;">' + productLabel + (chipKlikbaar ? ' <span style="opacity:0.55;">✎</span>' : '') + '</div>';
       }
     }
 
@@ -1574,7 +1604,7 @@
       }
       // Warning voor fornuis of kookplaat (geen service-visits)
       if (effectiefProduct()==='Fornuis' || effectiefProduct()==='Kookplaat') {
-        submitHtml += '<div class="info-box" style="background:#FFE6E6;border-color:#E63946;color:#C1121F;">⚠️ <b>DS voert geen service-visits uit voor Fornuis / Kookplaat!</b><br>Loggen is mogelijk, maar er wordt geen stop gepland.</div>';
+        submitHtml += '<div class="warning-box">⚠️ <b>DS voert geen service-visits uit voor Fornuis / Kookplaat!</b><br>Loggen is mogelijk, maar er wordt geen stop gepland.</div>';
       }
 
       var direxUrl = '';
@@ -2067,8 +2097,8 @@
     } else if (stap.type==='text'||stap.type==='route-input') {
       if (stap.type==='route-input') {
         var infoDiv=idoc.createElement('div');
-        infoDiv.style.cssText='background:#FFF8E1;border:1px solid #FFD54F;border-radius:6px;padding:8px 12px;margin-bottom:8px;font-size:12px;color:#5D4037;line-height:1.6;';
-        infoDiv.innerHTML='<strong>Vermeld altijd:</strong><br>netwerk &nbsp;&middot;&nbsp; depot &nbsp;&middot;&nbsp; routenummer<br><span style="color:#888;font-size:11px;">Bijv. <em>2M Rotterdam 3</em></span>';
+        infoDiv.className = 'park-melding';
+        infoDiv.innerHTML='<strong>Vermeld altijd:</strong><br>netwerk &nbsp;&middot;&nbsp; depot &nbsp;&middot;&nbsp; routenummer<br><span style="color:#999999;font-size:11px;">Bijv. <em>2M Rotterdam 3</em></span>';
         container.appendChild(infoDiv);
       }
       var iH='<input type="text" id="i" placeholder="Typ hier..."><button id="n" class="action-btn">Volgende</button>';
@@ -2404,10 +2434,10 @@
       var v = publiceerReistijdVerzoek();
       if (v) {
         melding.textContent = '\u2713 ' + v.zoekterm + ' klaargezet \u2014 open de Ritmonitor en klik Bereken.';
-        melding.style.color = '#008a00';
+        melding.style.color = '#155724';
       } else {
         melding.textContent = 'Klaarzetten niet gelukt \u2014 kopieer het adres handmatig.';
-        melding.style.color = '#D50000';
+        melding.style.color = '#E50000';
       }
     };
     wrap.appendChild(btn); wrap.appendChild(melding);

@@ -7,8 +7,10 @@ Gebruik: python3 build.py
 Wat het doet:
 1. Voert node --check uit op ds-logboek.js, paste-bookmarklet.js en
    tourtool/extra-rijtijd.js
-2. Detecteert versienummer uit ds-logboek.js
-3. Synchroniseert PASTE_VERSION in paste-bookmarklet.js naar hetzelfde versienummer
+2. Controleert of het gedeelde stijlblok DS_UI in ds-logboek.js en
+   tourtool/extra-rijtijd.js nog letterlijk gelijk is
+3. Detecteert versienummer uit ds-logboek.js
+4. Synchroniseert PASTE_VERSION in paste-bookmarklet.js naar hetzelfde versienummer
 
 Vereisten: Python 3, Node.js
 """
@@ -36,6 +38,40 @@ syntax_check('paste-bookmarklet.js')
 # Losse tool met een eigen versienummer (RIJTIJD_VERSION); die wordt hier
 # bewust niet gesynchroniseerd, alleen gecontroleerd.
 syntax_check('tourtool/extra-rijtijd.js')
+
+# ── STAP 1b: GEDEELDE STIJL VERGELIJKEN ──────────────────────────────────────
+# ds-logboek.js en tourtool/extra-rijtijd.js dragen allebei een letterlijk
+# identieke DS_UI-lijst: de knoppen, velden, blokken en kleuren die beide tools
+# delen. Ze kunnen die code niet importeren — het zijn twee losse bestanden die
+# elk apart door een bookmarklet geladen worden — dus is dit de enige plek waar
+# gecontroleerd kan worden dat ze niet uit elkaar gelopen zijn.
+
+def lees_ds_ui(filename):
+    with open(filename, 'r', encoding='utf-8') as f:
+        inhoud = f.read()
+    begin = inhoud.find('  var DS_UI = [')
+    if begin == -1:
+        print(f'DS_UI niet gevonden in {filename}.')
+        sys.exit(1)
+    eind = inhoud.find('\n  ];', begin)
+    if eind == -1:
+        print(f'DS_UI in {filename} wordt niet afgesloten.')
+        sys.exit(1)
+    return inhoud[begin:eind]
+
+print('Gedeelde stijl: DS_UI vergelijken')
+ui_widget = lees_ds_ui('ds-logboek.js')
+ui_tool = lees_ds_ui('tourtool/extra-rijtijd.js')
+if ui_widget != ui_tool:
+    import difflib
+    print('DS_UI LOOPT UITEEN tussen ds-logboek.js en tourtool/extra-rijtijd.js:')
+    for regel in difflib.unified_diff(
+            ui_widget.splitlines(), ui_tool.splitlines(),
+            fromfile='ds-logboek.js', tofile='tourtool/extra-rijtijd.js', lineterm=''):
+        print('  ' + regel)
+    print('\nBeide bestanden moeten dezelfde DS_UI-lijst bevatten. Pas allebei aan.')
+    sys.exit(1)
+print(f'DS_UI identiek in beide bestanden ({ui_widget.count(chr(10))} regels).')
 
 # ── STAP 2: EXTRACT VERSION ──────────────────────────────────────────────────
 
