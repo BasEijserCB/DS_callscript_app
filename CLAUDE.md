@@ -44,6 +44,7 @@ Tot en met v1.38.0 bestond er een parallelle staging build (`staging/ds-logboek-
 
 | Versie | Wijziging |
 |---|---|
+| v1.40.1 | Fix: het reistijd-verzoek stuurde `callData.probleem` ongewijzigd mee — het flow-label, niet de kolom J-waarde. `'Milieuretour / Pick-up ophalen'` matchte daardoor niets in de tabel `TAKEN` van `tourtool/extra-rijtijd.js` (die op het vocabulaire gesleuteld is), en servicetijd én netwerken bleven leeg. `bouwReistijdVerzoek()` draait het label nu door `taakNaarVocab()`, dezelfde normalisatie die `bouwLogParams()` voor kolom J gebruikt. |
 | v1.40.0 | Add: `formaatTV` in het reistijd-verzoek. Bij TV-taken bepaalt het formaat welk netwerk het werk mag doen — vanaf 55 inch alleen BI, daaronder 1X of BI — en dat onderscheid kon `tourtool/extra-rijtijd.js` niet maken zonder dit veld. Alleen een extra veld in `bouwReistijdVerzoek()`. |
 | v1.39.0 | Add: `route` (de rit van de klant zelf) in het reistijd-verzoek, zodat `tourtool/extra-rijtijd.js` die rit als kandidaat kan uitsluiten én uit het netwerkprefix kan afleiden welke andere netwerken het werk aankunnen. Alleen een extra veld in `bouwReistijdVerzoek()`; geen flow-, log- of vocabulairewijziging. |
 | v1.38.0 | Add: knop **"Adres klaarzetten voor reistijd-check"** onder elke uitkomstvraag waar `Same day gepland` / `Next day gepland` (of de visit-varianten) een optie is. Publiceert adres + taak naar `localStorage['ds_reistijd_verzoek']` én het klembord, zodat `tourtool/extra-rijtijd.js` op de Ritmonitor weet welk adres het moet doorrekenen. Bewust vóór het loggen: de same day / next day keuze hangt juist af van die uitslag, dus de klembord-payload van `kopieerNaarKlembord()` bestaat op dat moment nog niet. Eén hook in de renderer (`renderReistijdKnop`, aangeroepen naast `renderAndersSection`) dekt alle zeven uitkomstschermen. `kopieerNaarKlembord()` is niet aangeraakt — de adresscrape is bewust gedupliceerd in `scrapeAdresVoorReistijd()` om het kritieke pad van de paste-bookmarklet met rust te laten. |
@@ -260,6 +261,10 @@ Elke visit heeft `PlanCoordinates` (lat/lon), `SequenceNumber`, `TourId`, `IsAct
 
 **Rekenregels.** Per gat: `t(A→X) + t(X→B) − t(A→B)`, alle drie via dezelfde engine (publieke OSRM-demoserver). Alleen gaten vanaf de huidige positie van de bezorger tellen mee: de laatste stop met een echte `RealArrivalDatestamp` (de ↑/↓-pijltjes in de lijst) is waar de rit nu is. Ritten met **voorsprong** (gepland min werkelijk) komen boven: `netto = max(0, benodigde tijd − voorsprong)`. Voorafgaand aan het routeren worden ritten hemelsbreed gefilterd; alleen de zes dichtstbijzijnde gaan echt de router in — dat houdt het aantal calls naar een publieke demoserver fatsoenlijk.
 
+**Niet de eerstvolgende stop.** Een toegevoegde stop wordt niet op tijd naar de werktelefoon van de held gesynchroniseerd, dus het gat direct na de huidige positie is geen optie: `NIET_PLANBAAR = 1` slaat het over. Het gat daarna kán wel, maar is krap — `RISICOVOL = 1` markeert het met `⚠ krap` in het paneel en een `⚠` in de kolom. Een risicovol gat kan nog steeds bovenaan staan; het is een waarschuwing, geen degradatie. Ritten waarin na deze regel geen bruikbaar gat overblijft, gaan de router niet eens in.
+
+**Alleen voor ritten die rijden.** Een rit geldt als onderweg zodra één stop een echte `RealArrivalDatestamp` heeft. Staat de rit nog op het depot, dan speelt het sync-probleem niet: alle gaten doen mee, inclusief het eerste, en er wordt niets als krap gemarkeerd. In plaats daarvan toont die rij `⚑ Rit staat nog op het depot — informeer de TL na het inplannen`, want dan moet de teamleider op het depot de wijziging meekrijgen.
+
 **Welke ritten meedoen.** Twee filters draaien vóór het ophalen van de stops, zodat er geen tientallen onnodige requests uitgaan:
 
 1. **De eigen rit valt af.** De rit waar de klant nu op staat kan de aftercare niet zelf doen. Twee bronnen, in die volgorde:
@@ -267,9 +272,16 @@ Elke visit heeft `PlanCoordinates` (lat/lon), `SequenceNumber`, `TourId`, `IsAct
    - **Zelf herkennen op coördinaat.** Ligt het gezochte adres binnen `EIGEN_RIT_M` (100 m) van een stop in een rit, dan ís dat de rit van de klant. Vangt het geval af waarin het logboek geen route meestuurde (oudere versie, geen-order modus, handmatig ingetypt adres). Gebeurt ná het ophalen van de stops, dus het netwerkfilter dat uit dat netwerk volgt wordt in een tweede schifting alsnog toegepast; het veld "Eigen rit" wordt gevuld met wat er gevonden is.
 2. **Netwerkvinkjes.** Vier vinkjes, één per netwerk — `1M` (één man, begane grond), `1X` (één man installateur, inbouw maar begane grond), `2M` (twee man, tilt naar boven), `BI` (twee man installatie, kan alles). Aangevinkt = die ritten mogen de aftercare doen. De keuze wordt direct in `localStorage` (`rijtijd_netwerken`) bewaard. Bewust handmatig: het bronnetwerk van de klant zegt wat die ploeg kón, niet wat de aftercare nódig heeft, en die vertaling zit nog in niemands hoofd op papier.
 
-**Ranglijst: de lichtste aangevinkte ploeg wint.** `NETWERKEN` (`['1M','1X','2M','BI']`) is licht → zwaar en tegelijk de eerste sorteersleutel; pas daarbinnen telt de netto tijd en dan de kortste omweg. Kan een 2M het werk ook, dan gaat die vóór een BI — BI-tijd is te duur voor werk dat een lichtere ploeg aankan. De rij met de lichtste ploeg krijgt het label `lichtste ploeg`, maar alleen als er meerdere netwerken in de uitslag staan. Aanname daarin: **1X vóór 2M**, oftewel één installateur is goedkoper dan twee man — niet geverifieerd, omwisselen is één regel.
+**Het grote getal is de uitloop, niet de klusduur.** Per gat: `uitloop = benodigde tijd − voorsprong`. Rood `+12 min` betekent dat de rit twaalf minuten uitloopt; groen `−19 min` dat het ruim past en er negentien minuten voorsprong overblijft. Dat is het getal in het paneel, in de kolom `+ rijtijd` en op het pilletje. Kleur: groen alleen bij `≤ 0` (de rit loopt er niet door uit), oranje t/m `UITLOOP_ROOD` (15 min), daarboven rood — groen mag niet ook "een paar minuten te laat" betekenen, want dat is precies het onderscheid waar de ranglijst op sorteert. De opbouw (`10 rijden + 37 service = 47 min`) staat eronder, zodat de klusduur zichtbaar blijft zonder de hoofdvraag te verdringen.
 
-Let op het gevolg: netwerk weegt zwaarder dan rijtijd. Een 2M-rit met 40 minuten omweg staat boven een BI-rit met 5 minuten omweg. Beide staan in de lijst, dus de afweging blijft zichtbaar.
+**Ranglijst — vier sleutels op volgorde.** Dezelfde ladder geldt binnen een rit (welk gat) en tussen ritten onderling (`vergelijkGaten` en de sortering van `resultaten`):
+
+1. **Past het binnen de voorsprong?** Kost de planning dan niets, en dat weegt zwaarder dan welk netwerk ook. Een BI-rit die de klus gratis opvangt gaat dus vóór een 2M-rit die er tijd bij krijgt.
+2. **Is het gat niet krap?** Een `⚠ krap` gat zakt onder alles wat wél past en niet krap is.
+3. **De lichtste aangevinkte ploeg.** `NETWERKEN` (`['1M','1X','2M','BI']`) is licht → zwaar. Kan een 2M het werk ook, dan gaat die vóór een BI — BI-tijd is te duur voor werk dat een lichtere ploeg aankan. Label `lichtste ploeg`, alleen zichtbaar als er meerdere netwerken in de uitslag staan. Aanname: **1X vóór 2M**, oftewel één installateur is goedkoper dan twee man — niet geverifieerd, omwisselen is één regel.
+4. **Netto tijd**, dan de kortste omweg.
+
+Netwerk weegt dus zwaarder dan rijtijd, maar lichter dan "past in de voorsprong" en "niet krap".
 
 **`TAKEN` — servicetijd en netwerk per taak.** Eén tabel met per kolom J-taak twee velden:
 
@@ -297,6 +309,11 @@ Een taak uit het logboek zet hiermee de servicetijd én de vinkjes klaar. Het bl
 Let op: `41` voor TV + Soundbar ophangen én installeren is minder dan de `42` voor alleen installeren. Dat lijkt een fout in de catalogus, maar de waarden zijn overgenomen zoals ze er staan.
 
 **Servicetijd.** Optioneel veld, start altijd op leeg (= 0). Leeg = alleen rijtijd. Ingevuld = rijtijd + service, en dat totaal wordt overal gebruikt: ranglijst, groot getal, kolom in de stoplijst, pilletje. De waarde komt uit `TAKEN[taak].minuten`. Overweging voor later: die tabel hoort eigenlijk in de Google Sheet, zodat planners hem kunnen bijstellen zonder commit.
+
+**Staande koppeling: `taak` is altijd kolom J-vocabulaire.** `bouwReistijdVerzoek()` draait `callData.probleem` door `taakNaarVocab()`, dezelfde normalisatie die `bouwLogParams()` voor kolom J gebruikt. De tabel `TAKEN` in de tool is daarop gesleuteld en mag dus nooit flow-labels bevatten. Gevolg voor onderhoud, twee kanten op:
+
+- Krijgt een **flow-label** een nieuwe regel in `taakNaarVocab()`, dan erft de reistijd-tool die automatisch — daar hoeft niets te gebeuren.
+- Komt er een nieuwe **vocabulaire-waarde** bij in `PROBLEEM_CATEGORIEEN` waarvoor een bezoek gepland wordt, dan moet die er met de hand bij in `TAKEN`, anders blijven servicetijd en netwerken leeg. Er is geen vangnet dat dat meldt.
 
 **Koppeling met het logboek (v1.38.0).** Het logboek publiceert bij de uitkomstvraag `ds_reistijd_verzoek`:
 
