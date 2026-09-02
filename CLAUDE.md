@@ -4,16 +4,6 @@ Browsergebaseerde widget voor het Coolblue Delivery Support team. Draait bovenop
 
 ---
 
-## Productie vs. Staging — werkregel
-
-**Functionele wijzigingen worden altijd in BEIDE bestanden doorgevoerd:** `ds-logboek.js` én `staging/ds-logboek-staging.js`. De data-laag (scraping, flow engine, gespreksflow, logging, clipboard payload) is identiek — alleen de UI verschilt. Behandel ze als twee implementaties van dezelfde logica.
-
-**Cosmetische wijzigingen** (UI, layout, stijl, teksten, kleuren) gelden alleen voor het bestand waarop de vraag betrekking heeft — niet automatisch voor het andere.
-
-Uitzondering op de functionele regel: als uitdrukkelijk gevraagd wordt om een wijziging alleen in productie of alleen in staging door te voeren, geldt dat specifiek voor dat bestand.
-
----
-
 ## Bestanden
 
 | Bestand | Rol |
@@ -25,9 +15,6 @@ Uitzondering op de functionele regel: als uitdrukkelijk gevraagd wordt om een wi
 | `install.html` | Installatiepagina. Bevat **beide** bookmarklets als sleepbare knoppen. |
 | `build.py` | Syntax-checkt `ds-logboek.js` en `paste-bookmarklet.js`, detecteert versienummer uit `ds-logboek.js` en synchroniseert `PASTE_VERSION` in `paste-bookmarklet.js`. |
 | `gas-backend.js` | Broncode van het Google Apps Script backend (`doGet`). Schrijft elke log-entry als rij naar de actieve Google Sheet. Moet handmatig gekopieerd worden naar de GAS editor bij wijzigingen — een commit hier verandert niets in productie. |
-| `staging/ds-logboek-staging.js` | Staging build van de widget: zelfde data-laag (scraping, flow engine, logging, clipboard) als `ds-logboek.js`, maar met een volledig nieuwe React+Babel UI (side-panel design). Bevat `STAGING_VERSION` constante (`vX.X.X-staging`). |
-| `staging/loader-staging-bookmarklet.js` | Loader bookmarklet voor de staging widget. Haalt `ds-logboek-staging.js` op via raw GitHub URL, cached in localStorage (`ds_app_staging_cache`), stale-while-revalidate. Toont eigen toast bij update. |
-| `staging/install-staging.html` | Installatiepagina voor de staging bookmarklet. |
 | `tourtool/extra-rijtijd.js` | **Losse tool**, geen onderdeel van de widget. Draait op de Ritmonitor en berekent wat een extra stop aan rijtijd kost, per gat en over meerdere ritten. Console-snippet, geen bookmarklet. Zie "Extra rijtijd-tool". |
 | `tourtool/probe-ritmonitor.js` | Eenmalige recon van de Ritmonitor (frameworks, DOM, netwerk, viewmodels). Alleen lezen; bewaard als naslag voor als DireXtion verandert. |
 
@@ -53,25 +40,27 @@ localStorage.removeItem('ds_app_prod_cache')
 
 Nieuwste bovenaan. Alleen `ds-logboek.js` versies (productie).
 
+Tot en met v1.38.0 bestond er een parallelle staging build (`staging/ds-logboek-staging.js`, React+Babel side-panel) waarin elke functionele wijziging werd meegenomen. Dat experiment is op 02-09-2026 gestaakt en de map is verwijderd; de vermeldingen "ook in staging" zijn uit de regels hieronder gehaald. Terug te vinden in de git-historie tot commit `d96fd0d`.
+
 | Versie | Wijziging |
 |---|---|
-| v1.38.0 | Add: knop **"Adres klaarzetten voor reistijd-check"** onder elke uitkomstvraag waar `Same day gepland` / `Next day gepland` (of de visit-varianten) een optie is. Publiceert adres + taak naar `localStorage['ds_reistijd_verzoek']` én het klembord, zodat `tourtool/extra-rijtijd.js` op de Ritmonitor weet welk adres het moet doorrekenen. Bewust vóór het loggen: de same day / next day keuze hangt juist af van die uitslag, dus de klembord-payload van `kopieerNaarKlembord()` bestaat op dat moment nog niet. Eén hook in de renderer (`renderReistijdKnop`, aangeroepen naast `renderAndersSection`) dekt alle zeven uitkomstschermen. `kopieerNaarKlembord()` is niet aangeraakt — de adresscrape is bewust gedupliceerd in `scrapeAdresVoorReistijd()` om het kritieke pad van de paste-bookmarklet met rust te laten. Ook in staging (v0.17.0-staging). |
-| v1.37.0 | Add: extra reden bij "Waarom niet same day?" (`next_day_reden`, kolom L): `'Playbook VT/route nog de weg op'`. Alleen een nieuwe waarde in de lijst `nextDayRedenen`; geen flow-, categorie- of vocabulairewijziging. Ook in staging (v0.16.0-staging). |
-| v1.36.0 | **Terugdraai van v1.34.0–v1.35.1.** De ontvangstbevestiging schreef elke logregel vier keer weg. `schrijfMetRetry()` controleerde de geschreven rij door kolom A en B terug te lezen met `getDisplayValues()` en te vergelijken met de weggeschreven strings — maar de sheet formatteert die cellen zelf, dus de vergelijking faalde altijd. Elke poging deed een eigen `appendRow`: vier rijen per gesprek, daarna een `Error` naar de client, die de regel in de buffer hield en bij elke widget-start opnieuw aanbood. Logging is terug op `fetch(...).catch(function(){})`, zonder buffer, zonder melding, zonder id. `gas-backend.js` is terug op de versie zonder retry, lock, ontdubbeling en foutenlogboek — **handmatig terugzetten in de GAS-editor is nodig**, een commit hier verandert niets in productie. Ook in staging (v0.15.0-staging). |
-| v1.35.1 | Fix: geslaagde herverzending is nu stil (alleen console). Wie de pagina sluit vlak na het loggen krijgt de bevestiging niet meer binnen; die regel wordt een sessie later alsnog bevestigd, en een ↻/✓-melding daarover zou dagelijkse ruis worden. Fix (backend): ontdubbeling verplaatst naar binnen de scriptlock — daarbuiten konden twee gelijktijdige herverzendingen van dezelfde id allebei een rij schrijven. Ook in staging (v0.14.1-staging). |
-| v1.35.0 | Fix: bevestiging werkte in de praktijk niet. `fetch` krijgt de output van een Apps Script web-app niet terug — de redirect naar `googleusercontent.com` vereist de sessiecookie, die cross-origin niet meegaat, en geeft anders een 404. De rij werd dus geschreven terwijl de client een fout meldde. Verzenden gaat nu via een `<script>`-tag (JSONP); `doGet` geeft JavaScript terug bij een `callback`-parameter. URL omgezet naar de anonieme vorm `macros/s/<ID>/exec`. Herhaalde waarschuwingen bundelen in één melding met teller. Ook in staging (v0.14.0-staging). |
-| v1.34.0 | Add: **logging met ontvangstbevestiging**. Elke logregel wordt eerst in `localStorage` (`ds_log_buffer`) vastgelegd en pas verwijderd als de backend bevestigt dat de rij geschreven én teruggelezen is. Zonder bevestiging blijft de regel staan, krijgt de medewerker een rode melding, en wordt hij bij de volgende widget-start opnieuw aangeboden (`DSLog.verwerkBuffer()`). De backend ontdubbelt op log-id via `CacheService` (6 uur), dus herverzending geeft geen dubbele rijen. Vervangt `fetch(...).catch(function(){})` — de constructie die het verlies van aug. 2026 onzichtbaar hield. Ook in staging (v0.13.0-staging). |
-| v1.33.1 | Rename: probleemcategorie (kolom AA) `'Taak bij de klant'` → `'Nazorg nodig'`. Alleen de groepsnaam in `PROBLEEM_CATEGORIEEN`; de 14 waarden in de groep en alle kolom J-waarden zijn ongewijzigd. Let op: `'Nazorg nodig'` komt daarmee ook voor in kolom Z (ingang, via `INGANG_MAP`) — zelfde term, andere betekenis: AA = wat voor werk het was, Z = hoe het belletje binnenkwam. Ook in staging (v0.12.1-staging) en in `mapping-kolom-J.tsv` (52 regels). |
-| v1.33.0 | Add: **kolom AA `probleemCategorie`** — de groep waartoe de kolom J-waarde behoort (`Taak bij de klant` / `Probleem bij de klant` / `Onderweg` / `Pakket` / `Depot / hub` / `Planning / administratie` / `Overig`). `PROBLEEM_VOCAB` is vervangen door `PROBLEEM_CATEGORIEEN` (groep → waarden); de platte lijst en de opzoektabel `PROBLEEM_CAT_VAN` worden daaruit afgeleid, zodat waarde en categorie niet uit elkaar kunnen lopen. Kolom U heet in de sheet voortaan **Oplossing categorie** (was: Categorie) — alleen een kopwijziging, de waarden en `berekenCategorie()` zijn ongewijzigd. Ook in staging (v0.12.0-staging). `mapping-kolom-J.tsv` heeft een kolom C met de probleemcategorie. |
-| v1.32.0 | Refactor (log-output, geen flow-wijziging): kolom J bevat voortaan uitsluitend **wat** er moest gebeuren, uit een gesloten vocabulaire van 44 waarden (`PROBLEEM_VOCAB`). Beller-/contextprefixen (`Onderweg:`, `KS:`, `Winkel:`), `ks_reden`-prefixen (`Nazorg nodig — `, `KS vraagt om held terug te sturen — `), uitkomst-suffixen en vrije tekst zijn uit J verwijderd. Twee nieuwe kolommen: **Y `locatie`** (Onderweg / Bij de klant / Depot / hub / Stop aanpassen / Buiten DS) en **Z `ingang`** (`ks_reden` / `tl_reden` genormaliseerd). Vrije tekst en losse details (depot/hub-toelichting, partnernaam, `product_mee_terug`, `intern_reden`) gaan nu naar kolom S, ` \| `-gescheiden. Milieuretour en Pick-up zijn twee aparte J-waarden; de vier TV-varianten blijven bestaan. Ook in staging (v0.11.0-staging). `mapping-kolom-J.tsv` mapt de 161 historische labels naar de nieuwe 44. |
-| v1.31.0 | Add: `'Schade / Defect'` is geen planbaar probleem meer. Bij CBB "Bij de klant" wordt voor schade géén same day/next day uitkomst meer gevraagd; uitkomst auto-gevuld `'Schade — advies gegeven'`, categorie `Advies gegeven`, dsWaarde `'Schade gemeld — klant geadviseerd (korting of nieuw product, held meldt in Jerney)'`. Submit-scherm toont info-blokje (klant kiest korting of nieuw product, bezorger geeft door in Jerney). Add: twee manieren om de automatische apparaatdetectie te overrulen — (1) productchip is klikbaar (`resetProductDetectie()`) en stuurt de gebruiker door de handmatige apparaatkeuze; (2) per taak-sectie een "Meer taken (filter negeren)"-toggle die de door type-filtering weggelaten taken alsnog toont. Beide ook in staging. Fix (paste-bookmarklet): deur omdraaien + koelkast/vriezer next-day pakte geen sjabloon omdat `skipDienstType` de `dienstType` leeglaat en het sjabloon-blok `dienstType` vereiste; nu valt deur omdraaien zonder dienstType terug op het Extra dienst-sjabloon. |
+| v1.38.0 | Add: knop **"Adres klaarzetten voor reistijd-check"** onder elke uitkomstvraag waar `Same day gepland` / `Next day gepland` (of de visit-varianten) een optie is. Publiceert adres + taak naar `localStorage['ds_reistijd_verzoek']` én het klembord, zodat `tourtool/extra-rijtijd.js` op de Ritmonitor weet welk adres het moet doorrekenen. Bewust vóór het loggen: de same day / next day keuze hangt juist af van die uitslag, dus de klembord-payload van `kopieerNaarKlembord()` bestaat op dat moment nog niet. Eén hook in de renderer (`renderReistijdKnop`, aangeroepen naast `renderAndersSection`) dekt alle zeven uitkomstschermen. `kopieerNaarKlembord()` is niet aangeraakt — de adresscrape is bewust gedupliceerd in `scrapeAdresVoorReistijd()` om het kritieke pad van de paste-bookmarklet met rust te laten. |
+| v1.37.0 | Add: extra reden bij "Waarom niet same day?" (`next_day_reden`, kolom L): `'Playbook VT/route nog de weg op'`. Alleen een nieuwe waarde in de lijst `nextDayRedenen`; geen flow-, categorie- of vocabulairewijziging. |
+| v1.36.0 | **Terugdraai van v1.34.0–v1.35.1.** De ontvangstbevestiging schreef elke logregel vier keer weg. `schrijfMetRetry()` controleerde de geschreven rij door kolom A en B terug te lezen met `getDisplayValues()` en te vergelijken met de weggeschreven strings — maar de sheet formatteert die cellen zelf, dus de vergelijking faalde altijd. Elke poging deed een eigen `appendRow`: vier rijen per gesprek, daarna een `Error` naar de client, die de regel in de buffer hield en bij elke widget-start opnieuw aanbood. Logging is terug op `fetch(...).catch(function(){})`, zonder buffer, zonder melding, zonder id. `gas-backend.js` is terug op de versie zonder retry, lock, ontdubbeling en foutenlogboek — **handmatig terugzetten in de GAS-editor is nodig**, een commit hier verandert niets in productie. |
+| v1.35.1 | Fix: geslaagde herverzending is nu stil (alleen console). Wie de pagina sluit vlak na het loggen krijgt de bevestiging niet meer binnen; die regel wordt een sessie later alsnog bevestigd, en een ↻/✓-melding daarover zou dagelijkse ruis worden. Fix (backend): ontdubbeling verplaatst naar binnen de scriptlock — daarbuiten konden twee gelijktijdige herverzendingen van dezelfde id allebei een rij schrijven. |
+| v1.35.0 | Fix: bevestiging werkte in de praktijk niet. `fetch` krijgt de output van een Apps Script web-app niet terug — de redirect naar `googleusercontent.com` vereist de sessiecookie, die cross-origin niet meegaat, en geeft anders een 404. De rij werd dus geschreven terwijl de client een fout meldde. Verzenden gaat nu via een `<script>`-tag (JSONP); `doGet` geeft JavaScript terug bij een `callback`-parameter. URL omgezet naar de anonieme vorm `macros/s/<ID>/exec`. Herhaalde waarschuwingen bundelen in één melding met teller. |
+| v1.34.0 | Add: **logging met ontvangstbevestiging**. Elke logregel wordt eerst in `localStorage` (`ds_log_buffer`) vastgelegd en pas verwijderd als de backend bevestigt dat de rij geschreven én teruggelezen is. Zonder bevestiging blijft de regel staan, krijgt de medewerker een rode melding, en wordt hij bij de volgende widget-start opnieuw aangeboden (`DSLog.verwerkBuffer()`). De backend ontdubbelt op log-id via `CacheService` (6 uur), dus herverzending geeft geen dubbele rijen. Vervangt `fetch(...).catch(function(){})` — de constructie die het verlies van aug. 2026 onzichtbaar hield. |
+| v1.33.1 | Rename: probleemcategorie (kolom AA) `'Taak bij de klant'` → `'Nazorg nodig'`. Alleen de groepsnaam in `PROBLEEM_CATEGORIEEN`; de 14 waarden in de groep en alle kolom J-waarden zijn ongewijzigd. Let op: `'Nazorg nodig'` komt daarmee ook voor in kolom Z (ingang, via `INGANG_MAP`) — zelfde term, andere betekenis: AA = wat voor werk het was, Z = hoe het belletje binnenkwam. Ook in `mapping-kolom-J.tsv` (52 regels). |
+| v1.33.0 | Add: **kolom AA `probleemCategorie`** — de groep waartoe de kolom J-waarde behoort (`Taak bij de klant` / `Probleem bij de klant` / `Onderweg` / `Pakket` / `Depot / hub` / `Planning / administratie` / `Overig`). `PROBLEEM_VOCAB` is vervangen door `PROBLEEM_CATEGORIEEN` (groep → waarden); de platte lijst en de opzoektabel `PROBLEEM_CAT_VAN` worden daaruit afgeleid, zodat waarde en categorie niet uit elkaar kunnen lopen. Kolom U heet in de sheet voortaan **Oplossing categorie** (was: Categorie) — alleen een kopwijziging, de waarden en `berekenCategorie()` zijn ongewijzigd. `mapping-kolom-J.tsv` heeft een kolom C met de probleemcategorie. |
+| v1.32.0 | Refactor (log-output, geen flow-wijziging): kolom J bevat voortaan uitsluitend **wat** er moest gebeuren, uit een gesloten vocabulaire van 44 waarden (`PROBLEEM_VOCAB`). Beller-/contextprefixen (`Onderweg:`, `KS:`, `Winkel:`), `ks_reden`-prefixen (`Nazorg nodig — `, `KS vraagt om held terug te sturen — `), uitkomst-suffixen en vrije tekst zijn uit J verwijderd. Twee nieuwe kolommen: **Y `locatie`** (Onderweg / Bij de klant / Depot / hub / Stop aanpassen / Buiten DS) en **Z `ingang`** (`ks_reden` / `tl_reden` genormaliseerd). Vrije tekst en losse details (depot/hub-toelichting, partnernaam, `product_mee_terug`, `intern_reden`) gaan nu naar kolom S, ` \| `-gescheiden. Milieuretour en Pick-up zijn twee aparte J-waarden; de vier TV-varianten blijven bestaan. `mapping-kolom-J.tsv` mapt de 161 historische labels naar de nieuwe 44. |
+| v1.31.0 | Add: `'Schade / Defect'` is geen planbaar probleem meer. Bij CBB "Bij de klant" wordt voor schade géén same day/next day uitkomst meer gevraagd; uitkomst auto-gevuld `'Schade — advies gegeven'`, categorie `Advies gegeven`, dsWaarde `'Schade gemeld — klant geadviseerd (korting of nieuw product, held meldt in Jerney)'`. Submit-scherm toont info-blokje (klant kiest korting of nieuw product, bezorger geeft door in Jerney). Add: twee manieren om de automatische apparaatdetectie te overrulen — (1) productchip is klikbaar (`resetProductDetectie()`) en stuurt de gebruiker door de handmatige apparaatkeuze; (2) per taak-sectie een "Meer taken (filter negeren)"-toggle die de door type-filtering weggelaten taken alsnog toont. Fix (paste-bookmarklet): deur omdraaien + koelkast/vriezer next-day pakte geen sjabloon omdat `skipDienstType` de `dienstType` leeglaat en het sjabloon-blok `dienstType` vereiste; nu valt deur omdraaien zonder dienstType terug op het Extra dienst-sjabloon. |
 | v1.30.4 | Fix: same-day "Deur omdraaien" service werd gewist bij terugzetten netwerk → 2Mans. Deur-omdraaien Extra-dienst services (`247513`/`301445`) bestaan alleen onder netwerk Coolblue Built-in (132137); paste-bookmarklet laat na kanaal-reset naar 2Mans het netwerk nu op Built-in staan (skip `netwerk → 12`) voor deze services. Wijziging alleen in `paste-bookmarklet.js`. |
-| v1.30.3 | Fix: same-day "Deur omdraaien" selecteerde verkeerde service `51068` ("(Nazorg) - apparaat waterpas zetten"). Deur omdraaien heeft geen nazorg-variant; nu `247513` ("(Extra dienst) - deur omdraaien") of `301445` ("(Extra dienst) - deur omdraaien koel-vriescombinatie") bij koel-vries combo. `builtInServices` in paste-bookmarklet bijgewerkt. Ook in staging. |
-| v1.30.0 | Fix: "Blijverkoop vergeten" springt direct naar logging — geen uitkomstvraag meer. Held registreert administratie en gaat door; geen visit nodig. Uitkomst auto-gevuld als `'Administratie afgehandeld'`, dsWaarde altijd `'Blijverkoop vergeten — administratie afgehandeld'`, categorie `Advies gegeven`. Info-blokje op submit-scherm. Ook in staging. |
-| v1.29.0 | Refactor: Beller-kolom (P) in Google Sheets log beperkt tot vier waarden: `CBB`, `CBF`, `Klantenservice`, `Overig`. Winkel, Teamleider, Interne leveringen, Technische Dienst, Yeply, G4S en Andere beller worden allemaal als `Overig` gelogd — minder datapunten, simpelere analyse. Ook in staging. |
-| v1.28.0 | Add: CBF "Pakket niet meegenomen / niet ingeladen" extra uitkomst `'Product is al afgeleverd'`. Fix: `'KS:'` en `'Winkel:'` prefixes uit probleem-kolom verwijderd (beller-kolom maakt onderscheid al — voorkomt dubbele data). Ook in staging. |
-| v1.27.1 | Fix: bevestiging bij naam wijzigen is nu inline in de widget (Ja/Nee in footer) i.p.v. browser `confirm()` popup. Ook in staging. |
-| v1.27.0 | Add: subtiel pencil-icoontje (✎) naast naam in footer — gebruiker kan opgeslagen naam wijzigen (clear `ds_fname`/`ds_lname` + flow stelt vraag opnieuw). Ook in staging build. |
+| v1.30.3 | Fix: same-day "Deur omdraaien" selecteerde verkeerde service `51068` ("(Nazorg) - apparaat waterpas zetten"). Deur omdraaien heeft geen nazorg-variant; nu `247513` ("(Extra dienst) - deur omdraaien") of `301445` ("(Extra dienst) - deur omdraaien koel-vriescombinatie") bij koel-vries combo. `builtInServices` in paste-bookmarklet bijgewerkt. |
+| v1.30.0 | Fix: "Blijverkoop vergeten" springt direct naar logging — geen uitkomstvraag meer. Held registreert administratie en gaat door; geen visit nodig. Uitkomst auto-gevuld als `'Administratie afgehandeld'`, dsWaarde altijd `'Blijverkoop vergeten — administratie afgehandeld'`, categorie `Advies gegeven`. Info-blokje op submit-scherm. |
+| v1.29.0 | Refactor: Beller-kolom (P) in Google Sheets log beperkt tot vier waarden: `CBB`, `CBF`, `Klantenservice`, `Overig`. Winkel, Teamleider, Interne leveringen, Technische Dienst, Yeply, G4S en Andere beller worden allemaal als `Overig` gelogd — minder datapunten, simpelere analyse. |
+| v1.28.0 | Add: CBF "Pakket niet meegenomen / niet ingeladen" extra uitkomst `'Product is al afgeleverd'`. Fix: `'KS:'` en `'Winkel:'` prefixes uit probleem-kolom verwijderd (beller-kolom maakt onderscheid al — voorkomt dubbele data). |
+| v1.27.1 | Fix: bevestiging bij naam wijzigen is nu inline in de widget (Ja/Nee in footer) i.p.v. browser `confirm()` popup. |
+| v1.27.0 | Add: subtiel pencil-icoontje (✎) naast naam in footer — gebruiker kan opgeslagen naam wijzigen (clear `ds_fname`/`ds_lname` + flow stelt vraag opnieuw). |
 | v1.26.0 | Feat: KS/Winkel "held terug sturen" → Same day/Next day vraagt nu product + "Wat moet er gebeuren bij de klant?" voor correcte service-configuratie |
 | v1.25.0 | Fix: product-selectie logica verfijnd (multi-product flow) |
 | v1.24.1 | Add: `'Pick-up niet nodig'` als derde `pick_up_status` optie |
@@ -133,32 +122,6 @@ Nieuwste bovenaan. Alleen `ds-logboek.js` versies (productie).
 | v1.11.0–v1.11.26 | Iteraties witgoed-flow, product-herkenning, layout-verbeteringen |
 | v1.10.0–v1.10.4 | Add: KS advies-flow; CBF pakket-opties uitgebreid; AEG prefix-fixes |
 | v1.9.2–v1.9.8 | Initiële opzet: scraping, DOM-detectie, ordernummer-extractie, GAS logging |
-
----
-
-## Staging — wat het is en hoe het werkt
-
-De staging build (`staging/ds-logboek-staging.js`) is een volledig werkende alternatieve versie van de widget bedoeld om nieuwe UI-ontwerpen te testen zonder de productieversie te raken. De data-laag (scraping, flow engine, `bouwLogParams`, `kopieerNaarKlembord`, GAS logging) is identiek aan `ds-logboek.js` en wordt samen bijgehouden. De UI is volledig herschreven in React+Babel (via CDN) en draait als side-panel in de browser.
-
-**Verschillen met productie:**
-- UI: React+Babel side-panel i.p.v. vanilla JS widget
-- Toont een gele "⚠ STAGING — design preview" banner bovenin
-- Root element: `#ds-logboek-staging-root` (apart van productie, kan naast elkaar draaien)
-- Cache key: `ds_app_staging_cache` (apart van `ds_app_prod_cache`)
-- Versie-suffix: `-staging` (bijv. `v0.3.0-staging`)
-
-**Versienummer staging** ophogen bij elke wijziging aan `staging/ds-logboek-staging.js` — zonder te vragen, zelfde regels als productie (patch voor bugfix, minor voor nieuwe feature/UI-wijziging). De `STAGING_VERSION` constante staat bovenin het bestand. `build.py` raakt de staging versie **niet** — handmatig bijwerken in het bestand zelf.
-
-**Deploy staging:**
-```bash
-# Na wijziging in staging/ds-logboek-staging.js:
-git add staging/ds-logboek-staging.js && git commit -m "staging: beschrijving, bump to vX.X.X-staging" && git push
-```
-
-De staging loader haalt de nieuwe versie automatisch op via stale-while-revalidate. Cache handmatig legen als fallback:
-```javascript
-localStorage.removeItem('ds_app_staging_cache')
-```
 
 ---
 
@@ -246,7 +209,7 @@ Wat overblijft is iets in de omgeving — autorisatie, quota, of een serverstatu
 
 Kolom J beantwoordt uitsluitend de vraag **wat moest er gebeuren**. De andere dimensies staan elders: wie belde in P, waar het speelde in Y, de ingang van het belletje in Z, de afloop in O + U, de probleemgroep in AA, vrije tekst in S. `bouwLogParams()` plakt die dimensies dus nooit meer aan elkaar.
 
-`PROBLEEM_CATEGORIEEN` (44 waarden in zeven groepen, identiek in productie en staging) is de bron. `PROBLEEM_VOCAB` (platte lijst) en `PROBLEEM_CAT_VAN` (waarde → groep) worden eruit afgeleid — één plek onderhouden dus.
+`PROBLEEM_CATEGORIEEN` (44 waarden in zeven groepen) is de bron. `PROBLEEM_VOCAB` (platte lijst) en `PROBLEEM_CAT_VAN` (waarde → groep) worden eruit afgeleid — één plek onderhouden dus.
 
 | Groep = kolom AA | Waarden = kolom J |
 |---|---|
@@ -258,7 +221,7 @@ Kolom J beantwoordt uitsluitend de vraag **wat moest er gebeuren**. De andere di
 | Planning / administratie | Stop / tijdslot aanpassen · Adres of telefoonnummer doorgeven aan held · Held terugsturen (taak niet gespecificeerd) |
 | Overig | Vraag / advies · Interne levering · Externe partner · Buiten DS: held regelt met TL · Buiten DS: klant doorverwezen naar KS · Buiten DS: overig |
 
-**Bij het toevoegen van een nieuwe taak of klacht aan de flow: zet 'm ook in `PROBLEEM_CATEGORIEEN`, in de juiste groep** (beide bestanden). Twee vangnetten maken het zichtbaar als dat vergeten wordt: `taakNaarVocab()` geeft onbekende waarden ongewijzigd door (er verschijnt een niet-vocabulaire waarde in kolom J) en `probleemCategorie()` geeft dan een lege kolom AA.
+**Bij het toevoegen van een nieuwe taak of klacht aan de flow: zet 'm ook in `PROBLEEM_CATEGORIEEN`, in de juiste groep**. Twee vangnetten maken het zichtbaar als dat vergeten wordt: `taakNaarVocab()` geeft onbekende waarden ongewijzigd door (er verschijnt een niet-vocabulaire waarde in kolom J) en `probleemCategorie()` geeft dan een lege kolom AA.
 
 Helperfuncties in `bouwLogParams()`-blok: `taakNaarVocab()` (callData.probleem → J), `depotVraagNaarVocab()` (`cbf_depot_reden` + `cbb_hub_reden` → één gedeelde depot/hub-familie), `ingangNaarVocab()` (`INGANG_MAP`, → kolom Z), `probleemCategorie()` (J → kolom AA).
 
