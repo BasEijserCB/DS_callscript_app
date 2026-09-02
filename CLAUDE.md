@@ -321,7 +321,7 @@ Beantwoordt één vraag: als we deze aftercare tussen twee stops proppen, hoevee
 
 **Vormgeving: één gedeeld stijlblok (v1.2.0).** De tool en de widget dragen allebei een letterlijk identieke lijst `DS_UI` — 42 CSS-regels met de onderdelen die ze delen: `.header`, `.content`, `label`, `.section-label`, `input`, `.ux-btn` (+ `.selected`), `.action-btn`, `.submit-btn`, `.back-btn`, `.info-box`, `.warning-box`, `.park-melding`, `.summary-box`, `.status-bar`, `.toggle-btn`, `.close-btn`, `.toggle-link`, `.footer`, `.version-bar` en `.pill-blue/-green/-amber`. Ze kunnen die code niet importeren: het zijn twee losse bestanden die elk apart door een bookmarklet geladen worden. Zie de sectie **Gedeelde stijl** hierboven.
 
-Wat per tool verschilt staat in een eigen lijst: `DS_WIDGET` (14 regels — het iframe-document, de twee-koloms weergave, de knopvarianten in de "Anders"-lijst) en `DS_PANEEL` (42 regels — de omhulling, de uitslaglijst, het pilletje).
+Wat per tool verschilt staat in een eigen lijst: `DS_WIDGET` (14 regels — het iframe-document, de twee-koloms weergave, de knopvarianten in de "Anders"-lijst) en `DS_PANEEL` (48 regels — de omhulling, de uitslaglijst, de samenvattingsbalk, het pilletje).
 
 **De ORS-sleutel staat niet in het bestand.** Dat bestand gaat naar GitHub en wordt door de loader opgehaald, dus een sleutel erin zou publiek zijn. Hij staat in `localStorage` (`rijtijd_ors_key`) en wordt gezet via een veld dat het paneel alleen toont zolang er geen sleutel is. Iedereen zet dus zijn eigen sleutel, één keer per browser. Lokaal staat er een gitignored `tourtool/zet-ors-sleutel.local.js` om dat in één plak te doen.
 
@@ -398,6 +398,10 @@ Netwerk weegt dus zwaarder dan rijtijd, maar lichter dan "past in de voorsprong"
 Een taak uit het logboek zet hiermee de servicetijd én de vinkjes klaar. Het blijft een voorzet: de vinkjes zijn altijd met de hand aan te passen, wat vooral bedoeld is voor milieuretour en pick-up. `Blijverkoop vergeten` staat niet in de tabel: dat is administratie, daar komt geen bezoek voor. Komt er toch een taak binnen die er niet in staat, dan blijft het formulier staan zoals het stond.
 
 Let op: `41` voor TV + Soundbar ophangen én installeren is minder dan de `42` voor alleen installeren. Dat lijkt een fout in de catalogus, maar de waarden zijn overgenomen zoals ze er staan.
+
+**Het invulblok klapt dicht na een berekening (v1.3.0).** Vier velden plus vier netwerkvinkjes namen zo'n 270px in beslag, waardoor de ranglijst — waar het de tool om te doen is — onder de vouw begon. Zodra `scan()` slaagt vouwt het formulier zich op tot één `.status-bar`-regel met wat er is doorgerekend (`Kaakberg 2, 1121RG Landsmeer · 37 min service · 2M, BI`) plus een "Wijzigen"-link. Klikken op die balk vouwt hem weer open; dat gebeurt ook bij **Wissen** en zodra het logboek een nieuw adres aanlevert — een binnengekomen adres hoort zichtbaar te zijn, niet weggeklapt. Bij het opstarten begint het paneel compact als er nog bewaarde resultaten staan (`vouwForm(versVerzoek || !resultaten.length)`).
+
+De knop "Haal adres op" is daarbij een linkje "↓ uit DS Logboek" op de labelregel geworden in plaats van een knop over de volle breedte; dat scheelt nog eens een regel. Samen halveert dit ongeveer de ruimte boven de uitslag.
 
 **Servicetijd.** Optioneel veld, start altijd op leeg (= 0). Leeg = alleen rijtijd. Ingevuld = rijtijd + service, en dat totaal wordt overal gebruikt: ranglijst, groot getal, kolom in de stoplijst, pilletje. De waarde komt uit `TAKEN[taak].minuten`. Overweging voor later: die tabel hoort eigenlijk in de Google Sheet, zodat planners hem kunnen bijstellen zonder commit.
 

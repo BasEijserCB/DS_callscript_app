@@ -64,7 +64,7 @@
 (function () {
   'use strict';
 
-  var RIJTIJD_VERSION = 'v1.2.0';
+  var RIJTIJD_VERSION = 'v1.3.0';
 
   var PANEL_ID = 'extra-rijtijd-panel';
   var PIL_ID = 'extra-rijtijd-pil';
@@ -227,6 +227,7 @@
     status('Uit DS Logboek (' + bron + '): ' + v.zoekterm +
            (v.taak ? ' \u2014 ' + v.taak : '') +
            (v.taak && st === null ? ' \u00b7 servicetijd nog niet bekend' : ''));
+    vouwForm(true);
     return true;
   }
 
@@ -619,6 +620,7 @@
             });
             bewaar(KEY_RES, resultaten); bewaar(KEY_ADRES, adres);
             status('');
+            vouwForm(false);
             render();
             return huidigeTourId().then(function (id) {
               var hier = resultaten.filter(function (r) { return r.tourId === id; })[0];
@@ -814,6 +816,30 @@
     bewaar(KEY_NETWERKEN, lijst);
   }
 
+  // Na een berekening is het invulblok bijzaak: de ranglijst is waar het om
+  // gaat, en die stond bij vier velden plus vier vinkjes ruim onder de vouw.
+  // Het blok klapt daarom dicht tot één regel met wat er is doorgerekend, en
+  // gaat weer open zodra je erop klikt, op Wissen drukt, of het logboek een
+  // nieuw adres aanlevert.
+  function samenvatting() {
+    var adres = (document.getElementById('er-adres') || {}).value || '';
+    var st = parseInt((document.getElementById('er-servicetijd') || {}).value, 10);
+    var nets = gekozenNetwerken();
+    var delen = [adres || 'geen adres'];
+    if (!isNaN(st) && st > 0) delen.push(st + ' min service');
+    if (nets.length && nets.length < NETWERKEN.length) delen.push(nets.join(', '));
+    return delen.join(' \u00b7 ');
+  }
+
+  function vouwForm(open) {
+    var form = document.getElementById('er-form');
+    var sam = document.getElementById('er-samenvatting');
+    if (!form || !sam) return;
+    form.style.display = open ? 'block' : 'none';
+    sam.style.display = open ? 'none' : 'flex';
+    if (!open) document.getElementById('er-sam-tekst').textContent = samenvatting();
+  }
+
   function toonPil(aan) {
     document.getElementById(PIL_ID).style.display = aan ? 'flex' : 'none';
     document.getElementById(PANEL_ID).style.display = aan ? 'none' : 'block';
@@ -890,6 +916,13 @@
     '#' + PANEL_ID + ' .header{border-radius:8px 8px 0 0;}',
     '#' + PANEL_ID + ' .version-bar{border-radius:0 0 8px 8px;}',
     '#' + PANEL_ID + ' .er-veld{margin-bottom:10px;}',
+    '#' + PANEL_ID + ' .er-labelrij{display:flex;justify-content:space-between;align-items:baseline;gap:8px;}',
+    '#' + PANEL_ID + ' .er-labelrij .section-label{margin-bottom:5px;}',
+    '#' + PANEL_ID + ' .er-uit-logboek{margin:0 0 5px;font-size:11px;white-space:nowrap;}',
+    '#' + PANEL_ID + ' .er-samenvatting{display:flex;justify-content:space-between;align-items:baseline;' +
+      'gap:10px;cursor:pointer;margin-bottom:10px;}',
+    '#' + PANEL_ID + ' .er-samenvatting:hover{border-color:#0090e3;}',
+    '#' + PANEL_ID + ' .er-sam-link{margin:0;white-space:nowrap;font-size:11px;}',
     '#' + PANEL_ID + ' .er-haal{text-align:center;margin:6px 0 0;}',
     '#' + PANEL_ID + ' .er-twee{display:flex;gap:8px;margin-bottom:10px;}',
     '#' + PANEL_ID + ' .er-twee > div{flex:1;min-width:0;}',
@@ -961,10 +994,17 @@
           'Zonder sleutel lopen de rijtijden via de OSRM-demoserver, die daar niet ' +
           'voor bedoeld is.</div>' +
       '</div>' +
+      '<div id="er-samenvatting" class="status-bar er-samenvatting" style="display:none">' +
+        '<span id="er-sam-tekst"></span>' +
+        '<span class="toggle-link er-sam-link">Wijzigen</span></div>' +
+      '<div id="er-form">' +
       '<div class="er-veld">' +
-        '<label class="section-label">Nieuwe stop \u2014 adres</label>' +
+        '<div class="er-labelrij">' +
+          '<label class="section-label" for="er-adres">Nieuwe stop \u2014 adres</label>' +
+          '<span class="toggle-link er-uit-logboek" id="er-logboek" ' +
+            'title="Adres overnemen uit het DS Logboek">\u2193 uit DS Logboek</span>' +
+        '</div>' +
         '<input type="text" id="er-adres" placeholder="Kerkstraat 12, 2101 AB Heemstede">' +
-        '<button class="ux-btn er-haal" id="er-logboek">\u2193 Haal adres op</button>' +
       '</div>' +
       '<div class="er-twee">' +
         '<div><label class="section-label">Servicetijd (min)</label>' +
@@ -980,6 +1020,7 @@
               '<input type="checkbox" id="er-net-' + n + '"> ' + n + '</label>';
           }).join('') +
         '</div>' +
+      '</div>' +
       '</div>' +
       '<div class="er-knoppen">' +
         '<button class="action-btn er-bereken">Bereken</button>' +
@@ -1011,6 +1052,10 @@
   pil.innerHTML = '<span class="er-pil-icoon">★</span><span id="er-pil-tekst">Extra rijtijd</span>';
   document.body.appendChild(pil);
 
+  // Een net binnengekomen adres uit het logboek weegt zwaarder dan bewaarde
+  // resultaten: dan hoort het formulier open te staan, niet dichtgeklapt.
+  var versVerzoek = false;
+
   var adresInput = document.getElementById('er-adres');
   var serviceInput = document.getElementById('er-servicetijd');
   var eigenRitInput = document.getElementById('er-eigenrit');
@@ -1036,7 +1081,7 @@
   try {
     var bewaardVerzoek = leesVerzoek(localStorage.getItem(REISTIJD_KEY));
     if (bewaardVerzoek && (Date.now() - (bewaardVerzoek.time || 0)) < 30 * 60 * 1000) {
-      pasVerzoekToe(bewaardVerzoek, 'logboek');
+      versVerzoek = pasVerzoekToe(bewaardVerzoek, 'logboek');
     }
   } catch (e) {}
 
@@ -1065,6 +1110,8 @@
     }
   };
 
+  panel.querySelector('.er-samenvatting').onclick = function () { vouwForm(true); };
+
   pil.onclick = function () { toonPil(false); };
   panel.querySelector('.er-klein').onclick = function () { toonPil(true); };
   panel.querySelector('.er-sluit').onclick = function () {
@@ -1083,6 +1130,7 @@
     resultaten = []; bewaar(KEY_RES, resultaten);
     kolomData = { tourId: null, perSeq: {}, risico: {}, beste: null };
     var inst = gridInstance(); if (inst) { try { inst.repaint(); } catch (e) {} }
+    vouwForm(true);
     render(); status('');
   };
   function opEnter(e) { if (e.key === 'Enter') panel.querySelector('.er-bereken').click(); }
@@ -1100,6 +1148,7 @@
     });
   });
 
+  vouwForm(versVerzoek || !resultaten.length);
   render();
   console.log('[Extra rijtijd] geladen — scant alle ritten, voorsprong telt mee');
 })();
