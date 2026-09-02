@@ -44,6 +44,7 @@ Tot en met v1.38.0 bestond er een parallelle staging build (`staging/ds-logboek-
 
 | Versie | Wijziging |
 |---|---|
+| v1.40.0 | Add: `formaatTV` in het reistijd-verzoek. Bij TV-taken bepaalt het formaat welk netwerk het werk mag doen — vanaf 55 inch alleen BI, daaronder 1X of BI — en dat onderscheid kon `tourtool/extra-rijtijd.js` niet maken zonder dit veld. Alleen een extra veld in `bouwReistijdVerzoek()`. |
 | v1.39.0 | Add: `route` (de rit van de klant zelf) in het reistijd-verzoek, zodat `tourtool/extra-rijtijd.js` die rit als kandidaat kan uitsluiten én uit het netwerkprefix kan afleiden welke andere netwerken het werk aankunnen. Alleen een extra veld in `bouwReistijdVerzoek()`; geen flow-, log- of vocabulairewijziging. |
 | v1.38.0 | Add: knop **"Adres klaarzetten voor reistijd-check"** onder elke uitkomstvraag waar `Same day gepland` / `Next day gepland` (of de visit-varianten) een optie is. Publiceert adres + taak naar `localStorage['ds_reistijd_verzoek']` én het klembord, zodat `tourtool/extra-rijtijd.js` op de Ritmonitor weet welk adres het moet doorrekenen. Bewust vóór het loggen: de same day / next day keuze hangt juist af van die uitslag, dus de klembord-payload van `kopieerNaarKlembord()` bestaat op dat moment nog niet. Eén hook in de renderer (`renderReistijdKnop`, aangeroepen naast `renderAndersSection`) dekt alle zeven uitkomstschermen. `kopieerNaarKlembord()` is niet aangeraakt — de adresscrape is bewust gedupliceerd in `scrapeAdresVoorReistijd()` om het kritieke pad van de paste-bookmarklet met rust te laten. |
 | v1.37.0 | Add: extra reden bij "Waarom niet same day?" (`next_day_reden`, kolom L): `'Playbook VT/route nog de weg op'`. Alleen een nieuwe waarde in de lijst `nextDayRedenen`; geen flow-, categorie- of vocabulairewijziging. |
@@ -261,27 +262,41 @@ Elke visit heeft `PlanCoordinates` (lat/lon), `SequenceNumber`, `TourId`, `IsAct
 
 **Welke ritten meedoen.** Twee filters draaien vóór het ophalen van de stops, zodat er geen tientallen onnodige requests uitgaan:
 
-1. **De eigen rit valt af.** De rit waar de klant nu op staat kan de aftercare niet zelf doen. Komt binnen als `route` in het reistijd-verzoek (v1.39.0), en staat als "Eigen rit" in het paneel zodat je hem handmatig kunt zetten of wissen. Vergelijking op de ritkern, dus `2M-NLRO-07-7` matcht `2M-NLRO-07`.
-2. **Netwerkregels.** Alleen een rit met een ploeg die het werk aankan is een optie. Geen doorlopende hiërarchie — per bronnetwerk een eigen lijstje in `NETWERK_REGELS`:
+1. **De eigen rit valt af.** De rit waar de klant nu op staat kan de aftercare niet zelf doen. Twee bronnen, in die volgorde:
+   - `route` uit het reistijd-verzoek (v1.39.0), zichtbaar in het veld "Eigen rit" zodat je hem kunt aanpassen of wissen. Vergelijking op de ritkern, dus `2M-NLRO-07-7` matcht `2M-NLRO-07`.
+   - **Zelf herkennen op coördinaat.** Ligt het gezochte adres binnen `EIGEN_RIT_M` (100 m) van een stop in een rit, dan ís dat de rit van de klant. Vangt het geval af waarin het logboek geen route meestuurde (oudere versie, geen-order modus, handmatig ingetypt adres). Gebeurt ná het ophalen van de stops, dus het netwerkfilter dat uit dat netwerk volgt wordt in een tweede schifting alsnog toegepast; het veld "Eigen rit" wordt gevuld met wat er gevonden is.
+2. **Netwerkvinkjes.** Vier vinkjes, één per netwerk — `1M` (één man, begane grond), `1X` (één man installateur, inbouw maar begane grond), `2M` (twee man, tilt naar boven), `BI` (twee man installatie, kan alles). Aangevinkt = die ritten mogen de aftercare doen. De keuze wordt direct in `localStorage` (`rijtijd_netwerken`) bewaard. Bewust handmatig: het bronnetwerk van de klant zegt wat die ploeg kón, niet wat de aftercare nódig heeft, en die vertaling zit nog in niemands hoofd op papier.
 
-| Rit van de klant | Standaard getoond | Optioneel (vinkje) |
-|---|---|---|
-| `1M` — één man, begane grond | 2M, 1X, BI | 1M zelf |
-| `2M` — twee man, tilt naar boven | 2M, BI | 1X |
-| `1X` — één man installateur, begane grond | BI | 1X zelf |
-| `BI` — twee man installatie, kan alles | BI | — |
-
-Het optionele netwerk verschilt per bronnetwerk, dus het vinkje benoemt zichzelf ("Ook 1X meenemen"). Een onbekend netwerkprefix (bijv. `BK`) of een leeg Eigen rit-veld betekent: niet filteren.
-
-**Ranglijst: de lichtste geschikte ploeg wint.** `NETWERK_KOSTEN` (`['1M','1X','2M','BI']`, licht → zwaar) is de eerste sorteersleutel; pas daarbinnen telt de netto tijd en dan de kortste omweg. Kan een 2M het werk ook, dan gaat die vóór een BI — BI-tijd is te duur om te besteden aan werk dat een lichtere ploeg aankan. De rij met de lichtste ploeg krijgt het label `lichtste ploeg`, maar alleen als er meerdere netwerken in de uitslag staan.
-
-Aanname in die volgorde: **1X vóór 2M**, oftewel één installateur is goedkoper dan twee man. Niet geverifieerd — omwisselen is één regel in `NETWERK_KOSTEN`.
+**Ranglijst: de lichtste aangevinkte ploeg wint.** `NETWERKEN` (`['1M','1X','2M','BI']`) is licht → zwaar en tegelijk de eerste sorteersleutel; pas daarbinnen telt de netto tijd en dan de kortste omweg. Kan een 2M het werk ook, dan gaat die vóór een BI — BI-tijd is te duur voor werk dat een lichtere ploeg aankan. De rij met de lichtste ploeg krijgt het label `lichtste ploeg`, maar alleen als er meerdere netwerken in de uitslag staan. Aanname daarin: **1X vóór 2M**, oftewel één installateur is goedkoper dan twee man — niet geverifieerd, omwisselen is één regel.
 
 Let op het gevolg: netwerk weegt zwaarder dan rijtijd. Een 2M-rit met 40 minuten omweg staat boven een BI-rit met 5 minuten omweg. Beide staan in de lijst, dus de afweging blijft zichtbaar.
 
-**`TAAK_NETWERKEN` — nog te maken.** Het bronnetwerk zegt wat de ploeg van de klant kón, niet wat de aftercare nódig heeft: een 1M-bezorging waarbij alsnog een vaatwasser ingebouwd moet worden kan niet naar 2M, ook al staat 2M hierboven bij `1M`. De tabel `TAAK_NETWERKEN` in `extra-rijtijd.js` mapt de kolom J-taken naar de netwerken die dat werk kunnen; **staat nu volledig op `null`**. Zodra een taak gevuld is, gaat die vóór op `NETWERK_REGELS` — de taak is immers het directe antwoord op de vraag. De taak komt uit het reistijd-verzoek en wordt gewist zodra je zelf een adres typt, zodat er geen taak van een vorig gesprek blijft hangen.
+**`TAKEN` — servicetijd en netwerk per taak.** Eén tabel met per kolom J-taak twee velden:
 
-**Servicetijd.** Optioneel veld, start altijd op leeg (= 0). Leeg = alleen rijtijd. Ingevuld = rijtijd + service, en dat totaal wordt overal gebruikt. `SERVICETIJDEN` in `extra-rijtijd.js` mapt de kolom J-taken naar minuten; **staat nu volledig op `null`** (= onbekend, veld blijft leeg). Vullen is een data-wijziging, geen codewijziging. Overweging voor later: die tabel hoort eigenlijk in de Google Sheet, zodat planners hem kunnen bijstellen zonder commit.
+- `minuten` — servicetijd ter plaatse, uit de servicecatalogus van DireXtion (overgenomen 02-09-2026). Een getal, of per `dienstType` als Nazorg en Extra dienst verschillen (`Trekschakelaar aansluiten` 17/18, `TV ophangen en installeren` 46/50).
+- `netwerken` — welke ploegen dit werk kunnen. Een array, of per `formaatTV` als het formaat uitmaakt: `{ 'Ja (>= 55 inch)': ['BI'], standaard: ['1X','BI'] }`. Alle vier de TV-taken werken zo — vanaf 55 inch kan alleen BI het.
+
+| Taak | Min | Netwerken |
+|---|---|---|
+| Plaatsen / Naar boven tillen | 9 | 2M, BI |
+| Aansluiting controleren | 7 | alle |
+| Trekschakelaar aansluiten | 17 / 18 | 1X, BI |
+| Apparaat inbouwen (Keuken) | 37 | 1X, BI |
+| Deur omdraaien | 25 | BI |
+| Stapelkit plaatsen | 10 | 2M, BI |
+| TV installeren | 32 | ≥55": BI · anders 1X, BI |
+| TV ophangen en installeren | 46 / 50 | ≥55": BI · anders 1X, BI |
+| TV + Soundbar installeren | 42 | ≥55": BI · anders 1X, BI |
+| TV + Soundbar ophangen en installeren | 41 | ≥55": BI · anders 1X, BI |
+| Milieuretour ophalen | 4 | 2M, BI (voorkeur) |
+| Pick-up ophalen | 9 | 2M, BI (voorkeur) |
+| Spullen achtergelaten bij klant | 3 | alle |
+
+Een taak uit het logboek zet hiermee de servicetijd én de vinkjes klaar. Het blijft een voorzet: de vinkjes zijn altijd met de hand aan te passen, wat vooral bedoeld is voor milieuretour en pick-up. `Blijverkoop vergeten` staat niet in de tabel: dat is administratie, daar komt geen bezoek voor. Komt er toch een taak binnen die er niet in staat, dan blijft het formulier staan zoals het stond.
+
+Let op: `41` voor TV + Soundbar ophangen én installeren is minder dan de `42` voor alleen installeren. Dat lijkt een fout in de catalogus, maar de waarden zijn overgenomen zoals ze er staan.
+
+**Servicetijd.** Optioneel veld, start altijd op leeg (= 0). Leeg = alleen rijtijd. Ingevuld = rijtijd + service, en dat totaal wordt overal gebruikt: ranglijst, groot getal, kolom in de stoplijst, pilletje. De waarde komt uit `TAKEN[taak].minuten`. Overweging voor later: die tabel hoort eigenlijk in de Google Sheet, zodat planners hem kunnen bijstellen zonder commit.
 
 **Koppeling met het logboek (v1.38.0).** Het logboek publiceert bij de uitkomstvraag `ds_reistijd_verzoek`:
 
