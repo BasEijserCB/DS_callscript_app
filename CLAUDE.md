@@ -44,6 +44,7 @@ Tot en met v1.38.0 bestond er een parallelle staging build (`staging/ds-logboek-
 
 | Versie | Wijziging |
 |---|---|
+| v1.39.0 | Add: `route` (de rit van de klant zelf) in het reistijd-verzoek, zodat `tourtool/extra-rijtijd.js` die rit als kandidaat kan uitsluiten én uit het netwerkprefix kan afleiden welke andere netwerken het werk aankunnen. Alleen een extra veld in `bouwReistijdVerzoek()`; geen flow-, log- of vocabulairewijziging. |
 | v1.38.0 | Add: knop **"Adres klaarzetten voor reistijd-check"** onder elke uitkomstvraag waar `Same day gepland` / `Next day gepland` (of de visit-varianten) een optie is. Publiceert adres + taak naar `localStorage['ds_reistijd_verzoek']` én het klembord, zodat `tourtool/extra-rijtijd.js` op de Ritmonitor weet welk adres het moet doorrekenen. Bewust vóór het loggen: de same day / next day keuze hangt juist af van die uitslag, dus de klembord-payload van `kopieerNaarKlembord()` bestaat op dat moment nog niet. Eén hook in de renderer (`renderReistijdKnop`, aangeroepen naast `renderAndersSection`) dekt alle zeven uitkomstschermen. `kopieerNaarKlembord()` is niet aangeraakt — de adresscrape is bewust gedupliceerd in `scrapeAdresVoorReistijd()` om het kritieke pad van de paste-bookmarklet met rust te laten. |
 | v1.37.0 | Add: extra reden bij "Waarom niet same day?" (`next_day_reden`, kolom L): `'Playbook VT/route nog de weg op'`. Alleen een nieuwe waarde in de lijst `nextDayRedenen`; geen flow-, categorie- of vocabulairewijziging. |
 | v1.36.0 | **Terugdraai van v1.34.0–v1.35.1.** De ontvangstbevestiging schreef elke logregel vier keer weg. `schrijfMetRetry()` controleerde de geschreven rij door kolom A en B terug te lezen met `getDisplayValues()` en te vergelijken met de weggeschreven strings — maar de sheet formatteert die cellen zelf, dus de vergelijking faalde altijd. Elke poging deed een eigen `appendRow`: vier rijen per gesprek, daarna een `Error` naar de client, die de regel in de buffer hield en bij elke widget-start opnieuw aanbood. Logging is terug op `fetch(...).catch(function(){})`, zonder buffer, zonder melding, zonder id. `gas-backend.js` is terug op de versie zonder retry, lock, ontdubbeling en foutenlogboek — **handmatig terugzetten in de GAS-editor is nodig**, een commit hier verandert niets in productie. |
@@ -258,7 +259,29 @@ Elke visit heeft `PlanCoordinates` (lat/lon), `SequenceNumber`, `TourId`, `IsAct
 
 **Rekenregels.** Per gat: `t(A→X) + t(X→B) − t(A→B)`, alle drie via dezelfde engine (publieke OSRM-demoserver). Alleen gaten vanaf de huidige positie van de bezorger tellen mee: de laatste stop met een echte `RealArrivalDatestamp` (de ↑/↓-pijltjes in de lijst) is waar de rit nu is. Ritten met **voorsprong** (gepland min werkelijk) komen boven: `netto = max(0, benodigde tijd − voorsprong)`. Voorafgaand aan het routeren worden ritten hemelsbreed gefilterd; alleen de zes dichtstbijzijnde gaan echt de router in — dat houdt het aantal calls naar een publieke demoserver fatsoenlijk.
 
-**Servicetijd.** Optioneel veld. Leeg = alleen rijtijd. Ingevuld = rijtijd + service, en dat totaal wordt overal gebruikt. `SERVICETIJDEN` in `extra-rijtijd.js` mapt de kolom J-taken naar minuten; **staat nu volledig op `null`** (= onbekend, veld blijft leeg). Vullen is een data-wijziging, geen codewijziging. Overweging voor later: die tabel hoort eigenlijk in de Google Sheet, zodat planners hem kunnen bijstellen zonder commit.
+**Welke ritten meedoen.** Twee filters draaien vóór het ophalen van de stops, zodat er geen tientallen onnodige requests uitgaan:
+
+1. **De eigen rit valt af.** De rit waar de klant nu op staat kan de aftercare niet zelf doen. Komt binnen als `route` in het reistijd-verzoek (v1.39.0), en staat als "Eigen rit" in het paneel zodat je hem handmatig kunt zetten of wissen. Vergelijking op de ritkern, dus `2M-NLRO-07-7` matcht `2M-NLRO-07`.
+2. **Netwerkregels.** Alleen een rit met een ploeg die het werk aankan is een optie. Geen doorlopende hiërarchie — per bronnetwerk een eigen lijstje in `NETWERK_REGELS`:
+
+| Rit van de klant | Standaard getoond | Optioneel (vinkje) |
+|---|---|---|
+| `1M` — één man, begane grond | 2M, 1X, BI | 1M zelf |
+| `2M` — twee man, tilt naar boven | 2M, BI | 1X |
+| `1X` — één man installateur, begane grond | BI | 1X zelf |
+| `BI` — twee man installatie, kan alles | BI | — |
+
+Het optionele netwerk verschilt per bronnetwerk, dus het vinkje benoemt zichzelf ("Ook 1X meenemen"). Een onbekend netwerkprefix (bijv. `BK`) of een leeg Eigen rit-veld betekent: niet filteren.
+
+**Ranglijst: de lichtste geschikte ploeg wint.** `NETWERK_KOSTEN` (`['1M','1X','2M','BI']`, licht → zwaar) is de eerste sorteersleutel; pas daarbinnen telt de netto tijd en dan de kortste omweg. Kan een 2M het werk ook, dan gaat die vóór een BI — BI-tijd is te duur om te besteden aan werk dat een lichtere ploeg aankan. De rij met de lichtste ploeg krijgt het label `lichtste ploeg`, maar alleen als er meerdere netwerken in de uitslag staan.
+
+Aanname in die volgorde: **1X vóór 2M**, oftewel één installateur is goedkoper dan twee man. Niet geverifieerd — omwisselen is één regel in `NETWERK_KOSTEN`.
+
+Let op het gevolg: netwerk weegt zwaarder dan rijtijd. Een 2M-rit met 40 minuten omweg staat boven een BI-rit met 5 minuten omweg. Beide staan in de lijst, dus de afweging blijft zichtbaar.
+
+**`TAAK_NETWERKEN` — nog te maken.** Het bronnetwerk zegt wat de ploeg van de klant kón, niet wat de aftercare nódig heeft: een 1M-bezorging waarbij alsnog een vaatwasser ingebouwd moet worden kan niet naar 2M, ook al staat 2M hierboven bij `1M`. De tabel `TAAK_NETWERKEN` in `extra-rijtijd.js` mapt de kolom J-taken naar de netwerken die dat werk kunnen; **staat nu volledig op `null`**. Zodra een taak gevuld is, gaat die vóór op `NETWERK_REGELS` — de taak is immers het directe antwoord op de vraag. De taak komt uit het reistijd-verzoek en wordt gewist zodra je zelf een adres typt, zodat er geen taak van een vorig gesprek blijft hangen.
+
+**Servicetijd.** Optioneel veld, start altijd op leeg (= 0). Leeg = alleen rijtijd. Ingevuld = rijtijd + service, en dat totaal wordt overal gebruikt. `SERVICETIJDEN` in `extra-rijtijd.js` mapt de kolom J-taken naar minuten; **staat nu volledig op `null`** (= onbekend, veld blijft leeg). Vullen is een data-wijziging, geen codewijziging. Overweging voor later: die tabel hoort eigenlijk in de Google Sheet, zodat planners hem kunnen bijstellen zonder commit.
 
 **Koppeling met het logboek (v1.38.0).** Het logboek publiceert bij de uitkomstvraag `ds_reistijd_verzoek`:
 
