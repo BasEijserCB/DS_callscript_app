@@ -421,7 +421,9 @@ De knop "↓ Adres uit DS Logboek" staat gewoon onder het adresveld; dat mag, wa
 
 naar `localStorage` (werkt Basic ↔ Ritmonitor, zelfde origin) én het klembord (nodig vanaf de consumer portal, andere origin).
 
-**Eén weg naar binnen (v1.4.0).** De tool haalt het verzoek uitsluitend op via de knop **"↓ Adres uit DS Logboek"** onder het adresveld. Die probeert eerst `localStorage`, dan het klembord, en negeert verzoeken ouder dan `VERZOEK_MAX_MIN` (30 minuten) — met een aparte melding voor "te oud" en "nog niets klaargezet".
+**Eén weg naar binnen (v1.4.0).** De tool haalt het verzoek uitsluitend op via de knop **"↓ Adres uit DS Logboek"** onder het adresveld. Die leest `localStorage` én het klembord en negeert verzoeken ouder dan `VERZOEK_MAX_MIN` (30 minuten) — met een aparte melding voor "te oud" en "nog niets klaargezet".
+
+**De jongste van de twee wint (v1.4.2).** Tot v1.4.1 gold `localStorage` als eerste bron: was die vers genoeg, dan werd het klembord niet eens gelezen. De twee bronnen lopen echter uiteen. Het logboek op de consumer portal schrijft naar de `localStorage` van *die* origin, dus alleen het klembord bereikt de Ritmonitor — terwijl de `localStorage` daar nog het verzoek van een eerdere casus op Basic vasthoudt. Binnen het half uur telde die als geldig, en laadde de tool de vorige stop terwijl de nieuwe al klaargezet was. Nu worden allebei gelezen en beslist `kiesJongste()` op `time`; de bron staat in de melding, zodat zichtbaar is wat er gebruikt is. Mag het klembord niet gelezen worden, dan blijft `localStorage` het vangnet.
 
 Tot v1.3.0 vulde de tool zichzelf: bij het opstarten las hij `localStorage`, en een `storage`-listener nam een adres live over zodra het logboek in een ander tabblad publiceerde. Dat werkte alleen op dezelfde origin. Vanaf de consumer portal kán dat niet — een klembordlezing mag pas na een gebruikersactie — dus stond het adres er op Basic ineens en moest je er vanaf de portal om vragen. Twee ervaringen voor dezelfde handeling. Het automatisch invullen en de `storage`-listener zijn daarom weg: liever overal één klik dan ergens nul en elders één.
 

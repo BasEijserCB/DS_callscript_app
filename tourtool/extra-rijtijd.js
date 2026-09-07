@@ -64,7 +64,7 @@
 (function () {
   'use strict';
 
-  var RIJTIJD_VERSION = 'v1.4.1';
+  var RIJTIJD_VERSION = 'v1.4.2';
 
   var PANEL_ID = 'extra-rijtijd-panel';
   var PIL_ID = 'extra-rijtijd-pil';
@@ -1090,20 +1090,37 @@
            '"Adres klaarzetten voor reistijd-check".', true);
   }
 
+  // Beide bronnen lezen en de jongste laten winnen. Ze lopen namelijk uiteen:
+  // draait het logboek op de consumer portal, dan schrijft het naar de
+  // localStorage van d\u00ed\u00e9 origin en bereikt alleen het klembord de
+  // Ritmonitor. De localStorage hier houdt dan nog het verzoek van een eerdere
+  // casus op Basic vast \u2014 binnen het half uur "vers genoeg", en daarmee laadde
+  // de tool de oude stop terwijl het klembord de nieuwe al klaar had staan.
+  function kiesJongste(v, w) {
+    if (w && (!v || (w.time || 0) > (v.time || 0))) return { v: w, bron: 'klembord' };
+    return { v: v, bron: 'logboek' };
+  }
+
   document.getElementById('er-logboek').onclick = function (e) {
     e.preventDefault();
     var v = null;
     try { v = leesVerzoek(localStorage.getItem(REISTIJD_KEY)); } catch (er) {}
-    if (versGenoeg(v)) { pasVerzoekToe(v, 'logboek'); return; }
+    function beslis(w) {
+      var k = kiesJongste(v, w);
+      // De jongste is stale \u21d2 de ander ook: die is per definitie ouder.
+      if (versGenoeg(k.v)) { pasVerzoekToe(k.v, k.bron); return; }
+      if (k.v) teOud(); else nietsKlaar();
+    }
     if (navigator.clipboard && navigator.clipboard.readText) {
       navigator.clipboard.readText().then(function (t) {
-        var w = leesVerzoek(t);
-        if (versGenoeg(w)) { pasVerzoekToe(w, 'klembord'); return; }
-        if (w || v) teOud(); else nietsKlaar();
+        beslis(leesVerzoek(t));
       }).catch(function () {
+        // Zonder klembord is localStorage het enige wat er is; dat kan het
+        // verzoek van een eerdere casus zijn, dus de bron staat in de melding.
+        if (versGenoeg(v)) { pasVerzoekToe(v, 'logboek'); return; }
         status('Klembord lezen mag niet \u2014 plak het adres handmatig.', true);
       });
-    } else if (v) { teOud(); } else { nietsKlaar(); }
+    } else { beslis(null); }
   };
 
   panel.querySelector('.er-samenvatting').onclick = function () { vouwForm(true); };
