@@ -64,7 +64,7 @@
 (function () {
   'use strict';
 
-  var RIJTIJD_VERSION = 'v1.5.0';
+  var RIJTIJD_VERSION = 'v1.6.0';
 
   var PANEL_ID = 'extra-rijtijd-panel';
   var PIL_ID = 'extra-rijtijd-pil';
@@ -445,10 +445,23 @@
     if (!f || !window.ko) return Promise.resolve(fallback);
     var url;
     try {
+      // Alles wat ritten kan wegfilteren gaat op nul. Een verlader- of
+      // uitvoerderfilter dat nog van een eerdere zoektocht in de Ritmonitor
+      // stond, mag de beste rit niet stil buiten beeld houden. `date` blijft
+      // staan — dat is geen versmalling maar de dag zelf.
       var filter = window.ko.toJS(f.staticFilter);
       filter.depots = (depots || []).map(String);
+      filter.shippers = [];
+      filter.tags = [];
+      filter.searchTags = [];
+      filter.depotBeginsWith = '';
       var stat = JSON.stringify(filter);
-      var state = JSON.stringify(window.ko.toJS(f.stateFilter));
+      var state = window.ko.toJS(f.stateFilter);
+      state.finishedTours = 'show';
+      state.inactiveTours = 'show';
+      state.tourProblems = 'allTours';
+      state.timeliness = 'allTours';
+      state = JSON.stringify(state);
       var orde = String(uw(root.sortProperty) || 'referenceId');
       // Zonder depotfilter zijn het er een paar honderd; 300 was te krap.
       url = TOURS_URL + '?filter=' + encodeURIComponent(stat) +
@@ -463,6 +476,55 @@
         return lijst.length ? lijst : fallback;
       })
       .catch(function () { return fallback; });
+  }
+
+  // Dezelfde keuze in de Ritmonitor zelf zetten en op Filteren drukken.
+  //
+  // Voor het zoeken is dit niet nodig — haalTours() doet zijn eigen request en
+  // maakt daarin dezelfde filters leeg. Het gaat om wat er ná de uitslag
+  // gebeurt: klikken op een regel roept `selectTourId()` aan, en een rit die
+  // niet in de rittenlijst staat is niet te selecteren. Zoeken in Rotterdam
+  // terwijl het scherm op Tilburg filtert levert dus een uitslag op waar je
+  // niet doorheen kunt klikken. Door de UI mee te zetten kijken tool en
+  // gebruiker naar hetzelfde.
+  //
+  // Best effort: lukt het niet, dan is er niets stuk — de zoektocht draait op
+  // het eigen request en die is hoe dan ook volledig.
+  function zetRitmonitorFilter(depots) {
+    var root = koRoot();
+    var f = root && root.tourFilter;
+    if (!f || !window.ko) return false;
+    var gezet = false;
+    function zet(obj, sleutel, waarde) {
+      try {
+        var v = obj && obj[sleutel];
+        if (window.ko.isObservable(v)) { v(waarde); gezet = true; }
+      } catch (e) {}
+    }
+    zet(f.staticFilter, 'depots', (depots || []).map(String));
+    zet(f.staticFilter, 'shippers', []);
+    zet(f.staticFilter, 'tags', []);
+    zet(f.staticFilter, 'searchTags', []);
+    zet(f.staticFilter, 'depotBeginsWith', '');
+    zet(f.stateFilter, 'finishedTours', 'show');
+    zet(f.stateFilter, 'inactiveTours', 'show');
+    zet(f.stateFilter, 'tourProblems', 'allTours');
+    zet(f.stateFilter, 'timeliness', 'allTours');
+    // Zijn het geen observables, dan de TagBox rechtstreeks. Die is aan
+    // dezelfde waarde gebonden, dus het filterpaneel loopt daarna gelijk.
+    if (!gezet) {
+      var box = depotBox();
+      if (!box) return false;
+      try { box.option('value', (depots || []).map(String)); } catch (e) { return false; }
+    }
+    var knop = document.getElementById('filter-submit');
+    if (!knop) return false;
+    knop.click();   // laat DireXtion zijn eigen onFilter → loadTours draaien
+    return true;
+  }
+
+  function even(ms) {
+    return new Promise(function (klaar) { setTimeout(klaar, ms); });
   }
 
   // ── stops per rit ────────────────────────────────────────────
@@ -698,8 +760,14 @@
         ? depots
         : autoDepots(nieuw, landVanNazorg(adres, eigenRit));
       if (!depotHandmatig) { depotKeuze = gekozenDepots.slice(); tekenDepots(); }
+      // Eerst de Ritmonitor gelijkzetten, dan pas ophalen. Even wachten tot
+      // zijn eigen loadTours klaar is, anders klikt de gebruiker straks op een
+      // rit die net weer uit de lijst valt.
+      var uiGezet = zetRitmonitorFilter(gekozenDepots);
       status('Ritten ophalen…');
-      return haalTours(gekozenDepots).then(function (alleTours) {
+      return even(uiGezet ? 900 : 0).then(function () {
+        return haalTours(gekozenDepots);
+      }).then(function (alleTours) {
         if (!alleTours.length) throw new Error('Geen ritten in de lijst gevonden.');
 
         // Eerst schiften, dan pas stops ophalen — scheelt tientallen requests.
