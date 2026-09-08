@@ -64,7 +64,7 @@
 (function () {
   'use strict';
 
-  var RIJTIJD_VERSION = 'v1.4.2';
+  var RIJTIJD_VERSION = 'v1.5.0';
 
   var PANEL_ID = 'extra-rijtijd-panel';
   var PIL_ID = 'extra-rijtijd-pil';
@@ -227,6 +227,7 @@
     status('Uit DS Logboek (' + bron + '): ' + v.zoekterm +
            (v.taak ? ' \u2014 ' + v.taak : '') +
            (v.taak && st === null ? ' \u00b7 servicetijd nog niet bekend' : ''));
+    depotHandmatig = false; depotKeuze = []; tekenDepots();   // andere nazorg
     vouwForm(true);
     return true;
   }
@@ -254,6 +255,163 @@
   }
   function uw(v) { try { return window.ko ? window.ko.unwrap(v) : v; } catch (e) { return v; } }
 
+  // ── depots ───────────────────────────────────────────────────
+  // Het depotfilter van de Ritmonitor is in de praktijk een stadskeuze: sinds
+  // een herinrichting vallen alle netwerken van een depot onder de naam van
+  // de stad. De losse 'BuiltIn-…', '1M…' en '1M Installation …' ingangen zijn
+  // resten van vroeger en blijven leeg.
+  //
+  // De optielijst houden we hier NIET bij. De dxTagBox 'Depots' in het
+  // filterpaneel heeft alle ~116 depots met hun id al in zijn dataSource, dus
+  // die lezen we uit. Een eigen tabel zou stil scheef gaan lopen zodra er een
+  // depot bij komt, en de ids zijn hier strings — anders dan de TagBoxen in
+  // het Import-formulier, die numeriek zijn.
+  function tagBoxen() {
+    var $ = window.jQuery, uit = [];
+    if (!$) return uit;
+    Array.prototype.forEach.call(document.querySelectorAll('.dx-tagbox'), function (el) {
+      if (el.parentElement && el.parentElement.closest('.dx-tagbox')) return;
+      var inst = null;
+      try { inst = $(el).dxTagBox('instance'); } catch (e) {}
+      if (inst) uit.push({ el: el, inst: inst });
+    });
+    return uit;
+  }
+
+  // De tekst links van een veld; DevExtreme hangt er zelf geen label aan.
+  function labelVan(el) {
+    var n = el, niveau = 0;
+    while (n && niveau++ < 5) {
+      var b = n.previousElementSibling;
+      while (b) {
+        var t = (b.textContent || '').replace(/\s+/g, ' ').trim();
+        if (t && t.length < 40) return t;
+        b = b.previousElementSibling;
+      }
+      n = n.parentElement;
+    }
+    return '';
+  }
+
+  // Waar de Ritmonitor nu op filtert. Leeg = geen depotfilter, dus alles.
+  function filterDepots() {
+    try {
+      var root = koRoot();
+      var f = root && root.tourFilter;
+      var d = f && window.ko.toJS(f.staticFilter).depots;
+      return (d || []).map(String);
+    } catch (e) { return []; }
+  }
+
+  // 'Depots' — nadrukkelijk niet 'Begin depot' of 'Eind depot', dat zijn
+  // andere velden in hetzelfde paneel met een bijna gelijk label.
+  function depotBox() {
+    var boxen = tagBoxen();
+    var hit = boxen.filter(function (b) { return /^depots$/i.test(labelVan(b.el)); })[0];
+    if (hit) return hit.inst;
+    // Vangnet als dat label ooit anders heet: de box waarvan de waarde precies
+    // de depots bevat waarop de Ritmonitor op dit moment filtert.
+    var nu = filterDepots();
+    if (nu.length) {
+      hit = boxen.filter(function (b) {
+        var v = (b.inst.option('value') || []).map(String);
+        return v.length === nu.length && nu.every(function (id) { return v.indexOf(id) !== -1; });
+      })[0];
+    }
+    return hit ? hit.inst : null;
+  }
+
+  // De Ritmonitor kent 116 depots, maar bruikbaar zijn er ruim twintig. Wat
+  // eruit moet:
+  //   · netwerkvarianten ('BuiltIn-Tilburg', '1MTilburg', '1M Installation
+  //     Tilburg', 'Tilburg 2M (BE)') — resten van een oudere inrichting; alle
+  //     netwerken van een depot zitten tegenwoordig in de stadsbak zelf;
+  //   · fietsdepots ('Fietshub …', 'Bikedepot …') — daar is deze tool niet voor;
+  //   · warehouses en interne leveringen — geen bezorgdepots.
+  // Wat overblijft is het stamdepot: één bak per stad.
+  var GEEN_STAMDEPOT = /^(1M|BuiltIn-|Bikedepot|Fietshub|Warehouse)|Interne leveringen| [12]M \(/i;
+
+  // Bakken die er als stamdepot uitzien maar geen bezorgdepot zijn. Aan de
+  // naam niet te zien, dus met de hand eruit:
+  //   Amsterdam, Venlo (DE)  — dode bakken, blijven leeg
+  //   WAD…                   — Waddeneilanden, puur administratief
+  var UITGESLOTEN_DEPOTS = ['Amsterdam', 'Venlo (DE)', 'WADAmSch', 'WADTexel', 'WADVlieTer'];
+
+  // Land en ligging per stamdepot. Het land houdt de keuze binnen de grens —
+  // nazorg gaat nooit naar een depot in een ander land. De coördinaten zijn
+  // er om automatisch te bepalen welke depots dicht genoeg bij de nazorg
+  // liggen; het zijn stadscoördinaten, niet de exacte depotadressen, dus reken
+  // op een afwijking van een kilometer of tien. Voor een straal van tientallen
+  // kilometers is dat ruim genoeg.
+  //
+  // Een depotnaam die hier niet in staat (nieuw depot) blijft handmatig
+  // aanvinkbaar maar doet niet mee in de automatische keuze — we weten niet
+  // waar hij ligt.
+  var DEPOTS = {
+    'Almere':      { land: 'NL', lat: 52.370, lon: 5.220 },
+    'Deventer':    { land: 'NL', lat: 52.250, lon: 6.160 },
+    'Groningen':   { land: 'NL', lat: 53.220, lon: 6.570 },
+    'Rotterdam':   { land: 'NL', lat: 51.920, lon: 4.480 },
+    'Tilburg':     { land: 'NL', lat: 51.560, lon: 5.090 },
+    'Utrecht':     { land: 'NL', lat: 52.090, lon: 5.110 },
+    'Venlo (NL)':  { land: 'NL', lat: 51.370, lon: 6.170 },
+    'Antwerpen':   { land: 'BE', lat: 51.220, lon: 4.400 },
+    'Gent':        { land: 'BE', lat: 51.050, lon: 3.720 },
+    'Nivelles':    { land: 'BE', lat: 50.600, lon: 4.330 },
+    'Dusseldorf':  { land: 'DE', lat: 51.230, lon: 6.780 },
+    'Hamburg':     { land: 'DE', lat: 53.550, lon: 10.000 },
+    'Hamm':        { land: 'DE', lat: 51.680, lon: 7.820 },
+    'Kelsterbach': { land: 'DE', lat: 50.070, lon: 8.530 },
+    'Langenhagen': { land: 'DE', lat: 52.450, lon: 9.740 },
+    'Leipzig':     { land: 'DE', lat: 51.340, lon: 12.370 },
+    'Nurnberg':    { land: 'DE', lat: 49.450, lon: 11.080 },
+    'Schonefeld':  { land: 'DE', lat: 52.390, lon: 13.520 },
+    'Tamm':        { land: 'DE', lat: 48.920, lon: 9.110 },
+    'Troisdorf':   { land: 'DE', lat: 50.820, lon: 7.150 }
+  };
+
+  // Hoe ver een depot van de nazorg mag liggen om vanzelf mee te doen. Bij 75
+  // km pakt een adres in de Randstad er drie tot vijf, terwijl Groningen en
+  // Venlo alleen blijven staan — die liggen nu eenmaal ver van de rest.
+  var DEPOT_STRAAL_KM = 75;
+
+  // Het land van de nazorg. De ritcode is exact ('2M-NLTI-07' → NL); staat die
+  // er niet, dan de postcode in het adresveld, met dezelfde regel als het
+  // logboek gebruikt: vijf cijfers = DE, vier cijfers = BE, anders NL.
+  function landVanNazorg(adres, eigenRit) {
+    var m = /-(NL|BE|DE)[A-Z]{2}-/i.exec(String(eigenRit || ''));
+    if (m) return m[1].toUpperCase();
+    var t = String(adres || '');
+    if (/\b\d{4}\s?[A-Za-z]{2}\b/.test(t)) return 'NL';
+    if (/\b\d{5}\b/.test(t)) return 'DE';
+    if (/\b\d{4}\b/.test(t)) return 'BE';
+    return '';
+  }
+
+  // [{id, naam}] uit de dataSource van die TagBox, op naam gesorteerd.
+  function depotOpties() {
+    var inst = depotBox();
+    if (!inst) return [];
+    try {
+      var ds = inst.getDataSource && inst.getDataSource();
+      var arr = (ds && ds.items && ds.items()) || inst.option('items') || [];
+      var ve = inst.option('valueExpr'), de = inst.option('displayExpr');
+      return arr.map(function (o) {
+        if (!o || typeof o !== 'object') return { id: String(o), naam: String(o) };
+        return {
+          id: String(typeof ve === 'string' ? o[ve] : (o.Id != null ? o.Id : o.id)),
+          naam: String(typeof de === 'function' ? de(o)
+                     : typeof de === 'string' ? o[de]
+                     : (o.Name || o.name || o.Text || o.text || ''))
+        };
+      }).filter(function (o) {
+        return o.id && o.id !== 'undefined' && o.naam &&
+               !GEEN_STAMDEPOT.test(o.naam) && UITGESLOTEN_DEPOTS.indexOf(o.naam) === -1;
+      }).sort(function (a, b) { return a.naam.localeCompare(b.naam); });
+    } catch (e) { return []; }
+  }
+
+
   // ── rittenlijst ──────────────────────────────────────────────
   function normTour(t) {
     var id = uw(t.id); if (id == null) id = uw(t.TourId); if (id == null) id = uw(t.Id);
@@ -275,19 +433,27 @@
 
   // Probeert de volledige gefilterde set op te halen; valt terug op de
   // ritten die het viewmodel al geladen heeft (de zichtbare ~16).
-  function haalTours() {
+  // depots: ids waarop gefilterd wordt. Leeg = geen depotfilter, dus alle
+  // ritten van de dag. De rest van het filter blijft zoals de gebruiker het
+  // in de Ritmonitor heeft staan — we sturen alleen een eigen `depots` mee in
+  // onze eigen request. Het scherm van de gebruiker verandert daar niet van:
+  // we raken de TagBox niet aan en drukken niet op Filteren.
+  function haalTours(depots) {
     var root = koRoot();
     var fallback = uitObservable(root);
     var f = root && root.tourFilter;
     if (!f || !window.ko) return Promise.resolve(fallback);
     var url;
     try {
-      var stat = JSON.stringify(window.ko.toJS(f.staticFilter));
+      var filter = window.ko.toJS(f.staticFilter);
+      filter.depots = (depots || []).map(String);
+      var stat = JSON.stringify(filter);
       var state = JSON.stringify(window.ko.toJS(f.stateFilter));
       var orde = String(uw(root.sortProperty) || 'referenceId');
+      // Zonder depotfilter zijn het er een paar honderd; 300 was te krap.
       url = TOURS_URL + '?filter=' + encodeURIComponent(stat) +
             '&stateFilter=' + encodeURIComponent(state) +
-            '&orderField=' + encodeURIComponent(orde) + '&skip=0&take=300';
+            '&orderField=' + encodeURIComponent(orde) + '&skip=0&take=1000';
     } catch (e) { return Promise.resolve(fallback); }
     return fetch(url, { credentials: 'same-origin' })
       .then(function (r) { return r.ok ? r.json() : null; })
@@ -523,11 +689,17 @@
     return a.totaal - b.totaal;
   }
 
-  function scan(adres, service, eigenRit, netwerken) {
+  function scan(adres, service, eigenRit, netwerken, depots) {
     status('Adres opzoeken…');
     return geocode(adres).then(function (nieuw) {
+      // Pas hier kan de depotkeuze automatisch: nu zijn de coördinaten van de
+      // nazorg bekend. Een handmatige keuze in het paneel gaat voor.
+      var gekozenDepots = (depots && depots.length)
+        ? depots
+        : autoDepots(nieuw, landVanNazorg(adres, eigenRit));
+      if (!depotHandmatig) { depotKeuze = gekozenDepots.slice(); tekenDepots(); }
       status('Ritten ophalen…');
-      return haalTours().then(function (alleTours) {
+      return haalTours(gekozenDepots).then(function (alleTours) {
         if (!alleTours.length) throw new Error('Geen ritten in de lijst gevonden.');
 
         // Eerst schiften, dan pas stops ophalen — scheelt tientallen requests.
@@ -816,6 +988,110 @@
     bewaar(KEY_NETWERKEN, lijst);
   }
 
+  // ── depotkeuze in het paneel ─────────────────────────────────
+  // Normaal kiest de tool zelf, op afstand tot het adres (zie autoDepots).
+  // Het lijstje in het paneel laat zien wat hij koos en is er om die keuze te
+  // overrulen; zodra je zelf een vinkje zet blijft die keuze staan, tot je een
+  // ander adres invult of op 'automatisch' klikt. Er wordt niets bewaard —
+  // een depotkeuze van gisteren zegt niets over de nazorg van vandaag.
+  var depotLijst = [];        // [{id, naam}] uit de TagBox van de Ritmonitor
+  var depotKeuze = [];        // ids waarop gefilterd wordt
+  var depotHandmatig = false; // heeft de gebruiker zelf ingegrepen?
+
+  function depotNamen() {
+    return depotKeuze.map(function (id) {
+      var d = depotLijst.filter(function (o) { return o.id === id; })[0];
+      return d ? d.naam : id;
+    });
+  }
+
+  // De automatische keuze, en het hele punt van deze functie: bij een nazorg
+  // hoort niet alleen het eigen depot maar ook wat er omheen ligt, want een
+  // buurdepot kan dichterbij zijn of meer voorsprong hebben. Draait op de
+  // coördinaten van het geocodeerde adres, dus altijd op de nazorg zelf en
+  // niet op het depot waar de rit toevallig vandaan komt.
+  //
+  // België doet altijd voltallig mee: drie depots, en het land is te klein om
+  // er met een straal iets zinnigs uit te zeven.
+  function autoDepots(punt, land) {
+    if (!land || !punt || !depotLijst.length) return [];
+    var mee = depotLijst.filter(function (d) {
+      return (DEPOTS[d.naam] || {}).land === land;
+    }).map(function (d) {
+      var c = DEPOTS[d.naam];
+      return { id: d.id, km: afstandKm(punt, { lat: c.lat, lon: c.lon }) };
+    }).sort(function (a, b) { return a.km - b.km; });
+    if (!mee.length) return [];
+    if (land === 'BE') return mee.map(function (d) { return d.id; });
+    var binnen = mee.filter(function (d) { return d.km <= DEPOT_STRAAL_KM; });
+    // Nooit leeg: ligt alles buiten de straal, dan blijft het dichtstbijzijnde
+    // depot over. Een lege lijst zou 'alle depots' betekenen, precies verkeerd.
+    return (binnen.length ? binnen : mee.slice(0, 1)).map(function (d) { return d.id; });
+  }
+
+  // Stamdepots die voor deze nazorg in aanmerking komen: die in hetzelfde
+  // land. Over de grens gaan we niet voor een nazorgje.
+  function toegestaneDepots() {
+    var land = landVanNazorg(
+      (document.getElementById('er-adres') || {}).value,
+      (document.getElementById('er-eigenrit') || {}).value);
+    return depotLijst.filter(function (d) {
+      var dl = (DEPOTS[d.naam] || {}).land || '';
+      return !land || !dl || dl === land;
+    });
+  }
+
+  function tekenDepots() {
+    var blok = document.getElementById('er-depotblok');
+    var vak = document.getElementById('er-depotlijst');
+    var hint = document.getElementById('er-depothint');
+    if (!blok || !vak || !hint) return;
+    // Geen optielijst gevonden (geen filterpaneel, andere pagina-opbouw): dan
+    // laten we het blok weg en blijft de tool doen wat hij altijd deed —
+    // zoeken binnen het depotfilter van de Ritmonitor.
+    if (!depotLijst.length) { blok.style.display = 'none'; return; }
+    blok.style.display = 'block';
+    var toegestaan = toegestaneDepots();
+    // De keuze beweegt mee: een depot dat door een landwissel afvalt hoort
+    // ook niet meer in het filter te zitten.
+    depotKeuze = depotKeuze.filter(function (id) {
+      return toegestaan.some(function (d) { return d.id === id; });
+    });
+    var q = ((document.getElementById('er-depotzoek') || {}).value || '').trim().toLowerCase();
+    // Aangevinkte bovenaan, zodat je nooit hoeft te scrollen om te zien wat
+    // er aan staat.
+    var zicht = toegestaan.filter(function (d) {
+      return !q || d.naam.toLowerCase().indexOf(q) !== -1;
+    }).sort(function (a, b) {
+      var va = depotKeuze.indexOf(a.id) !== -1, vb = depotKeuze.indexOf(b.id) !== -1;
+      if (va !== vb) return va ? -1 : 1;
+      return a.naam.localeCompare(b.naam);
+    });
+    vak.innerHTML = zicht.length
+      ? zicht.map(function (d) {
+          var aan = depotKeuze.indexOf(d.id) !== -1;
+          return '<label class="er-depotrij' + (aan ? ' aan' : '') + '">' +
+            '<input type="checkbox" data-depot="' + d.id + '"' + (aan ? ' checked' : '') + '>' +
+            d.naam.replace(/&/g, '&amp;').replace(/</g, '&lt;') + '</label>';
+        }).join('')
+      : '<div class="er-depotleeg">Geen depot met die naam.</div>';
+    var land = landVanNazorg(
+      (document.getElementById('er-adres') || {}).value,
+      (document.getElementById('er-eigenrit') || {}).value);
+    if (depotHandmatig) {
+      hint.innerHTML = 'Zelf gekozen: ' +
+        (depotKeuze.length ? depotNamen().join(', ') : 'niets \u2014 alle depots') +
+        ' <span class="toggle-link er-depotauto">automatisch</span>';
+    } else if (depotKeuze.length) {
+      hint.textContent = 'Automatisch gekozen: ' + depotNamen().join(', ');
+    } else {
+      hint.textContent = land === 'BE'
+        ? 'Bij Bereken doen alle Belgische depots mee.'
+        : 'Bij Bereken worden de depots binnen ' + DEPOT_STRAAL_KM +
+          ' km van het adres vanzelf gekozen.';
+    }
+  }
+
   // Direct na een berekening is het invulblok bijzaak: de ranglijst is waar
   // het om gaat, en die stond bij vier velden plus vier vinkjes ruim onder de
   // vouw. Het blok klapt daarom dicht tot één regel met wat er is doorgerekend,
@@ -826,9 +1102,11 @@
     var adres = (document.getElementById('er-adres') || {}).value || '';
     var st = parseInt((document.getElementById('er-servicetijd') || {}).value, 10);
     var nets = gekozenNetwerken();
+    var deps = depotNamen();
     var delen = [adres || 'geen adres'];
     if (!isNaN(st) && st > 0) delen.push(st + ' min service');
     if (nets.length && nets.length < NETWERKEN.length) delen.push(nets.join(', '));
+    if (deps.length) delen.push(deps.length > 2 ? deps.length + ' depots' : deps.join(' + '));
     return delen.join(' \u00b7 ');
   }
 
@@ -928,6 +1206,16 @@
     '#' + PANEL_ID + ' .er-net{width:auto;margin-bottom:0;display:flex;align-items:center;justify-content:center;' +
       'gap:5px;padding:8px 4px;font-size:12px;text-align:center;text-transform:none;letter-spacing:0;}',
     '#' + PANEL_ID + ' .er-net input{width:auto;margin:0;padding:0;cursor:pointer;}',
+    '#' + PANEL_ID + ' .er-depots{max-height:132px;overflow:auto;border:1px solid #DDDDDD;' +
+      'border-radius:6px;margin-top:6px;}',
+    '#' + PANEL_ID + ' .er-depotrij{display:flex;align-items:center;gap:7px;padding:5px 8px;' +
+      'margin-bottom:0;font-size:12px;font-weight:400;cursor:pointer;border-bottom:1px solid #F3F3F3;}',
+    '#' + PANEL_ID + ' .er-depotrij:last-child{border-bottom:none;}',
+    '#' + PANEL_ID + ' .er-depotrij:hover{background:#F2F7FC;}',
+    '#' + PANEL_ID + ' .er-depotrij.aan{background:#F2F7FC;font-weight:600;color:#285dab;}',
+    '#' + PANEL_ID + ' .er-depotrij input{width:auto;margin:0;padding:0;cursor:pointer;}',
+    '#' + PANEL_ID + ' .er-depotleeg{padding:7px 8px;font-size:11px;color:#999999;}',
+    '#' + PANEL_ID + ' .er-depothint{margin-top:5px;font-size:11px;color:#999999;line-height:1.4;}',
     '#' + PANEL_ID + ' .er-knoppen{display:flex;gap:8px;margin-top:10px;}',
     '#' + PANEL_ID + ' .er-knoppen .action-btn{flex:1;margin-top:0;}',
     '#' + PANEL_ID + ' .er-knoppen .back-btn{flex:0 0 82px;padding:11px 0;}',
@@ -1016,6 +1304,12 @@
           }).join('') +
         '</div>' +
       '</div>' +
+      '<div class="er-veld" id="er-depotblok" style="display:none">' +
+        '<label class="section-label">Depots die doorzocht worden</label>' +
+        '<input type="text" id="er-depotzoek" placeholder="zoek depot\u2026">' +
+        '<div class="er-depots" id="er-depotlijst"></div>' +
+        '<div class="er-depothint" id="er-depothint"></div>' +
+      '</div>' +
       '</div>' +
       '<div class="er-knoppen">' +
         '<button class="action-btn er-bereken">Bereken</button>' +
@@ -1033,6 +1327,9 @@
         '<li><b>Eigen rit</b> \u2014 de rit van de klant valt af: meegegeven door het logboek, ' +
           'of herkend doordat het adres er als stop in staat.</li>' +
         '<li><b>Netwerken</b> \u2014 vink zelf aan welke ploegen het werk mogen doen.</li>' +
+        '<li><b>Depots</b> \u2014 alle depots binnen ' + DEPOT_STRAAL_KM + ' km van het adres ' +
+          'doen vanzelf mee (in Belgi\u00eb alle drie), dus ook een buurdepot met ruimte. ' +
+          'Zelf aanvinken kan; je filter in de Ritmonitor blijft staan zoals het staat.</li>' +
         '<li><b>Adres</b> \u2014 PDOK (BAG) voor NL, Nominatim voor BE/DE. Welke bron ' +
           'het werd en wat hij vond, staat onder de uitslag.</li>' +
         '<li><b>Rijtijden</b> \u2014 OpenRouteService met eigen sleutel, of de OSRM-demo ' +
@@ -1052,6 +1349,16 @@
   var eigenRitInput = document.getElementById('er-eigenrit');
   adresInput.value = laad(KEY_ADRES, '') || '';
   zetNetwerken(laad(KEY_NETWERKEN, NETWERKEN.slice()));
+
+  // De depotlijst komt uit de TagBox van het filterpaneel. Die is bij het
+  // openen meestal al gevuld, maar laadt zijn store soms net iets later —
+  // vandaar één herkansing in plaats van meteen opgeven.
+  function laadDepots() {
+    depotLijst = depotOpties();
+    tekenDepots();
+  }
+  laadDepots();
+  if (!depotLijst.length) setTimeout(laadDepots, 1500);
 
   // Sleutelveld alleen tonen als er nog geen sleutel is.
   var sleutelBlok = document.getElementById('er-sleutel');
@@ -1137,7 +1444,9 @@
     if (!nets.length) { status('Vink minstens één netwerk aan.', true); return; }
     bewaar(KEY_NETWERKEN, nets);
     var s = parseInt(serviceInput.value, 10);
-    scan(a, (isNaN(s) || s < 0) ? 0 : s, eigenRitInput.value.trim(), nets);
+    // Alleen een eigen keuze doorgeven; anders kiest scan() zelf op afstand.
+    scan(a, (isNaN(s) || s < 0) ? 0 : s, eigenRitInput.value.trim(), nets,
+         depotHandmatig ? depotKeuze.slice() : null);
   };
   panel.querySelector('.er-wis').onclick = function () {
     resultaten = []; bewaar(KEY_RES, resultaten);
@@ -1151,7 +1460,14 @@
   serviceInput.addEventListener('keydown', opEnter);
   eigenRitInput.addEventListener('keydown', opEnter);
   // Zelf een adres typen betekent: de taak uit het logboek hoort er niet meer bij.
-  adresInput.addEventListener('input', function () { laatsteTaak = ''; laatsteFormaat = ''; });
+  // Adres en ritcode bepalen ook het land, en dus welke depots mogen meedoen.
+  // Een ander adres is een andere nazorg: de depotkeuze hoort dan weer uit
+  // de afstand te volgen, ook als je hem daarvoor met de hand had gezet.
+  function adresGewijzigd() { depotHandmatig = false; depotKeuze = []; tekenDepots(); }
+  adresInput.addEventListener('input', function () {
+    laatsteTaak = ''; laatsteFormaat = ''; adresGewijzigd();
+  });
+  eigenRitInput.addEventListener('input', adresGewijzigd);
   // Vinkjes meteen onthouden, niet pas bij Bereken.
   NETWERKEN.forEach(function (n) {
     var el = document.getElementById('er-net-' + n);
@@ -1160,6 +1476,25 @@
       bewaar(KEY_NETWERKEN, gekozenNetwerken());
     });
   });
+  // Depotvinkjes gedelegeerd: de lijst wordt bij elke zoekactie hertekend,
+  // dus losse listeners per regel zouden telkens weg zijn.
+  document.getElementById('er-depotlijst').addEventListener('change', function (e) {
+    var vak = e.target;
+    if (!vak || !vak.getAttribute) return;
+    var id = vak.getAttribute('data-depot');
+    if (!id) return;
+    var i = depotKeuze.indexOf(id);
+    if (vak.checked && i === -1) depotKeuze.push(id);
+    if (!vak.checked && i !== -1) depotKeuze.splice(i, 1);
+    depotHandmatig = true;
+    tekenDepots();
+  });
+  // Terug naar automatisch.
+  document.getElementById('er-depothint').addEventListener('click', function (e) {
+    if (!e.target || e.target.className.indexOf('er-depotauto') === -1) return;
+    depotHandmatig = false; depotKeuze = []; tekenDepots();
+  });
+  document.getElementById('er-depotzoek').addEventListener('input', tekenDepots);
 
   // Altijd open beginnen, ook met bewaarde resultaten in beeld. Dichtklappen
   // is het gevolg van een berekening die je zojuist deed — geen toestand waar
