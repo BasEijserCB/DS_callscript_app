@@ -64,7 +64,7 @@
 (function () {
   'use strict';
 
-  var RIJTIJD_VERSION = 'v1.7.0';
+  var RIJTIJD_VERSION = 'v1.8.0';
 
   var PANEL_ID = 'extra-rijtijd-panel';
   var PIL_ID = 'extra-rijtijd-pil';
@@ -90,6 +90,8 @@
   var VISITS_URL = '/ModuleTourMonitor/TourMonitor/GetVisitsWithExecutionStateByTour?tourId=';
   var TOURS_URL = '/ModuleTourMonitor/TourMonitor/GetTours';
   var MAX_ROUTE_RITTEN = 6;    // hoeveel ritten daadwerkelijk de router in
+  var ALTIJD_DICHTSTBIJ = 3;   // daarvan gegarandeerd de dichtstbijzijnde
+  var KM_NAAR_MIN = 3;         // ruwe omrekening voor de voorselectie, zie schatUitloop
   var PARALLEL_VISITS = 6;
   var EIGEN_RIT_M = 100;       // stop binnen 100 m van het adres = de rit van de klant zelf
   // De eerstvolgende stop kan technisch niet: een toegevoegde stop is niet op
@@ -750,6 +752,19 @@
   //   2. is het gat niet krap? (eerstvolgende-na-de-volgende)
   //   3. hoe lang duurt het
   // Netwerk komt pas daarna, en alleen tussen ritten onderling.
+  // Ruwe schatting van wat deze rit eraan overhoudt, vóór de router. Bedoeld
+  // om te kiezen wélke ritten de router in gaan, niet om iets te beweren over
+  // de uitkomst — dat doet maakGaps() straks met echte rijtijden.
+  //
+  // Heen en terug over de hemelsbrede afstand tot de dichtstbijzijnde stop is
+  // ruwweg 2 x afstand, en bij een stadssnelheid van zo'n 40 km/u komt dat op
+  // 3 minuten per kilometer. Grof, maar het onderscheid dat het moet maken is
+  // ook grof: een rit met veel voorsprong die wat verder ligt hoort mee te
+  // doen, en dat zag de oude voorselectie op pure afstand niet.
+  function schatUitloop(k, service) {
+    return k.dichtst * KM_NAAR_MIN + service - k.voorsprong;
+  }
+
   function vergelijkGaten(a, b) {
     if (a.past !== b.past) return a.past ? -1 : 1;
     if (a.risico !== b.risico) return a.risico ? 1 : -1;
@@ -824,8 +839,20 @@
             });
           }
           if (!kandidaten.length) throw new Error('Geen ritten met bruikbare toekomstige stops.');
+          // Twee bakken. De dichtstbijzijnde ritten gaan er altijd in — een rit
+          // die praktisch om de hoek rijdt mag nooit sneuvelen op een schatting.
+          // De overige plaatsen gaan naar de laagste geschatte uitloop, zodat
+          // een rit met flinke voorsprong die iets verder ligt alsnog meedoet.
+          // Zonder die tweede bak sorteerde de voorselectie op afstand terwijl
+          // de ranglijst erna op voorsprong sorteert — twee verschillende
+          // vragen, en de beste rit viel daartussen weg.
           kandidaten.sort(function (a, b) { return a.dichtst - b.dichtst; });
-          var kort = kandidaten.slice(0, MAX_ROUTE_RITTEN);
+          var kort = kandidaten.slice(0, ALTIJD_DICHTSTBIJ);
+          kandidaten.slice(ALTIJD_DICHTSTBIJ).sort(function (a, b) {
+            return schatUitloop(a, service) - schatUitloop(b, service);
+          }).slice(0, MAX_ROUTE_RITTEN - kort.length).forEach(function (k) {
+            kort.push(k);
+          });
           status('Rijtijden 0/' + kort.length + '…');
           return inBatches(kort, 2, function (k) {
             var punten = k.toekomst.map(function (s) {
@@ -1400,8 +1427,9 @@
         '<button class="back-btn active er-wis" title="Resultaten wissen">Wissen</button></div>' +
       '<div id="er-status" class="er-status"></div><div id="er-resultaten"></div>' +
       '<details class="er-uitleg"><summary>Hoe werkt dit?</summary><ul>' +
-        '<li><b>Ritten</b> \u2014 alle ritten uit de lijst; de ' + MAX_ROUTE_RITTEN +
-          ' dichtstbijzijnde gaan echt de router in.</li>' +
+        '<li><b>Ritten</b> \u2014 van alle ritten gaan er ' + MAX_ROUTE_RITTEN + ' echt de ' +
+          'router in: de ' + ALTIJD_DICHTSTBIJ + ' dichtstbijzijnde, plus de ritten waar ' +
+          'de voorsprong de klus vermoedelijk opvangt.</li>' +
         '<li><b>Volgorde</b> \u2014 1. past binnen de voorsprong \u00b7 2. niet krap \u00b7 ' +
           '3. lichtste ploeg \u00b7 4. kortste omweg.</li>' +
         '<li><b>Eerstvolgende stop</b> \u2014 kan niet: die haalt de sync naar de werktelefoon ' +
