@@ -64,7 +64,7 @@
 (function () {
   'use strict';
 
-  var RIJTIJD_VERSION = 'v1.6.0';
+  var RIJTIJD_VERSION = 'v1.7.0';
 
   var PANEL_ID = 'extra-rijtijd-panel';
   var PIL_ID = 'extra-rijtijd-pil';
@@ -112,6 +112,11 @@
   // Let op de aanname 1X vóór 2M: één installateur is goedkoper geacht dan
   // twee man. Klopt dat niet, wissel ze hier om.
   var NETWERKEN = ['1M', '1X', '2M', 'BI'];
+
+  // Zoveel ritten staan meteen in beeld. De rest is wel doorgerekend en blijft
+  // achter een linkje staan: in de praktijk kies je uit de bovenste paar, en
+  // een lijst van zes duwt de uitleg eronder van het scherm.
+  var TOON_EERST = 3;
 
   function netwerkRang(nw) {
     var i = NETWERKEN.indexOf(nw);
@@ -834,14 +839,14 @@
               return {
                 rit: k.tour.naam, tourId: k.tour.id, ref: k.tour.ref,
                 netwerk: nw, rang: netwerkRang(nw),
-                vanafSeq: k.toekomst[0].SequenceNumber, overgeslagen: k.gehad,
                 voorsprong: k.voorsprong, service: service, onderweg: k.onderweg,
-                afstand: Math.round(k.dichtst * 10) / 10, gaps: gaps
+                gaps: gaps
               };
             });
           }, function (k, n) { status('Rijtijden ' + k + '/' + n + '…'); })
           .then(function (res) {
             resultaten = res.filter(Boolean);
+            alleRittenTonen = false;   // nieuwe uitslag begint weer ingeklapt
             if (!resultaten.length) throw new Error('Geen rijtijden terug van de router.');
             // Zelfde ladder als binnen een rit, met het netwerk erachter:
             //   1. past binnen de voorsprong (kost de rit niets)
@@ -965,6 +970,8 @@
     return 'op schema';
   }
 
+  var alleRittenTonen = false;   // staat de rest van de ranglijst open?
+
   function render() {
     var body = document.getElementById('er-resultaten');
     if (body) {
@@ -975,7 +982,8 @@
         var rangen = resultaten.map(function (r) { return r.rang; });
         var minRang = Math.min.apply(null, rangen);
         var gemengd = Math.max.apply(null, rangen) !== minRang;
-        resultaten.forEach(function (r, idx) {
+        var zicht = alleRittenTonen ? resultaten : resultaten.slice(0, TOON_EERST);
+        zicht.forEach(function (r, idx) {
           var g = r.gaps[0];
           var opbouw = r.service
             ? g.extra + ' rijden + ' + r.service + ' service = ' + g.totaal + ' min'
@@ -994,10 +1002,16 @@
               (r.voorsprong > 0 ? 'er-goed' : (r.voorsprong < 0 ? 'er-slecht' : '')) + '">' +
               voorsprongTekst(r.voorsprong) + '</span></div>' +
             (r.onderweg ? '' : '<div class="park-melding er-depot">\u2691 Rit staat nog op het depot \u2014 informeer de TL na het inplannen</div>') +
-            '<div class="er-detail">' + g.basis + ' \u2192 ' + g.via + ' min rijden \u00b7 ' +
-            r.afstand + ' km \u00b7 vanaf stop ' + r.vanafSeq +
-            (r.overgeslagen ? ' (' + r.overgeslagen + ' gehad)' : '') + '</div></div>';
+            '</div>';
         });
+        if (resultaten.length > TOON_EERST) {
+          html += '<div class="er-meer"><span class="toggle-link er-meer-link">' +
+            (alleRittenTonen
+              ? 'minder tonen'
+              : '+ ' + (resultaten.length - TOON_EERST) + ' andere overwogen rit' +
+                (resultaten.length - TOON_EERST === 1 ? '' : 'ten')) +
+            '</span></div>';
+        }
         var uitleg = [];
         if (overslag.geo && overslag.geo.label) {
           uitleg.push('adres via ' + esc(overslag.geo.bron) + ': ' + esc(overslag.geo.label));
@@ -1017,6 +1031,8 @@
         Array.prototype.forEach.call(body.querySelectorAll('.er-rij'), function (el) {
           el.onclick = function () { selecteerRit(parseInt(el.getAttribute('data-tour'), 10)); };
         });
+        var meer = body.querySelector('.er-meer-link');
+        if (meer) meer.onclick = function () { alleRittenTonen = !alleRittenTonen; render(); };
       }
     }
     var b = resultaten.length ? resultaten[0] : null;
@@ -1298,7 +1314,7 @@
     '#' + PANEL_ID + ' .er-uitloop .section-label{margin-bottom:0;text-align:right;}',
     '#' + PANEL_ID + ' .er-rij-sub{margin-top:4px;font-size:12px;line-height:1.4;}',
     '#' + PANEL_ID + ' .er-opbouw{margin-top:3px;font-size:11px;color:#999999;}',
-    '#' + PANEL_ID + ' .er-detail{margin-top:2px;font-size:11px;color:#999999;}',
+    '#' + PANEL_ID + ' .er-meer{margin-top:9px;text-align:center;}',
     '#' + PANEL_ID + ' .er-goed{color:#155724;font-weight:600;}',
     '#' + PANEL_ID + ' .er-slecht{color:#E50000;font-weight:600;}',
     '#' + PANEL_ID + ' .er-ster{color:#ff6600;}',
