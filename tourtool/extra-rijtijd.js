@@ -64,7 +64,7 @@
 (function () {
   'use strict';
 
-  var RIJTIJD_VERSION = 'v1.10.0';
+  var RIJTIJD_VERSION = 'v1.10.1';
 
   var PANEL_ID = 'extra-rijtijd-panel';
   var PIL_ID = 'extra-rijtijd-pil';
@@ -382,7 +382,7 @@
   // Venlo alleen blijven staan — die liggen nu eenmaal ver van de rest.
   var DEPOT_STRAAL_KM = 75;
   var MIN_DEPOTS = 3;          // ondergrens, ook als er niets binnen de straal ligt
-  var DEPOT_MAX_KM = 110;      // maar nooit verder dan dit — zie autoDepots
+  var DEPOT_MAX_KM = 100;      // maar nooit verder dan dit — zie autoDepots
   var MAX_VISIT_RITTEN = 60;   // noodrem op het aantal GetVisits per Bereken
 
   // Routecode in de ritnaam → stamdepot. Afgeleid uit de data zelf op
@@ -1241,7 +1241,8 @@
       // Het plafond geldt alleen voor de ondergrens, niet voor de straal zelf.
       // Zonder plafond sleepte de derde plek in Zeeland en Zuid-Limburg Utrecht
       // mee op 128 respectievelijk 144 km — daar komt nooit een rit vandaan,
-      // en het kostte wel een GetVisits per rit van dat depot.
+      // en het kostte wel een GetVisits per rit van dat depot. 100 km in plaats
+      // van 110 houdt ook Venlo weg bij Enschede (107).
       if (d.km <= DEPOT_STRAAL_KM || (i < MIN_DEPOTS && d.km <= DEPOT_MAX_KM)) voegToe(d.id);
     });
     // Ligt zelfs het dichtstbijzijnde depot buiten het plafond, dan toch dat
