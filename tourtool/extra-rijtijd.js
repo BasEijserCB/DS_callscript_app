@@ -64,7 +64,7 @@
 (function () {
   'use strict';
 
-  var RIJTIJD_VERSION = 'v1.13.1';
+  var RIJTIJD_VERSION = 'v1.14.0';
 
   var PANEL_ID = 'extra-rijtijd-panel';
   var PIL_ID = 'extra-rijtijd-pil';
@@ -396,6 +396,7 @@
   var STANDAARD_TOT = 9 * 60;        // 09:00
   var NORM_MARGE = 60;               // zie normDuur — hoe ver de langste rit van
                                      // een starttijd onder de norm mag liggen
+  var TE_LANG_MARGE = 5;             // speling voor afrondingsruis — zie teLang
 
   // Routecode in de ritnaam → stamdepot. Afgeleid uit de data zelf op
   // 09-09-2026 (`probe-depotfilter.js`-aanpak: per depot GetTours ophalen en
@@ -883,6 +884,9 @@
     var c = { net: {}, start: {} };
     tours.forEach(function (t) {
       if (t.duur == null || t.start == null) return;
+      // Een al verlengde rit mag de maat niet zetten: als hij de langste van
+      // zijn cohort wordt, lijken al zijn collega's ineens te kort.
+      if (teLang(t)) return;
       var kn = netwerkVan(t.naam) + '@' + t.start;
       var gn = c.net[kn] || (c.net[kn] = { max: 0, aantal: 0 });
       gn.aantal++;
@@ -935,6 +939,22 @@
     var g = cohort.start[depotCode(t.naam) + '@' + t.start];
     if (!g || g.max < norm - NORM_MARGE) return 0;
     return norm;
+  }
+
+  // Een rit die langer duurt dan de maximale tourduur van zijn land is al eens
+  // verlengd — vrijwel altijd doordat wij er eerder op de dag iets aan hebben
+  // toegevoegd. Zo'n rit valt af als kandidaat, hoe groot de voorsprong ook is:
+  // die voorsprong is dan geen ruimte maar het gevolg van eerder ingrijpen.
+  //
+  // De norm is hier een plafond voor élke configuratie, niet alleen voor de
+  // standaardritten, dus het startvenster speelt geen rol. Duitse ritten hebben
+  // geen norm en vallen dus nooit af.
+  //
+  // TE_LANG_MARGE vangt afrondingsruis: 492 minuten is geen toegevoegde stop,
+  // 520 wel.
+  function teLang(t) {
+    var n = TOURDUUR[landVanTour(t)];
+    return !!n && t.duur != null && t.duur > n + TE_LANG_MARGE;
   }
 
   // Levert { min, bron, norm } — bron 'norm' of 'cohort', zodat de melding kan
@@ -997,7 +1017,7 @@
 
         // Eerst schiften, dan pas stops ophalen — scheelt tientallen requests.
         var eigenKern = ritKern(eigenRit);
-        overslag = { eigen: 0, netwerk: 0, klaar: 0, gekapt: 0, netwerken: netwerken,
+        overslag = { eigen: 0, netwerk: 0, klaar: 0, telang: 0, gekapt: 0, netwerken: netwerken,
                      eigenRit: eigenKern, geo: nieuw, orsLoos: !ORS_KEY,
                      codeOnbekend: codeOnbekend, uiLos: !uiGezet };
         var tours = alleTours.filter(function (t) {
@@ -1009,6 +1029,8 @@
           if (t.stops !== null && t.gedaan !== null && t.stops - t.gedaan < 2) {
             overslag.klaar++; return false;
           }
+          // Al verlengd: geen kandidaat meer, ook niet met veel voorsprong.
+          if (teLang(t)) { overslag.telang++; return false; }
           return true;
         });
         if (!tours.length) throw new Error('Geen ritten over in de aangevinkte netwerken.');
@@ -1296,6 +1318,7 @@
         if (overslag.eigen) uitleg.push('eigen rit ' + esc(overslag.eigenRit) + ' overgeslagen' + (overslag.auto ? ' (zelf herkend op het adres)' : ''));
         if (overslag.netwerk) uitleg.push(overslag.netwerk + ' rit(ten) buiten het netwerkfilter');
         if (overslag.klaar) uitleg.push(overslag.klaar + ' rit(ten) (bijna) klaar');
+        if (overslag.telang) uitleg.push(overslag.telang + ' rit(ten) al verlengd (langer dan de max tourduur)');
         if (overslag.gekapt) uitleg.push(overslag.gekapt + ' rit(ten) niet opgehaald (limiet ' + MAX_VISIT_RITTEN + ')');
         if (overslag.netwerken && overslag.netwerken.length < NETWERKEN.length) {
           uitleg.push('alleen ' + overslag.netwerken.join(', '));
@@ -1737,6 +1760,9 @@
           'de voorsprong de klus vermoedelijk opvangt.</li>' +
         '<li><b>Volgorde</b> \u2014 1. past binnen de voorsprong \u00b7 2. past dankzij een ' +
           'korte rit \u00b7 3. niet krap \u00b7 4. lichtste ploeg \u00b7 5. kortste omweg.</li>' +
+        '<li><b>Al verlengd</b> \u2014 een rit die langer duurt dan de maximale tourduur ' +
+          '(NL ' + TOURDUUR.NL + ' min, BE ' + TOURDUUR.BE + ') valt af, ook met veel ' +
+          'voorsprong: daar is eerder op de dag al iets aan toegevoegd.</li>' +
         '<li><b>Korte rit</b> \u2014 een rit die korter gepland staat dan hij zou moeten zijn: ' +
           'bij een start tussen 07:45 en 09:00 tegen de standaard tourduur (NL ' + TOURDUUR.NL +
           ' min, BE ' + TOURDUUR.BE + '), daarbuiten tegen de andere ritten van hetzelfde ' +
