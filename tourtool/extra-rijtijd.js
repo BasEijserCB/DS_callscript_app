@@ -64,7 +64,7 @@
 (function () {
   'use strict';
 
-  var RIJTIJD_VERSION = 'v1.15.0';
+  var RIJTIJD_VERSION = 'v1.15.1';
 
   var PANEL_ID = 'extra-rijtijd-panel';
   var PIL_ID = 'extra-rijtijd-pil';
@@ -285,16 +285,26 @@
     return uit;
   }
 
-  // De tekst links van een veld; DevExtreme hangt er zelf geen label aan.
+  // De tekst links van of boven een veld; DevExtreme hangt er zelf geen label
+  // aan. Twee manieren, en die tweede is niet optioneel: in probe-depotfilter.js
+  // werd "Depots" via het <label> in het bovenliggende element gevonden, en juist
+  // die tak was hier weggevallen — waardoor depotBox() niets vond en het hele
+  // depotblok stil verdween.
+  function tekstVan(el) { return el ? (el.textContent || '').replace(/\s+/g, ' ').trim() : ''; }
   function labelVan(el) {
     var n = el, niveau = 0;
-    while (n && niveau++ < 5) {
+    while (n && niveau++ < 6) {
       var b = n.previousElementSibling;
       while (b) {
-        var t = (b.textContent || '').replace(/\s+/g, ' ').trim();
-        if (t && t.length < 40) return t;
+        var t = tekstVan(b);
+        if (t && t.length < 60) return t;
         b = b.previousElementSibling;
       }
+      try {
+        var lab = n.parentElement && n.parentElement.querySelector(
+          ':scope > label, :scope > .dx-field-item-label, :scope > .dx-field-label');
+        if (lab && tekstVan(lab)) return tekstVan(lab);
+      } catch (e) {}
       n = n.parentElement;
     }
     return '';
@@ -310,20 +320,57 @@
     } catch (e) { return []; }
   }
 
-  // 'Depots' — nadrukkelijk niet 'Begin depot' of 'Eind depot', dat zijn
-  // andere velden in hetzelfde paneel met een bijna gelijk label.
+  // Namen van de opties van een tagbox, ruw.
+  function optieNamen(inst) {
+    try {
+      var ds = inst.getDataSource && inst.getDataSource();
+      var arr = (ds && ds.items && ds.items()) || inst.option('items') || [];
+      var de = inst.option('displayExpr');
+      return arr.map(function (o) {
+        if (!o || typeof o !== 'object') return String(o);
+        return String(typeof de === 'function' ? de(o)
+                    : typeof de === 'string' ? o[de]
+                    : (o.Name || o.name || o.Text || o.text || ''));
+      });
+    } catch (e) { return []; }
+  }
+
+  // De TagBox 'Depots' opzoeken. Vier manieren, van scherp naar grof, want op
+  // één signaal leunen ging al een keer mis: het label werd niet gevonden en
+  // toen verdween het hele depotblok zonder melding.
+  //
+  // 'Begin depot' en 'Eind depot' zijn aparte velden in hetzelfde paneel met
+  // een bijna gelijk label én bijna dezelfde inhoud, dus die moeten er bij elke
+  // methode uit.
   function depotBox() {
-    var boxen = tagBoxen();
-    var hit = boxen.filter(function (b) { return /^depots$/i.test(labelVan(b.el)); })[0];
-    if (hit) return hit.inst;
-    // Vangnet als dat label ooit anders heet: de box waarvan de waarde precies
-    // de depots bevat waarop de Ritmonitor op dit moment filtert.
-    var nu = filterDepots();
-    if (nu.length) {
+    var boxen = tagBoxen().filter(function (b) {
+      b.label = labelVan(b.el);
+      return !/begin|eind|start|end/i.test(b.label);
+    });
+    if (!boxen.length) return null;
+
+    // 1. Het label heet precies 'Depots'.
+    var hit = boxen.filter(function (b) { return /^depots$/i.test(b.label); })[0];
+    // 2. Het label bevat 'depot'.
+    if (!hit) hit = boxen.filter(function (b) { return /depot/i.test(b.label); })[0];
+    // 3. De inhoud verraadt het: de box die meerdere van onze stamdepots kent.
+    //    In DOM-volgorde, want 'Depots' staat vóór 'Begin depot'.
+    if (!hit) {
       hit = boxen.filter(function (b) {
-        var v = (b.inst.option('value') || []).map(String);
-        return v.length === nu.length && nu.every(function (id) { return v.indexOf(id) !== -1; });
+        var namen = optieNamen(b.inst), raak = 0;
+        for (var i = 0; i < namen.length && raak < 3; i++) if (DEPOTS[namen[i]]) raak++;
+        return raak >= 3;
       })[0];
+    }
+    // 4. De box waarvan de waarde precies het huidige depotfilter is.
+    if (!hit) {
+      var nu = filterDepots();
+      if (nu.length) {
+        hit = boxen.filter(function (b) {
+          var v = (b.inst.option('value') || []).map(String);
+          return v.length === nu.length && nu.every(function (id) { return v.indexOf(id) !== -1; });
+        })[0];
+      }
     }
     return hit ? hit.inst : null;
   }
@@ -795,16 +842,20 @@
   function inBatches(items, n, fn, voortgang) {
     if (!items.length) return Promise.resolve([]);
     return new Promise(function (resolve) {
-      var uit = [], i = 0, klaar = 0;
+      var uit = [], fouten = [], i = 0, klaar = 0;
       function volgende() {
         if (i >= items.length) return;
         var idx = i++;
         Promise.resolve(fn(items[idx]))
-          .then(function (r) { uit[idx] = r; }, function () { uit[idx] = null; })
+          .then(function (r) { uit[idx] = r; },
+                // Reden bewaren, niet weggooien. Faalt álles, dan is dit het
+                // enige wat vertelt wát er misging — een 403 van de router
+                // (dagquotum, sleutel) leest heel anders dan een CSP-blokkade.
+                function (e) { uit[idx] = null; fouten.push(e && e.message ? e.message : String(e)); })
           .then(function () {
             klaar++;
             if (voortgang) voortgang(klaar, items.length);
-            if (klaar === items.length) resolve(uit); else volgende();
+            if (klaar === items.length) { uit.fouten = fouten; resolve(uit); } else volgende();
           });
       }
       for (var k = 0; k < Math.min(n, items.length); k++) volgende();
@@ -1147,7 +1198,10 @@
           .then(function (res) {
             resultaten = res.filter(Boolean);
             alleRittenTonen = false;   // nieuwe uitslag begint weer ingeklapt
-            if (!resultaten.length) throw new Error('Geen rijtijden terug van de router.');
+            if (!resultaten.length) {
+              var eerste = (res.fouten || [])[0];
+              throw new Error('Geen rijtijden terug van de router.' + (eerste ? ' ' + eerste : ''));
+            }
             // Zelfde ladder als binnen een rit, met het netwerk erachter:
             //   1. past binnen de voorsprong (kost de rit niets)
             //   2. past dankzij een korte rit — maar moet gecontroleerd
@@ -1507,11 +1561,17 @@
     var vak = document.getElementById('er-depotlijst');
     var hint = document.getElementById('er-depothint');
     if (!blok || !vak || !hint) return;
-    // Geen optielijst gevonden (geen filterpaneel, andere pagina-opbouw): dan
-    // laten we het blok weg en blijft de tool doen wat hij altijd deed —
-    // zoeken binnen het depotfilter van de Ritmonitor.
-    if (!depotLijst.length) { blok.style.display = 'none'; return; }
     blok.style.display = 'block';
+    // Geen optielijst gevonden — geen filterpaneel, of DireXtion heeft de
+    // opbouw veranderd. Vroeger verdween het blok dan zonder een woord, en dan
+    // zoekt de tool zonder depotfilter terwijl niets dat verraadt.
+    if (!depotLijst.length) {
+      vak.innerHTML = '<div class="er-depotleeg">Depotlijst niet gevonden in het ' +
+        'filterpaneel van de Ritmonitor. Er wordt zonder depotfilter gezocht \u2014 ' +
+        'trager, en mogelijk buiten je regio.</div>';
+      hint.textContent = '';
+      return;
+    }
     var toegestaan = toegestaneDepots();
     // De keuze beweegt mee: een depot dat door een landwissel afvalt hoort
     // ook niet meer in het filter te zitten.
