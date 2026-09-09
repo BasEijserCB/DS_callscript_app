@@ -30,6 +30,14 @@ python3 build.py
 git add . && git commit -m "beschrijving, bump to vX.X.X" && git push
 ```
 
+**De drie loaders zijn gehard (09-09-2026).** De cache blijft het snelheidsmiddel: `eval(cached)` draait als eerste en synchroon, de fetch loopt daarna in de achtergrond — stale-while-revalidate, ongewijzigd. Wat erbij kwam raakt alleen de paden waar het misging:
+
+- **`eval(cached)` staat in een try/catch.** Gooide een kapotte gecachete versie een fout, dan stopte het hele bookmarklet-script daar en werd er nooit meer een update opgehaald: de cache kon zichzelf niet repareren. Dat is precies gebeurd met `extra-rijtijd.js` v1.16.0. Faalt de cache nu, dan wordt de verse code in diezelfde klik uitgevoerd.
+- **`setItem` vangt een quota-fout op** door eerst de oude waarde te wissen en het opnieuw te proberen; lukt ook dat niet, dan is de toast rood met de opdracht de sleutel handmatig te wissen. De bestanden groeien (`extra-rijtijd.js` staat op ruim 100 KB) en een volle `localStorage` liet de cache anders stil op een oude versie staan.
+- **De lege `.catch(function(){})` logt nu.** Een mislukte update was volledig onzichtbaar.
+
+De bookmarklets in `install.html` en `tourtool/install-rijtijd.html` zijn opnieuw gegenereerd uit de drie `*-bookmarklet.js`-bestanden; wie de oude heeft moet hem opnieuw slepen om de hardening te krijgen. De oude blijven verder gewoon werken.
+
 De loader bookmarklet haalt de nieuwe `ds-logboek.js` automatisch op in de achtergrond (stale-while-revalidate + `{cache:'no-store'}`). Als de code gewijzigd is, toont de loader een blauwe toast rechtsonder ("↻ DS Logboek: nieuwe versie gedownload"). Bij de volgende klik op de bookmarklet krijg je de nieuwe versie. Cache handmatig legen is alleen nodig als fallback:
 ```javascript
 localStorage.removeItem('ds_app_prod_cache')
