@@ -64,7 +64,7 @@
 (function () {
   'use strict';
 
-  var RIJTIJD_VERSION = 'v1.13.0';
+  var RIJTIJD_VERSION = 'v1.13.1';
 
   var PANEL_ID = 'extra-rijtijd-panel';
   var PIL_ID = 'extra-rijtijd-pil';
@@ -394,6 +394,8 @@
   var TOURDUUR = { NL: 490, BE: 475 };
   var STANDAARD_VAN = 7 * 60 + 45;   // 07:45
   var STANDAARD_TOT = 9 * 60;        // 09:00
+  var NORM_MARGE = 60;               // zie normDuur — hoe ver de langste rit van
+                                     // een starttijd onder de norm mag liggen
 
   // Routecode in de ritnaam → stamdepot. Afgeleid uit de data zelf op
   // 09-09-2026 (`probe-depotfilter.js`-aanpak: per depot GetTours ophalen en
@@ -868,14 +870,27 @@
   // omdat de reistijd heen en terug eraf is, en bij een latere start wordt die
   // tijd van de maximale tourduur afgetrokken. In beide gevallen is de werkdag
   // gewoon vol. Binnen het cohort vallen die verklaringen tegen elkaar weg.
+  // Depotcode uit de ritnaam: 2M-NLTI-07 → NLTI.
+  function depotCode(naam) {
+    var m = /^[0-9A-Z]{2}-([A-Z]{4})-/i.exec(String(naam || '').trim());
+    return m ? m[1].toUpperCase() : '?';
+  }
+
+  // Twee indexen. `net` is fijnmazig (netwerk + starttijd) en dient als
+  // vergelijkingsbasis; `start` is grover (depot + starttijd, alle netwerken)
+  // en dient om te zien óf een starttijd een volle dag is — zie normDuur.
   function maakCohort(tours) {
-    var c = {};
+    var c = { net: {}, start: {} };
     tours.forEach(function (t) {
       if (t.duur == null || t.start == null) return;
-      var k = netwerkVan(t.naam) + '@' + t.start;
-      var g = c[k] || (c[k] = { max: 0, aantal: 0 });
-      g.aantal++;
-      if (t.duur > g.max) g.max = t.duur;
+      var kn = netwerkVan(t.naam) + '@' + t.start;
+      var gn = c.net[kn] || (c.net[kn] = { max: 0, aantal: 0 });
+      gn.aantal++;
+      if (t.duur > gn.max) gn.max = t.duur;
+      var ks = depotCode(t.naam) + '@' + t.start;
+      var gs = c.start[ks] || (c.start[ks] = { max: 0, aantal: 0 });
+      gs.aantal++;
+      if (t.duur > gs.max) gs.max = t.duur;
     });
     return c;
   }
@@ -887,15 +902,39 @@
     return m ? m[1].toUpperCase() : '';
   }
 
-  // De harde norm, of 0 als die hier niet geldt. Alleen ritten die tussen
-  // STANDAARD_VAN en STANDAARD_TOT beginnen zijn standaardritten; later op de
-  // dag bestaan er praktisch geen, en de aangepaste routes daar hebben elk hun
-  // eigen maximum (de latere start gaat van de tourduur af).
-  function normDuur(t) {
+  // De harde norm, of 0 als die hier niet geldt. Twee voorwaarden.
+  //
+  // Ten eerste het startvenster: alleen ritten die tussen STANDAARD_VAN en
+  // STANDAARD_TOT beginnen zijn standaardritten. Later op de dag bestaan die
+  // praktisch niet, en de aangepaste routes daar hebben elk hun eigen maximum
+  // omdat de latere start van de tourduur af gaat.
+  //
+  // Ten tweede: ook binnen dat venster rijden er configuraties die met reden
+  // korter zijn — de losploeg lost eerst trailers en gaat daarna pas bezorgen.
+  // Zonder tweede voorwaarde zou elke losploeg-rit als "korte rit" opduiken.
+  // Ze zijn te herkennen aan hun eigen starttijd (een andere starttijd is per
+  // definitie een andere configuratie), en aan het feit dat de héle groep ver
+  // onder de norm zit. Zit de langste rit met deze starttijd meer dan
+  // NORM_MARGE onder de norm, dan is dat de configuratie en niet een tekort:
+  // de norm geldt dan niet en we vallen terug op het cohort.
+  //
+  // In Tilburg op 09-09-2026: 07:50 had 17 ritten met een langste van 488 min
+  // (de standaardconfiguratie), 08:05 had er twee met een langste van 312 —
+  // ruim drie uur korter, dus een eigen configuratie.
+  //
+  // Prijs hiervan: een rit met een unieke starttijd in het venster staat in
+  // een groep van één, en dan is zijn eigen duur de langste. Kort betekent dan
+  // geen norm en dus geen melding. Bewust die kant op: liever een korte rit
+  // gemist dan de losploeg elke dag ten onrechte geflagd.
+  function normDuur(cohort, t) {
     if (t.start == null) return 0;
     var d = new Date(t.start), m = d.getHours() * 60 + d.getMinutes();
     if (m < STANDAARD_VAN || m > STANDAARD_TOT) return 0;
-    return TOURDUUR[landVanTour(t)] || 0;
+    var norm = TOURDUUR[landVanTour(t)] || 0;
+    if (!norm) return 0;
+    var g = cohort.start[depotCode(t.naam) + '@' + t.start];
+    if (!g || g.max < norm - NORM_MARGE) return 0;
+    return norm;
   }
 
   // Levert { min, bron, norm } — bron 'norm' of 'cohort', zodat de melding kan
@@ -905,12 +944,12 @@
     // Een standaardrit meten we tegen de vaste tourduur. Dat is sterker dan het
     // cohort: het is het werkelijke maximum, en het werkt ook als een rit de
     // enige is met die starttijd — juist dan zag het cohort niets.
-    var norm = normDuur(t);
+    var norm = normDuur(cohort, t);
     if (norm) {
       var rn = norm - t.duur;
       return rn >= RUIMTE_MIN ? { min: rn, bron: 'norm', norm: norm } : { min: 0 };
     }
-    var g = cohort[netwerkVan(t.naam) + '@' + t.start];
+    var g = cohort.net[netwerkVan(t.naam) + '@' + t.start];
     // Eén rit in het cohort betekent geen vergelijkingsmateriaal; dan doen we
     // geen uitspraak in plaats van een slechte.
     if (!g || g.aantal < 2) return { min: 0 };
