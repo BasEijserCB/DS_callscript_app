@@ -64,7 +64,7 @@
 (function () {
   'use strict';
 
-  var RIJTIJD_VERSION = 'v1.12.0';
+  var RIJTIJD_VERSION = 'v1.13.0';
 
   var PANEL_ID = 'extra-rijtijd-panel';
   var PIL_ID = 'extra-rijtijd-pil';
@@ -386,6 +386,15 @@
   var MAX_VISIT_RITTEN = 60;   // noodrem op het aantal GetVisits per Bereken
   var RUIMTE_MIN = 10;         // minder dan dit heet geen korte rit — zie ruimteVan
 
+  // Standaard tourduur in minuten, per land. Geldt alleen voor ritten die in
+  // het standaard startvenster beginnen; daarbuiten (aangepaste routes,
+  // avondritten) bestaat er geen vaste norm en valt ruimteVan() terug op het
+  // cohort. Avondritten beginnen in NL overal om 13:20 en bestaan in BE niet;
+  // hun norm is niet bekend.
+  var TOURDUUR = { NL: 490, BE: 475 };
+  var STANDAARD_VAN = 7 * 60 + 45;   // 07:45
+  var STANDAARD_TOT = 9 * 60;        // 09:00
+
   // Routecode in de ritnaam → stamdepot. Afgeleid uit de data zelf op
   // 09-09-2026 (`probe-depotfilter.js`-aanpak: per depot GetTours ophalen en
   // de codes uit de ritnamen tellen); elk depot bleek precies één code te
@@ -474,6 +483,7 @@
       stops: getal(t, 'NumberOfVisits', 'numberOfVisits'),
       gedaan: getal(t, 'NumberOfVisitsCompleted', 'numberOfVisitsCompleted'),
       voorsprong: voorsprongUitLijst(t),
+      land: String(uw(t.MobileGroupCode) || uw(t.mobileGroupCode) || '').toUpperCase(),
       start: start,
       duur: (start !== null && eind !== null) ? Math.round((eind - start) / 60000) : null
     };
@@ -869,14 +879,43 @@
     });
     return c;
   }
+  // Het land van een rit: uit MobileGroupCode in de rittenlijst, en anders uit
+  // de landletters in de routecode (2M-NLTI-07 → NL).
+  function landVanTour(t) {
+    if (t.land) return t.land;
+    var m = /^[0-9A-Z]{2}-(NL|BE|DE)[A-Z]{2}-/i.exec(String(t.naam || ''));
+    return m ? m[1].toUpperCase() : '';
+  }
+
+  // De harde norm, of 0 als die hier niet geldt. Alleen ritten die tussen
+  // STANDAARD_VAN en STANDAARD_TOT beginnen zijn standaardritten; later op de
+  // dag bestaan er praktisch geen, en de aangepaste routes daar hebben elk hun
+  // eigen maximum (de latere start gaat van de tourduur af).
+  function normDuur(t) {
+    if (t.start == null) return 0;
+    var d = new Date(t.start), m = d.getHours() * 60 + d.getMinutes();
+    if (m < STANDAARD_VAN || m > STANDAARD_TOT) return 0;
+    return TOURDUUR[landVanTour(t)] || 0;
+  }
+
+  // Levert { min, bron, norm } — bron 'norm' of 'cohort', zodat de melding kan
+  // vertellen waar het getal vandaan komt.
   function ruimteVan(cohort, t) {
-    if (t.duur == null || t.start == null) return 0;
+    if (t.duur == null || t.start == null) return { min: 0 };
+    // Een standaardrit meten we tegen de vaste tourduur. Dat is sterker dan het
+    // cohort: het is het werkelijke maximum, en het werkt ook als een rit de
+    // enige is met die starttijd — juist dan zag het cohort niets.
+    var norm = normDuur(t);
+    if (norm) {
+      var rn = norm - t.duur;
+      return rn >= RUIMTE_MIN ? { min: rn, bron: 'norm', norm: norm } : { min: 0 };
+    }
     var g = cohort[netwerkVan(t.naam) + '@' + t.start];
     // Eén rit in het cohort betekent geen vergelijkingsmateriaal; dan doen we
     // geen uitspraak in plaats van een slechte.
-    if (!g || g.aantal < 2) return 0;
+    if (!g || g.aantal < 2) return { min: 0 };
     var r = g.max - t.duur;
-    return r >= RUIMTE_MIN ? r : 0;
+    return r >= RUIMTE_MIN ? { min: r, bron: 'cohort' } : { min: 0 };
   }
 
   // Volgorde: past het binnen de voorsprong · past het dankzij een korte rit ·
@@ -968,8 +1007,10 @@
             if (dichtst * 1000 <= EIGEN_RIT_M && (!autoEigen || dichtst < autoEigen.dichtst)) {
               autoEigen = { naam: t.naam, dichtst: dichtst };
             }
+            var ru = ruimteVan(cohort, t);
             kandidaten.push({
-              tour: t, toekomst: toekomst, dichtst: dichtst, ruimte: ruimteVan(cohort, t),
+              tour: t, toekomst: toekomst, dichtst: dichtst,
+              ruimte: ru.min, ruimteBron: ru.bron, ruimteNorm: ru.norm,
               gehad: info.vanaf, voorsprong: info.voorsprong, onderweg: info.onderweg
             });
           });
@@ -1015,7 +1056,8 @@
                 rit: k.tour.naam, tourId: k.tour.id, ref: k.tour.ref,
                 netwerk: nw, rang: netwerkRang(nw),
                 voorsprong: k.voorsprong, service: service, onderweg: k.onderweg,
-                ruimte: k.ruimte, start: k.tour.start,
+                ruimte: k.ruimte, ruimteBron: k.ruimteBron, ruimteNorm: k.ruimteNorm,
+                start: k.tour.start,
                 gaps: gaps
               };
             });
@@ -1191,9 +1233,11 @@
             // dan is het sowieso een optie en zou de melding ruis zijn.
             (!g.past && g.pastRuim && r.ruimte
               ? '<div class="park-melding er-depot">\u2691 <b>Korte rit \u2014 controleer dit.</b> ' +
-                'Deze rit staat ' + r.ruimte + ' min korter gepland dan de andere ' +
-                esc(r.netwerk) + '-ritten die om ' + klok(r.start) + ' beginnen. Past alleen ' +
-                'als die tijd er echt is.</div>'
+                'Deze rit staat ' + r.ruimte + ' min korter gepland dan ' +
+                (r.ruimteBron === 'norm'
+                  ? 'de standaard tourduur van ' + r.ruimteNorm + ' min'
+                  : 'de andere ' + esc(r.netwerk) + '-ritten die om ' + klok(r.start) + ' beginnen') +
+                '. Past alleen als die tijd er echt is.</div>'
               : '') +
             (r.onderweg ? '' : '<div class="park-melding er-depot">\u2691 Rit staat nog op het depot \u2014 informeer de TL na het inplannen</div>') +
             '</div>';
@@ -1654,9 +1698,11 @@
           'de voorsprong de klus vermoedelijk opvangt.</li>' +
         '<li><b>Volgorde</b> \u2014 1. past binnen de voorsprong \u00b7 2. past dankzij een ' +
           'korte rit \u00b7 3. niet krap \u00b7 4. lichtste ploeg \u00b7 5. kortste omweg.</li>' +
-        '<li><b>Korte rit</b> \u2014 een rit die korter gepland staat dan de andere ritten van ' +
-          'hetzelfde netwerk met dezelfde starttijd (die hebben dezelfde configuratie). ' +
-          'Dat is een aanwijzing, geen zekerheid: controleer of die tijd er echt is.</li>' +
+        '<li><b>Korte rit</b> \u2014 een rit die korter gepland staat dan hij zou moeten zijn: ' +
+          'bij een start tussen 07:45 en 09:00 tegen de standaard tourduur (NL ' + TOURDUUR.NL +
+          ' min, BE ' + TOURDUUR.BE + '), daarbuiten tegen de andere ritten van hetzelfde ' +
+          'netwerk met dezelfde starttijd. Een aanwijzing, geen zekerheid \u2014 controleer ' +
+          'of die tijd er echt is.</li>' +
         '<li><b>Eerstvolgende stop</b> \u2014 kan niet: die haalt de sync naar de werktelefoon ' +
           'niet. De stop daarna kan wel, maar staat als \u26A0 krap.</li>' +
         '<li><b>Nog op het depot</b> \u2014 dan geldt die beperking niet, maar moet je de TL ' +
