@@ -333,7 +333,7 @@ Wat per tool verschilt staat in een eigen lijst: `DS_WIDGET` (14 regels — het 
 |---|---|
 | `$('#visit-grid-container').dxDataGrid('instance').getDataSource()` | Stops van de geselecteerde rit. **`store().load()` gebruiken, niet `items()`** — het grid pagineert op 20 rijen. |
 | `/ModuleTourMonitor/TourMonitor/GetVisitsWithExecutionStateByTour?tourId=<id>` | Stops van élke rit, `{Data:[…],Success:true}`. Same-origin GET, enige parameter is `tourId`. Zo scant de tool meerdere ritten zonder de UI aan te raken. |
-| `/ModuleTourMonitor/TourMonitor/GetTours?filter=…&stateFilter=…&orderField=…&skip=&take=` | Volledige gefilterde rittenlijst. Valt terug op `ko.contextFor(rij).$root.tours()` (alleen de ~16 geladen ritten). |
+| `/ModuleTourMonitor/TourMonitor/GetTours?filter=…&stateFilter=…&orderField=…&skip=&take=` | Volledige gefilterde rittenlijst. Valt terug op `ko.contextFor(rij).$root.tours()` (alleen de ~16 geladen ritten). Velden per rit: `Id · InstanceId · Reference · Name · MobileGroupCode · Status · Timeliness · TimelinessMinutes · NumberOfVisits · NumberOfVisitsCompleted · PlanDistance · PlanStart/EndDatestamp` plus chauffeur- en GPS-info. **Geen depotveld** — vandaar `ROUTECODE_DEPOT`. |
 | `ko.contextFor($('table.tourlist tr.icons')).$root` | Viewmodel: `tours`, `selectTourId()`, `tourFilter`, `sortProperty`. |
 
 Elke visit heeft `PlanCoordinates` (lat/lon), `SequenceNumber`, `TourId`, `IsActivity`, tijdvenster en plan-/werkelijke aankomst- en vertrektijden. Geocoden van routestops is dus niet nodig — alleen het nieuwe adres wordt opgezocht.
@@ -382,12 +382,17 @@ Een nieuw adres — zelf getypt of uit het logboek — zet de depotkeuze altijd 
 
 **Depotfilter (v1.5.0) — automatisch verbreden.** Het hele punt: bij een nazorg hoort niet alleen het eigen depot maar ook wat eromheen ligt. Een buurdepot kan dichterbij zijn of meer voorsprong hebben, en dat zag je niet zolang de tool het depotfilter van de Ritmonitor erfde.
 
-- **De keuze valt in `scan()`, ná het geocoderen.** Daar zijn de coördinaten van de nazorg bekend, dus `autoDepots(punt, land)` kan gewoon rekenen: alle stamdepots in hetzelfde land binnen `DEPOT_STRAAL_KM` (75 km) van het adres. De keuze hangt dus aan het adres, niet aan het depot waar de rit toevallig vandaan komt — dat werkt ook in geen-order modus en bij een handmatig ingetypt adres.
+- **De keuze valt in `scan()`, ná het geocoderen.** Daar zijn de coördinaten van de nazorg bekend, dus `autoDepots(punt, land, eigenRit)` kan rekenen. Drie regels, in deze volgorde:
+  1. **Het depot van de eigen rit doet altijd mee, ongeacht afstand** (v1.9.0). `depotVanRit()` leest de routecode uit de ritnaam (`2M-NLTI-07` → `NLTI` → Tilburg) via `ROUTECODE_DEPOT`. Dat is geen schatting: die rit rijdt dit adres vandaag, dus dít is het depot dat het gebied bedient. Sommige verzorgingsgebieden reiken verder dan de straal — Maastricht ligt op 89 km van Tilburg — en dan viel juist het meest voor de hand liggende depot af.
+  2. **Alle stamdepots in hetzelfde land binnen `DEPOT_STRAAL_KM`** (75 km) van het adres.
+  3. **Ondergrens `MIN_DEPOTS`** (3): ook als er niets binnen de straal ligt. In Zeeland en Zuid-Limburg is er geen enkel depot binnen 75 km; zonder die ondergrens zocht de tool daar in één depot.
+- **Zonder eigen rit werkt alleen de afstand.** In geen-order modus of bij een zelf getypt adres is regel 1 er niet. Let op: de eigen rit die de tool *zelf* herkent op coördinaat (`EIGEN_RIT_M`) komt te laat — die wordt pas gevonden nadat de stops al opgehaald zijn, dus die stuurt de depotkeuze niet.
+- **Onbekende routecode = melding.** Kent `ROUTECODE_DEPOT` de code niet (Duitse ritten, of een nieuwe code), dan valt de keuze terug op afstand alleen en verschijnt er een `⚑`-blok onder de uitslag. Deze fout was eerder stil, en dat is precies waarom hij lang onopgemerkt bleef.
 - **België doet altijd voltallig mee.** Drie depots, en het land is te klein om er met een straal iets zinnigs uit te zeven.
 - **Duitsland werkt, maar is bijzaak.** De Duitse depots liggen zo ver uit elkaar dat de straal er meestal één of twee overlaat, en Duitse collega's bellen DS niet. Ze staan er voor de volledigheid.
 - **Nooit leeg.** Ligt alles buiten de straal, dan blijft het dichtstbijzijnde depot over — een lege lijst betekent in dit filter *alle* depots, precies verkeerd om.
 - **Waarom afstand en niet de PC4-verzorgingsgebieden.** Die gebieden bestaan (dashboard *Delivery area per depot-network*, vier indelingen: 2Man Delivery = 2M, 1Man Delivery = 1M, 1Man Installation = 1X, 2Man Installation = BI) en zijn exacter, maar ze zijn hier bewust niet gebruikt. Twee redenen. **Ze wisselen** — depots verhuizen zelden, verzorgingsgebieden regelmatig, dus een coördinaat veroudert langzamer dan een postcodetabel. En **ze zouden het verkeerde dichttimmeren**: DS lost juist vaak iets op door een ánder netwerk te sturen dan er oorspronkelijk stond, dus de vraag is niet "welk depot bedient deze postcode voor dit netwerk" maar "welke depots rijden hier in de buurt". Almere bedient bijvoorbeeld Amsterdam en Noord-Holland-noord maar rijdt de installatienetwerken niet; met een straal komt Utrecht daar vanzelf bij, met een PC4-tabel per netwerk niet.
-- **Wat de straal oplevert** (adres → gekozen depots): Landsmeer → Almere, Utrecht, Rotterdam · Breda → Tilburg, Rotterdam, Utrecht · Den Haag → Rotterdam, Utrecht, Almere · Eindhoven → Tilburg, Venlo · Zwolle → Deventer, Almere · Groningen → Groningen · Maastricht → Venlo · Antwerpen → alle drie de BE-depots.
+- **Wat het oplevert** (adres + eigen rit → gekozen depots): Landsmeer `NLAL` → Almere, Utrecht, Rotterdam · Maastricht `NLTI` → Tilburg, Venlo, Utrecht · Vlissingen `NLRO` → Rotterdam, Tilburg, Utrecht · Leeuwarden `NLGR` → Groningen, Almere, Deventer · Enschede `NLDE` → Deventer, Venlo, Groningen · Eindhoven `NLTI` → Tilburg, Venlo, Utrecht · Antwerpen → alle drie de BE-depots.
 
 **Het lijstje in het paneel is een overrule, geen invulveld.** Het toont wat de tool koos; vink je zelf iets aan, dan blijft die keuze staan tot je een ander adres invult of op "automatisch" klikt. Er wordt niets bewaard in `localStorage` — een depotkeuze van gisteren zegt niets over de nazorg van vandaag. Handmatig met niets aangevinkt betekent: geen depotfilter, alle ritten.
 
@@ -403,7 +408,24 @@ Een nieuw adres — zelf getypt of uit het logboek — zet de depotkeuze altijd 
 
 De 20 stamdepots: **NL** Almere · Deventer · Groningen · Rotterdam · Tilburg · Utrecht · Venlo (NL) — **BE** Antwerpen · Gent · Nivelles — **DE** Dusseldorf · Hamburg · Hamm · Kelsterbach · Langenhagen · Leipzig · Nurnberg · Schonefeld · Tamm · Troisdorf.
 
-**Openstaand: waar zitten de Amsterdamse ritten?** De bak `Amsterdam` is dood en er is geen bak `Overamstel`, terwijl `alleDepots` in `ds-logboek.js` wel `NLOV` (Overamstel) kent en routes als `2M-NLOV-07` bestaan. Onder welk stamdepot die ritten vallen is niet vastgesteld — vermoedelijk `Almere`. Zolang dat niet klopt is de tool blind in de regio Amsterdam.
+**`ROUTECODE_DEPOT` — routecode → stamdepot.** Afgeleid uit de data zelf op 09-09-2026: per depot `GetTours` ophalen en de codes uit de ritnamen tellen. Elk depot bleek precies één code te hebben, zonder overlap.
+
+| Depot | Code | Ritten die dag |
+|---|---|---|
+| Rotterdam | `NLRO` | 36 |
+| Tilburg | `NLTI` | 28 |
+| Utrecht | `NLUT` | 22 |
+| Groningen | `NLGR` | 21 |
+| Antwerpen | `BEAN` | 21 |
+| Deventer | `NLDE` | 20 |
+| Gent | `BEGE` | 19 |
+| Venlo (NL) | `NLVE` | 17 |
+| Almere | `NLAL` | 15 |
+| Nivelles | `BENI` | 12 |
+
+Alleen NL en BE. De Duitse depots liggen zo ver uit elkaar dat de straal daar volstaat; hun codes vallen onder de melding "onbekende routecode". Hetzelfde probe-recept vult ze aan als dat ooit nodig is.
+
+**Daarmee is de oude vraag "waar zitten de Amsterdamse ritten?" beantwoord:** `NLOV` komt in géén enkel depot voor. Overamstel bestaat alleen nog als fietshub, net als `NLEI`, `NLDH`, `BEZA` en `BEWI` — en BK-ritten doen in deze tool niet mee. `parseToTourAlias()` in `ds-logboek.js` zet `NLOV` voor niet-fietsnetwerken al om naar `NLAL`, en de regio Amsterdam en Noord-Holland wordt inderdaad door **Almere** gereden. Het gat bestond nooit.
 
 **Voorselectie — welke ritten de router in gaan (v1.8.0).** Elke kandidaat kost één `matrix()`-aanroep, en bij een gratis ORS-sleutel is dat de schaarse bron: `MAX_ROUTE_RITTEN` van 6 naar 10 zetten betekent een derde minder berekeningen per dag. Beter kiezen loont dus meer dan meer doorrekenen.
 
@@ -413,6 +435,8 @@ De shortlist bestaat nu uit twee bakken:
 
 1. De **`ALTIJD_DICHTSTBIJ`** (3) dichtstbijzijnde ritten, onvoorwaardelijk. Een rit die praktisch om de hoek rijdt mag nooit sneuvelen op een schatting.
 2. De resterende plaatsen gaan naar de laagste **`schatUitloop()`** = `afstand × KM_NAAR_MIN + servicetijd − voorsprong`. `KM_NAAR_MIN` is 3: heen en terug is ruwweg tweemaal de hemelsbrede afstand, bij zo'n 40 km/u komt dat op drie minuten per kilometer.
+
+**Openstaand — de schatting kan weg.** Op 09-09-2026 bleek dat `GetTours` per rit al `TimelinessMinutes` (voorsprong in minuten, negatief = te vroeg), `Status` (`OnTour` / nog op het depot) en `NumberOfVisitsCompleted` teruggeeft. De voorsprong van **alle** ritten is dus bekend vóór er één `GetVisits`-call gedaan is, terwijl `schatUitloop()` hem nu benadert en `verwerkStops()` hem pas achteraf exact berekent. Daarmee kan de voorselectie op de echte voorsprong sorteren in plaats van op een aanname, en zou zelfs het ophalen van stops gerichter kunnen. Nog niet gedaan; controleer eerst het teken van `TimelinessMinutes` bij een rit die te láát is.
 
 Die schatting is grof en bedoeld om te *kiezen*, niet om iets te beweren — `maakGaps()` rekent daarna met echte rijtijden, en een kandidaat die tegenvalt zakt vanzelf in de ranglijst. Ze onderschat de omweg systematisch wanneer de dichtstbijzijnde stop niet naast een bruikbaar gat ligt; dat is de prijs van schatten op één getal dat je gratis hebt.
 

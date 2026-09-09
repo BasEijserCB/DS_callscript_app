@@ -64,7 +64,7 @@
 (function () {
   'use strict';
 
-  var RIJTIJD_VERSION = 'v1.8.0';
+  var RIJTIJD_VERSION = 'v1.9.0';
 
   var PANEL_ID = 'extra-rijtijd-panel';
   var PIL_ID = 'extra-rijtijd-pil';
@@ -381,6 +381,23 @@
   // km pakt een adres in de Randstad er drie tot vijf, terwijl Groningen en
   // Venlo alleen blijven staan — die liggen nu eenmaal ver van de rest.
   var DEPOT_STRAAL_KM = 75;
+  var MIN_DEPOTS = 3;          // ondergrens, ook als er niets binnen de straal ligt
+
+  // Routecode in de ritnaam → stamdepot. Afgeleid uit de data zelf op
+  // 09-09-2026 (`probe-depotfilter.js`-aanpak: per depot GetTours ophalen en
+  // de codes uit de ritnamen tellen); elk depot bleek precies één code te
+  // hebben, zonder overlap. Alleen NL en BE — de Duitse depots liggen zo ver
+  // uit elkaar dat de straal daar volstaat, en een onbekende code valt netjes
+  // terug op de afstand mét een melding onder de uitslag.
+  //
+  // NLOV, NLEI, NLDH, BEZA en BEWI staan er bewust niet in: dat zijn
+  // fietshubcodes, en BK-ritten doen in deze tool niet mee. `parseToTourAlias()`
+  // in ds-logboek.js zet NLOV voor niet-fietsnetwerken al om naar NLAL.
+  var ROUTECODE_DEPOT = {
+    NLAL: 'Almere',    NLDE: 'Deventer', NLGR: 'Groningen', NLRO: 'Rotterdam',
+    NLTI: 'Tilburg',   NLUT: 'Utrecht',  NLVE: 'Venlo (NL)',
+    BEAN: 'Antwerpen', BEGE: 'Gent',     BENI: 'Nivelles'
+  };
 
   // Het land van de nazorg. De ritcode is exact ('2M-NLTI-07' → NL); staat die
   // er niet, dan de postcode in het adresveld, met dezelfde regel als het
@@ -778,7 +795,10 @@
       // nazorg bekend. Een handmatige keuze in het paneel gaat voor.
       var gekozenDepots = (depots && depots.length)
         ? depots
-        : autoDepots(nieuw, landVanNazorg(adres, eigenRit));
+        : autoDepots(nieuw, landVanNazorg(adres, eigenRit), eigenRit);
+      // Kent de tabel de routecode niet, dan is er puur op afstand gezocht en
+      // kan het depot van de klant gemist zijn. Dat hoort niet stil te blijven.
+      var codeOnbekend = (eigenRit && !depotVanRit(eigenRit)) ? String(eigenRit).trim() : '';
       if (!depotHandmatig) { depotKeuze = gekozenDepots.slice(); tekenDepots(); }
       // Eerst de Ritmonitor gelijkzetten, dan pas ophalen. Even wachten tot
       // zijn eigen loadTours klaar is, anders klikt de gebruiker straks op een
@@ -792,7 +812,8 @@
 
         // Eerst schiften, dan pas stops ophalen — scheelt tientallen requests.
         var eigenKern = ritKern(eigenRit);
-        overslag = { eigen: 0, netwerk: 0, netwerken: netwerken, eigenRit: eigenKern, geo: nieuw, orsLoos: !ORS_KEY };
+        overslag = { eigen: 0, netwerk: 0, netwerken: netwerken, eigenRit: eigenKern,
+                     geo: nieuw, orsLoos: !ORS_KEY, codeOnbekend: codeOnbekend };
         var tours = alleTours.filter(function (t) {
           if (eigenKern && ritKern(t.naam) === eigenKern) { overslag.eigen++; return false; }
           var nw = netwerkVan(t.naam);
@@ -1049,6 +1070,12 @@
           uitleg.push('alleen ' + overslag.netwerken.join(', '));
         }
         if (uitleg.length) html += '<div class="er-status">' + uitleg.join(' \u00b7 ') + '</div>';
+        if (overslag.codeOnbekend) {
+          html += '<div class="park-melding er-depot">\u2691 Routecode van ' +
+                  esc(overslag.codeOnbekend) + ' staat niet in de depottabel \u2014 ' +
+                  'er is alleen op afstand tot het adres gezocht. Ligt het eigen depot ' +
+                  'verder weg, vink het er dan zelf bij.</div>';
+        }
         if (overslag.orsLoos) {
           html += '<div class="park-melding er-depot">\u2691 Nog geen OpenRouteService-sleutel \u2014 ' +
                   'rijtijden komen van de OSRM-demoserver, die daar niet voor bedoeld is. ' +
@@ -1124,20 +1151,48 @@
   //
   // België doet altijd voltallig mee: drie depots, en het land is te klein om
   // er met een straal iets zinnigs uit te zeven.
-  function autoDepots(punt, land) {
-    if (!land || !punt || !depotLijst.length) return [];
+  // Welk depot rijdt deze rit? `2M-NLTI-07` → Tilburg. Leeg bij een onbekende
+  // code — dan valt de keuze terug op afstand alleen.
+  function depotVanRit(naam) {
+    var m = /^[0-9A-Z]{2}-([A-Z]{4})-/i.exec(String(naam || '').trim());
+    return m ? (ROUTECODE_DEPOT[m[1].toUpperCase()] || '') : '';
+  }
+
+  function autoDepots(punt, land, eigenRit) {
+    if (!depotLijst.length) return [];
+    var ids = [];
+    function voegToe(id) { if (id && ids.indexOf(id) === -1) ids.push(id); }
+
+    // 1. Het depot van de eigen rit doet altijd mee, hoe ver het ook ligt.
+    //    Dat is geen schatting: die rit rijdt dit adres vandaag, dus dit ís het
+    //    depot dat het gebied bedient. Sommige verzorgingsgebieden reiken
+    //    verder dan DEPOT_STRAAL_KM, en dan viel juist het meest voor de hand
+    //    liggende depot af.
+    var eigenDepot = depotVanRit(eigenRit);
+    if (eigenDepot) {
+      depotLijst.forEach(function (d) { if (d.naam === eigenDepot) voegToe(d.id); });
+    }
+
+    // 2. Daarna op afstand, binnen hetzelfde land. Zonder land geen straal:
+    //    dan weten we niet eens in welk land we mogen zoeken.
+    if (!land || !punt) return ids;
     var mee = depotLijst.filter(function (d) {
       return (DEPOTS[d.naam] || {}).land === land;
     }).map(function (d) {
       var c = DEPOTS[d.naam];
       return { id: d.id, km: afstandKm(punt, { lat: c.lat, lon: c.lon }) };
     }).sort(function (a, b) { return a.km - b.km; });
-    if (!mee.length) return [];
-    if (land === 'BE') return mee.map(function (d) { return d.id; });
-    var binnen = mee.filter(function (d) { return d.km <= DEPOT_STRAAL_KM; });
-    // Nooit leeg: ligt alles buiten de straal, dan blijft het dichtstbijzijnde
-    // depot over. Een lege lijst zou 'alle depots' betekenen, precies verkeerd.
-    return (binnen.length ? binnen : mee.slice(0, 1)).map(function (d) { return d.id; });
+
+    // België voltallig: drie depots, te klein land om uit te zeven.
+    if (land === 'BE') { mee.forEach(function (d) { voegToe(d.id); }); return ids; }
+
+    // Binnen de straal, en anders toch de MIN_DEPOTS dichtstbijzijnde. In
+    // Zeeland en Zuid-Limburg ligt er geen enkel depot binnen 75 km; zonder
+    // die ondergrens zocht de tool daar in één depot.
+    mee.forEach(function (d, i) {
+      if (d.km <= DEPOT_STRAAL_KM || i < MIN_DEPOTS) voegToe(d.id);
+    });
+    return ids;
   }
 
   // Stamdepots die voor deze nazorg in aanmerking komen: die in hetzelfde
