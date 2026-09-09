@@ -64,7 +64,7 @@
 (function () {
   'use strict';
 
-  var RIJTIJD_VERSION = 'v1.10.2';
+  var RIJTIJD_VERSION = 'v1.11.0';
 
   var PANEL_ID = 'extra-rijtijd-panel';
   var PIL_ID = 'extra-rijtijd-pil';
@@ -542,32 +542,55 @@
   // Best effort: lukt het niet, dan is er niets stuk — de zoektocht draait op
   // het eigen request en die is hoe dan ook volledig.
   function zetRitmonitorFilter(depots) {
+    var wil = (depots || []).map(String);
+
+    // De TagBox eerst, niet de observable. Dat is de enige route die met
+    // probe-depotfilter.js echt bewezen is: waarde zetten plus #filter-submit
+    // laat de hele keten onFilter → loadTours → GetTours lopen, mét de depots
+    // in de URL. Of tourFilter.staticFilter.depots een observable is, is nooit
+    // vastgesteld — dat was een aanname.
+    var box = depotBox();
+    var gezet = false;
+    if (box) {
+      try { box.option('value', wil); gezet = true; } catch (e) {}
+    }
+
+    // Vangnet, en meteen de plek om de overige versmallers leeg te zetten.
+    // Let op: elk veld apart beoordelen. Tot v1.11.0 stond hier één gedeelde
+    // vlag over alle velden, waardoor een geslaagde stateFilter-set het
+    // depot-vangnet oversloeg en er op Filteren werd gedrukt met de óude
+    // depots er nog in.
     var root = koRoot();
     var f = root && root.tourFilter;
-    if (!f || !window.ko) return false;
-    var gezet = false;
-    function zet(obj, sleutel, waarde) {
-      try {
-        var v = obj && obj[sleutel];
-        if (window.ko.isObservable(v)) { v(waarde); gezet = true; }
-      } catch (e) {}
+    if (f && window.ko) {
+      var zet = function (obj, sleutel, waarde) {
+        try {
+          var v = obj && obj[sleutel];
+          if (window.ko.isObservable(v)) { v(waarde); return true; }
+        } catch (e) {}
+        return false;
+      };
+      if (!gezet) gezet = zet(f.staticFilter, 'depots', wil);
+      zet(f.staticFilter, 'shippers', []);
+      zet(f.staticFilter, 'tags', []);
+      zet(f.staticFilter, 'searchTags', []);
+      zet(f.staticFilter, 'depotBeginsWith', '');
+      zet(f.stateFilter, 'finishedTours', 'show');
+      zet(f.stateFilter, 'inactiveTours', 'show');
+      zet(f.stateFilter, 'tourProblems', 'allTours');
+      zet(f.stateFilter, 'timeliness', 'allTours');
     }
-    zet(f.staticFilter, 'depots', (depots || []).map(String));
-    zet(f.staticFilter, 'shippers', []);
-    zet(f.staticFilter, 'tags', []);
-    zet(f.staticFilter, 'searchTags', []);
-    zet(f.staticFilter, 'depotBeginsWith', '');
-    zet(f.stateFilter, 'finishedTours', 'show');
-    zet(f.stateFilter, 'inactiveTours', 'show');
-    zet(f.stateFilter, 'tourProblems', 'allTours');
-    zet(f.stateFilter, 'timeliness', 'allTours');
-    // Zijn het geen observables, dan de TagBox rechtstreeks. Die is aan
-    // dezelfde waarde gebonden, dus het filterpaneel loopt daarna gelijk.
-    if (!gezet) {
-      var box = depotBox();
-      if (!box) return false;
-      try { box.option('value', (depots || []).map(String)); } catch (e) { return false; }
+    if (!gezet) return false;
+
+    // Terugleescontrole. Staat er niet wat we wilden, dan heeft klikken geen
+    // zin: dan filtert de Ritmonitor op zijn oude keuze en verandert er alleen
+    // iets op het scherm van de gebruiker.
+    if (box) {
+      var nu = (box.option('value') || []).map(String);
+      var gelijk = nu.length === wil.length && wil.every(function (id) { return nu.indexOf(id) !== -1; });
+      if (!gelijk) return false;
     }
+
     var knop = document.getElementById('filter-submit');
     if (!knop) return false;
     knop.click();   // laat DireXtion zijn eigen onFilter → loadTours draaien
@@ -841,7 +864,7 @@
         var eigenKern = ritKern(eigenRit);
         overslag = { eigen: 0, netwerk: 0, klaar: 0, gekapt: 0, netwerken: netwerken,
                      eigenRit: eigenKern, geo: nieuw, orsLoos: !ORS_KEY,
-                     codeOnbekend: codeOnbekend };
+                     codeOnbekend: codeOnbekend, uiLos: !uiGezet };
         var tours = alleTours.filter(function (t) {
           if (eigenKern && ritKern(t.naam) === eigenKern) { overslag.eigen++; return false; }
           var nw = netwerkVan(t.naam);
@@ -1118,6 +1141,11 @@
           uitleg.push('alleen ' + overslag.netwerken.join(', '));
         }
         if (uitleg.length) html += '<div class="er-status">' + uitleg.join(' \u00b7 ') + '</div>';
+        if (overslag.uiLos) {
+          html += '<div class="park-melding er-depot">\u2691 Het filter in de Ritmonitor kon ' +
+                  'niet gelijkgezet worden. De uitslag hieronder klopt, maar een rit uit een ' +
+                  'depot dat je scherm niet toont is mogelijk niet aan te klikken.</div>';
+        }
         if (overslag.codeOnbekend) {
           html += '<div class="park-melding er-depot">\u2691 Routecode van ' +
                   esc(overslag.codeOnbekend) + ' staat niet in de depottabel \u2014 ' +
