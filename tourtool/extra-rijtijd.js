@@ -64,7 +64,7 @@
 (function () {
   'use strict';
 
-  var RIJTIJD_VERSION = 'v1.16.0';
+  var RIJTIJD_VERSION = 'v1.16.1';
 
   var PANEL_ID = 'extra-rijtijd-panel';
   var PIL_ID = 'extra-rijtijd-pil';
@@ -375,21 +375,7 @@
     return hit ? hit.inst : null;
   }
 
-  // De stamdepots: id, land en ligging. Dit is de bron voor de depotkeuze.
-  //
-  // Tot v1.16.0 werden id en naam uit de dxTagBox 'Depots' van de Ritmonitor
-  // gelezen, om geen lijst te hoeven onderhouden. Die TagBox bleek in de
-  // praktijk niet betrouwbaar te vinden — drie verschillende DOM-aannames
-  // faalden achter elkaar — en dan viel de hele depotfiltering stil weg. Tien
-  // ids in een tabel die toch al land, coördinaten en routecode bijhoudt is
-  // die kwetsbaarheid niet waard. De TagBox is nu alleen nog nodig om het
-  // filter in de Ritmonitor mee te zetten, en dat is bijzaak: mislukt dat, dan
-  // klopt de uitslag nog steeds.
-  //
-  // Komt er een depot bij, dan hoort het hier. De ids zijn op te halen met het
-  // recept in probe-depotfilter.js (`__opties(<i>)` op het depotveld).
-  //
-  // Het land houdt de keuze binnen de grens —
+  // Land, ligging én id per stamdepot. Dit is de bron voor de depotkeuze. Het land houdt de keuze binnen de grens —
   // nazorg gaat nooit naar een depot in een ander land. De coördinaten zijn
   // er om automatisch te bepalen welke depots dicht genoeg bij de nazorg
   // liggen; het zijn stadscoördinaten, niet de exacte depotadressen, dus reken
@@ -401,16 +387,16 @@
   // waar hij ligt.
   var DEPOTS = {
     'Almere':      { id: '2021191', land: 'NL', lat: 52.370, lon: 5.220 },
-    'Deventer':    { id: '696250',  land: 'NL', lat: 52.250, lon: 6.160 },
-    'Groningen':   { id: '4885',    land: 'NL', lat: 53.220, lon: 6.570 },
-    'Rotterdam':   { id: '1721',    land: 'NL', lat: 51.920, lon: 4.480 },
-    'Tilburg':     { id: '13',      land: 'NL', lat: 51.560, lon: 5.090 },
-    'Utrecht':     { id: '14',      land: 'NL', lat: 52.090, lon: 5.110 },
-    'Venlo (NL)':  { id: '421593',  land: 'NL', lat: 51.370, lon: 6.170 },
-    'Antwerpen':   { id: '18808',   land: 'BE', lat: 51.220, lon: 4.400 },
-    'Gent':        { id: '35210',   land: 'BE', lat: 51.050, lon: 3.720 },
-    'Nivelles':    { id: '696230',  land: 'BE', lat: 50.600, lon: 4.330 },
-    'Dusseldorf':  { id: '558485',  land: 'DE', lat: 51.230, lon: 6.780 },
+    'Deventer':    { id: '696250', land: 'NL', lat: 52.250, lon: 6.160 },
+    'Groningen':   { id: '4885', land: 'NL', lat: 53.220, lon: 6.570 },
+    'Rotterdam':   { id: '1721', land: 'NL', lat: 51.920, lon: 4.480 },
+    'Tilburg':     { id: '13', land: 'NL', lat: 51.560, lon: 5.090 },
+    'Utrecht':     { id: '14', land: 'NL', lat: 52.090, lon: 5.110 },
+    'Venlo (NL)':  { id: '421593', land: 'NL', lat: 51.370, lon: 6.170 },
+    'Antwerpen':   { id: '18808', land: 'BE', lat: 51.220, lon: 4.400 },
+    'Gent':        { id: '35210', land: 'BE', lat: 51.050, lon: 3.720 },
+    'Nivelles':    { id: '696230', land: 'BE', lat: 50.600, lon: 4.330 },
+    'Dusseldorf':  { id: '558485', land: 'DE', lat: 51.230, lon: 6.780 },
     'Hamburg':     { id: '1858536', land: 'DE', lat: 53.550, lon: 10.000 },
     'Hamm':        { id: '1578843', land: 'DE', lat: 51.680, lon: 7.820 },
     'Kelsterbach': { id: '1301373', land: 'DE', lat: 50.070, lon: 8.530 },
@@ -419,7 +405,7 @@
     'Nurnberg':    { id: '2249404', land: 'DE', lat: 49.450, lon: 11.080 },
     'Schonefeld':  { id: '2106913', land: 'DE', lat: 52.390, lon: 13.520 },
     'Tamm':        { id: '2009534', land: 'DE', lat: 48.920, lon: 9.110 },
-    'Troisdorf':   { id: '2478920', land: 'DE', lat: 51.230, lon: 7.150 }
+    'Troisdorf':   { id: '2478920', land: 'DE', lat: 50.820, lon: 7.150 }
   };
 
   // Hoe ver een depot van de nazorg mag liggen om vanzelf mee te doen. Bij 75
@@ -481,13 +467,987 @@
   }
 
   // [{id, naam}] uit DEPOTS, alleen de ondersteunde landen, op naam gesorteerd.
-  // Geen DOM, geen dataSource, geen timing — dit werkt ook als het filterpaneel
-  // dicht staat of DireXtion zijn opbouw verandert.
+  //
+  // Tot v1.16.0 kwam deze lijst uit de dataSource van de dxTagBox 'Depots'.
+  // Die bleek niet betrouwbaar te vinden — drie DOM-aannames faalden achter
+  // elkaar — en dan viel de hele depotfiltering stil weg. Tien ids in een
+  // tabel die toch al land, coördinaten en routecode bijhoudt is die
+  // kwetsbaarheid niet waard. Geen DOM, geen dataSource, geen timing: dit
+  // werkt ook met een dichtgeklapt filterpaneel.
   function depotOpties() {
     return Object.keys(DEPOTS).filter(function (naam) {
       return landOndersteund(DEPOTS[naam].land);
     }).sort(function (a, b) { return a.localeCompare(b); })
       .map(function (naam) { return { id: DEPOTS[naam].id, naam: naam }; });
+  }
+
+
+  // ── rittenlijst ──────────────────────────────────────────────
+  // Voorsprong uit de rittenlijst zelf, in minuten, positief = vóór op schema.
+  // Het teken van TimelinessMinutes is niet gedocumenteerd — bij een rit met
+  // label 'TooEarly' zagen we -43 — dus we leiden het af uit het label en niet
+  // uit het teken. Zonder label vallen we terug op die waarneming.
+  function voorsprongUitLijst(t) {
+    var m = uw(t.TimelinessMinutes); if (m == null) m = uw(t.timelinessMinutes);
+    if (typeof m !== 'number') return null;
+    var label = String(uw(t.Timeliness) || uw(t.timeliness) || '');
+    if (/late/i.test(label)) return -Math.abs(m);
+    if (/early/i.test(label)) return Math.abs(m);
+    return -m;
+  }
+  function getal(t, a, b) {
+    var v = uw(t[a]); if (v == null) v = uw(t[b]);
+    return typeof v === 'number' ? v : null;
+  }
+
+  function normTour(t) {
+    var id = uw(t.id); if (id == null) id = uw(t.TourId); if (id == null) id = uw(t.Id);
+    if (id == null) return null;
+    var naam = uw(t.name) || uw(t.Name) || uw(t.Alias) || '';
+    var ref = uw(t.referenceId) || uw(t.ReferenceId) || '';
+    // stops/gedaan tellen ook activiteiten mee, dus ze zijn niet gelijk aan wat
+    // verwerkStops() straks overhoudt. Ze worden alleen gebruikt om ritten over
+    // te slaan die sowieso geen gat kunnen hebben — die kant op is het veilig.
+    // start bepaalt de configuratie (zie ruimteVan), duur is het geplande
+    // aantal minuten van de rit.
+    var start = msUit(uw(t.PlanStartDatestamp) || uw(t.planStartDatestamp));
+    var eind = msUit(uw(t.PlanEndDatestamp) || uw(t.planEndDatestamp));
+    return {
+      id: id, naam: String(naam || ref || id), ref: String(ref || ''),
+      stops: getal(t, 'NumberOfVisits', 'numberOfVisits'),
+      gedaan: getal(t, 'NumberOfVisitsCompleted', 'numberOfVisitsCompleted'),
+      voorsprong: voorsprongUitLijst(t),
+      land: String(uw(t.MobileGroupCode) || uw(t.mobileGroupCode) || '').toUpperCase(),
+      start: start,
+      duur: (start !== null && eind !== null) ? Math.round((eind - start) / 60000) : null
+    };
+  }
+
+  function uitObservable(root) {
+    var lijst = [];
+    try {
+      (uw(root && root.tours) || []).forEach(function (t) {
+        var n = normTour(t); if (n) lijst.push(n);
+      });
+    } catch (e) {}
+    return lijst;
+  }
+
+  // Probeert de volledige gefilterde set op te halen; valt terug op de
+  // ritten die het viewmodel al geladen heeft (de zichtbare ~16).
+  // depots: ids waarop gefilterd wordt. Leeg = geen depotfilter, dus alle
+  // ritten van de dag. De rest van het filter blijft zoals de gebruiker het
+  // in de Ritmonitor heeft staan — we sturen alleen een eigen `depots` mee in
+  // onze eigen request. Het scherm van de gebruiker verandert daar niet van:
+  // we raken de TagBox niet aan en drukken niet op Filteren.
+  function haalTours(depots) {
+    var root = koRoot();
+    var fallback = uitObservable(root);
+    var f = root && root.tourFilter;
+    if (!f || !window.ko) return Promise.resolve(fallback);
+    var url;
+    try {
+      // Alles wat ritten kan wegfilteren gaat op nul. Een verlader- of
+      // uitvoerderfilter dat nog van een eerdere zoektocht in de Ritmonitor
+      // stond, mag de beste rit niet stil buiten beeld houden. `date` blijft
+      // staan — dat is geen versmalling maar de dag zelf.
+      var filter = window.ko.toJS(f.staticFilter);
+      filter.depots = (depots || []).map(String);
+      filter.shippers = [];
+      filter.tags = [];
+      filter.searchTags = [];
+      filter.depotBeginsWith = '';
+      var stat = JSON.stringify(filter);
+      var state = window.ko.toJS(f.stateFilter);
+      state.finishedTours = 'show';
+      state.inactiveTours = 'show';
+      state.tourProblems = 'allTours';
+      state.timeliness = 'allTours';
+      state = JSON.stringify(state);
+      var orde = String(uw(root.sortProperty) || 'referenceId');
+      // Zonder depotfilter zijn het er een paar honderd; 300 was te krap.
+      url = TOURS_URL + '?filter=' + encodeURIComponent(stat) +
+            '&stateFilter=' + encodeURIComponent(state) +
+            '&orderField=' + encodeURIComponent(orde) + '&skip=0&take=1000';
+    } catch (e) { return Promise.resolve(fallback); }
+    return fetch(url, { credentials: 'same-origin' })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (j) {
+        if (!j || !j.Data || !j.Data.length) return fallback;
+        var lijst = j.Data.map(normTour).filter(Boolean);
+        return lijst.length ? lijst : fallback;
+      })
+      .catch(function () { return fallback; });
+  }
+
+  // Dezelfde keuze in de Ritmonitor zelf zetten en op Filteren drukken.
+  //
+  // Voor het zoeken is dit niet nodig — haalTours() doet zijn eigen request en
+  // maakt daarin dezelfde filters leeg. Het gaat om wat er ná de uitslag
+  // gebeurt: klikken op een regel roept `selectTourId()` aan, en een rit die
+  // niet in de rittenlijst staat is niet te selecteren. Zoeken in Rotterdam
+  // terwijl het scherm op Tilburg filtert levert dus een uitslag op waar je
+  // niet doorheen kunt klikken. Door de UI mee te zetten kijken tool en
+  // gebruiker naar hetzelfde.
+  //
+  // Best effort: lukt het niet, dan is er niets stuk — de zoektocht draait op
+  // het eigen request en die is hoe dan ook volledig.
+  function zetRitmonitorFilter(depots) {
+    var wil = (depots || []).map(String);
+
+    // De TagBox eerst, niet de observable. Dat is de enige route die met
+    // probe-depotfilter.js echt bewezen is: waarde zetten plus #filter-submit
+    // laat de hele keten onFilter → loadTours → GetTours lopen, mét de depots
+    // in de URL. Of tourFilter.staticFilter.depots een observable is, is nooit
+    // vastgesteld — dat was een aanname.
+    var box = depotBox();
+    var gezet = false;
+    if (box) {
+      try { box.option('value', wil); gezet = true; } catch (e) {}
+    }
+
+    // Vangnet, en meteen de plek om de overige versmallers leeg te zetten.
+    // Let op: elk veld apart beoordelen. Tot v1.11.0 stond hier één gedeelde
+    // vlag over alle velden, waardoor een geslaagde stateFilter-set het
+    // depot-vangnet oversloeg en er op Filteren werd gedrukt met de óude
+    // depots er nog in.
+    var root = koRoot();
+    var f = root && root.tourFilter;
+    if (f && window.ko) {
+      var zet = function (obj, sleutel, waarde) {
+        try {
+          var v = obj && obj[sleutel];
+          if (window.ko.isObservable(v)) { v(waarde); return true; }
+        } catch (e) {}
+        return false;
+      };
+      if (!gezet) gezet = zet(f.staticFilter, 'depots', wil);
+      zet(f.staticFilter, 'shippers', []);
+      zet(f.staticFilter, 'tags', []);
+      zet(f.staticFilter, 'searchTags', []);
+      zet(f.staticFilter, 'depotBeginsWith', '');
+      zet(f.stateFilter, 'finishedTours', 'show');
+      zet(f.stateFilter, 'inactiveTours', 'show');
+      zet(f.stateFilter, 'tourProblems', 'allTours');
+      zet(f.stateFilter, 'timeliness', 'allTours');
+    }
+    if (!gezet) return false;
+
+    // Terugleescontrole. Staat er niet wat we wilden, dan heeft klikken geen
+    // zin: dan filtert de Ritmonitor op zijn oude keuze en verandert er alleen
+    // iets op het scherm van de gebruiker.
+    if (box) {
+      var nu = (box.option('value') || []).map(String);
+      var gelijk = nu.length === wil.length && wil.every(function (id) { return nu.indexOf(id) !== -1; });
+      if (!gelijk) return false;
+    }
+
+    var knop = document.getElementById('filter-submit');
+    if (!knop) return false;
+    knop.click();   // laat DireXtion zijn eigen onFilter → loadTours draaien
+    return true;
+  }
+
+  function even(ms) {
+    return new Promise(function (klaar) { setTimeout(klaar, ms); });
+  }
+
+  // ── stops per rit ────────────────────────────────────────────
+  function haalVisits(tourId) {
+    return fetch(VISITS_URL + tourId, { credentials: 'same-origin' })
+      .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+      .then(function (j) { if (!j || !j.Success || !j.Data) throw new Error('geen data'); return j.Data; });
+  }
+
+  // "/Date(1788243209062)/" → ms, of null bij leeg/sentinel (DateTime.MinValue)
+  function msUit(d) {
+    if (!d) return null;
+    var m = /\/Date\((-?\d+)/.exec(String(d));
+    var ms = m ? parseInt(m[1], 10) : Date.parse(d);
+    if (isNaN(ms) || ms < 946684800000) return null;
+    return ms;
+  }
+  // Bezocht = er staat een echte aankomsttijd; precies de regels met ↑/↓.
+  function isBezocht(v) { return msUit(v.RealArrivalDatestamp) !== null; }
+
+  // Voorsprong in minuten: gepland min werkelijk op de huidige positie.
+  // Positief = vóór op schema, negatief = achter. Valt terug op de
+  // prognose van de eerstvolgende stop als de huidige geen echte tijd heeft.
+  function voorsprongMin(stops, vanaf) {
+    var s = stops[vanaf];
+    if (s) {
+      var p = msUit(s.PlanArrivalDatestamp), r = msUit(s.RealArrivalDatestamp);
+      if (p !== null && r !== null) return Math.round((p - r) / 60000);
+    }
+    for (var i = vanaf + 1; i < stops.length; i++) {
+      var pp = msUit(stops[i].PlanArrivalDatestamp), pg = msUit(stops[i].ArrivalPrognosis);
+      if (pp !== null && pg !== null) return Math.round((pp - pg) / 60000);
+    }
+    return 0;
+  }
+
+  function verwerkStops(visits) {
+    var stops = (visits || []).filter(function (v) {
+      return !v.IsActivity && v.PlanCoordinates &&
+             typeof v.PlanCoordinates.Latitude === 'number' &&
+             typeof v.PlanCoordinates.Longitude === 'number';
+    });
+    if (stops.length < 2) return null;
+    stops.sort(function (a, b) { return a.SequenceNumber - b.SequenceNumber; });
+    var huidig = -1;
+    for (var i = 0; i < stops.length; i++) if (isBezocht(stops[i])) huidig = i;
+    var vanaf = Math.max(huidig, 0);
+    if (vanaf >= stops.length - 1) return null;      // rit zo goed als klaar
+    // Onderweg = er is al ergens echt aangekomen. Staat de rit nog op het
+    // depot, dan speelt het sync-probleem niet en mag ook het eerste gat.
+    return {
+      stops: stops, vanaf: vanaf, onderweg: huidig >= 0,
+      voorsprong: voorsprongMin(stops, vanaf)
+    };
+  }
+
+  // ── externe calls ────────────────────────────────────────────
+  // Zo weinig mogelijk over onszelf meesturen. referrerPolicy houdt
+  // 'coolblue.dirextion.nl' uit de logs van PDOK/OSRM, credentials:'omit'
+  // zorgt dat er nooit een cookie meegaat.
+  // Let op: de Origin-header gaat wél mee — die hoort bij CORS en is vanuit
+  // de browser niet uit te zetten zonder het antwoord onleesbaar te maken.
+  // Volledig anoniem kan alleen via een eigen proxy of eigen OSRM.
+  function externFetch(url) {
+    return fetch(url, { referrerPolicy: 'no-referrer', credentials: 'omit', mode: 'cors' });
+  }
+
+  // Nominatim is de uitzondering: hun gebruiksvoorwaarden vragen dat je je
+  // identificeert. Een User-Agent kun je vanuit de browser niet zetten, dus
+  // dat gaat via de Referer — hier dus bewust GEEN no-referrer. Cookies gaan
+  // nog steeds niet mee, en het blijft bij één verzoek per Bereken, ruim
+  // binnen hun limiet van één per seconde.
+  function nominatimFetch(url) {
+    return fetch(url, { credentials: 'omit', mode: 'cors' });
+  }
+
+  // ── geo ──────────────────────────────────────────────────────
+  // De hele berekening hangt aan dit ene punt: zit het adres 200 m verkeerd,
+  // dan klopt elke omweg in de lijst niet. Daarom eerst PDOK — de officiële
+  // BAG-bron, exact op huisnummerniveau, maar alleen Nederland. Levert die
+  // niets op (BE/DE, of een adres dat de BAG niet kent), dan Nominatim.
+  function geocodePdok(adres) {
+    var url = PDOK + '?q=' + encodeURIComponent(adres) + '&rows=1&fq=type:adres';
+    return externFetch(url).then(function (r) {
+      if (!r.ok) throw new Error('PDOK gaf ' + r.status);
+      return r.json();
+    }).then(function (j) {
+      var d = j && j.response && j.response.docs && j.response.docs[0];
+      if (!d || !d.centroide_ll) return null;
+      var m = /POINT\(\s*([-\d.]+)\s+([-\d.]+)\s*\)/.exec(d.centroide_ll);   // POINT(lon lat)
+      if (!m) return null;
+      return { lat: parseFloat(m[2]), lon: parseFloat(m[1]), bron: 'PDOK', label: d.weergavenaam || '' };
+    });
+  }
+
+  function geocodeNominatim(adres) {
+    var url = NOMINATIM + '?format=json&limit=1&countrycodes=nl,be,de&q=' + encodeURIComponent(adres);
+    return nominatimFetch(url).then(function (r) {
+      if (!r.ok) throw new Error('Geocoder gaf ' + r.status);
+      return r.json();
+    }).then(function (j) {
+      if (!j || !j.length) throw new Error('Adres niet gevonden: ' + adres);
+      return {
+        lat: parseFloat(j[0].lat), lon: parseFloat(j[0].lon),
+        bron: 'Nominatim', label: j[0].display_name || ''
+      };
+    });
+  }
+
+  function geocode(adres) {
+    return geocodePdok(adres)
+      .catch(function () { return null; })
+      .then(function (p) { return p || geocodeNominatim(adres); });
+  }
+
+  function afstandKm(a, b) {
+    var R = 6371, r = Math.PI / 180;
+    var dLat = (b.lat - a.lat) * r, dLon = (b.lon - a.lon) * r;
+    var h = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(a.lat * r) * Math.cos(b.lat * r) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    return 2 * R * Math.asin(Math.sqrt(h));
+  }
+
+  // Allebei leveren dezelfde vorm op: durations[i][j] in seconden.
+  function matrix(punten) {
+    return ORS_KEY ? matrixOrs(punten) : matrixOsrm(punten);
+  }
+
+  function matrixOrs(punten) {
+    return fetch(ORS, {
+      method: 'POST',
+      headers: { 'Authorization': ORS_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        locations: punten.map(function (p) { return [p.lon, p.lat]; }),   // [lon, lat]
+        metrics: ['duration']
+      }),
+      referrerPolicy: 'no-referrer',
+      credentials: 'omit'
+    }).then(function (r) {
+      if (r.ok) return r.json();
+      return r.text().then(function (t) {
+        throw new Error('ORS gaf ' + r.status + (t ? ': ' + t.slice(0, 140) : ''));
+      });
+    }).then(function (j) {
+      if (!j || !j.durations) throw new Error('ORS gaf geen rijtijden terug');
+      return j.durations;
+    });
+  }
+
+  function matrixOsrm(punten) {
+    var coords = punten.map(function (p) { return p.lon + ',' + p.lat; }).join(';');
+    return externFetch(OSRM + coords + '?annotations=duration').then(function (r) {
+      if (!r.ok) throw new Error('Router gaf ' + r.status);
+      return r.json();
+    }).then(function (j) {
+      if (j.code !== 'Ok' || !j.durations) throw new Error('Geen route gevonden');
+      return j.durations;
+    });
+  }
+
+  // ── hulpje: beperkt parallel uitvoeren ───────────────────────
+  function inBatches(items, n, fn, voortgang) {
+    if (!items.length) return Promise.resolve([]);
+    return new Promise(function (resolve) {
+      var uit = [], fouten = [], i = 0, klaar = 0;
+      function volgende() {
+        if (i >= items.length) return;
+        var idx = i++;
+        Promise.resolve(fn(items[idx]))
+          .then(function (r) { uit[idx] = r; },
+                // Reden bewaren, niet weggooien. Faalt álles, dan is dit het
+                // enige wat vertelt wát er misging — een 403 van de router
+                // (dagquotum, sleutel) leest heel anders dan een CSP-blokkade.
+                function (e) { uit[idx] = null; fouten.push(e && e.message ? e.message : String(e)); })
+          .then(function () {
+            klaar++;
+            if (voortgang) voortgang(klaar, items.length);
+            if (klaar === items.length) { uit.fouten = fouten; resolve(uit); } else volgende();
+          });
+      }
+      for (var k = 0; k < Math.min(n, items.length); k++) volgende();
+    });
+  }
+
+  // ── rekenwerk ────────────────────────────────────────────────
+  function straat(v) { return (v.Address || v.City || '?').split(',')[0]; }
+
+  // Wat de rit er netto bij krijgt: benodigde tijd min de voorsprong.
+  // Voorsprong kan de omweg hooguit helemaal opvangen (niet negatief maken);
+  // achterstand (negatieve voorsprong) telt er juist bovenop.
+  function netto(totaal, voorsprong) { return Math.max(0, totaal - voorsprong); }
+
+  function maakGaps(toekomst, D, nieuwIndex, service, onderweg, voorsprong, ruimte) {
+    var gaps = [];
+    // i telt vanaf de huidige positie: i = 0 zou de nieuwe stop de
+    // eerstvolgende maken (kan niet, sync), i = 1 de tweede (krap).
+    // Staat de rit nog op het depot, dan geldt die beperking niet.
+    var eerste = onderweg ? NIET_PLANBAAR : 0;
+    for (var i = eerste; i < toekomst.length - 1; i++) {
+      var basis = D[i][i + 1], heen = D[i][nieuwIndex], terug = D[nieuwIndex][i + 1];
+      if (basis == null || heen == null || terug == null) continue;
+      var extra = Math.round((heen + terug - basis) / 60);
+      var totaal = extra + service;
+      gaps.push({
+        van: straat(toekomst[i]), naar: straat(toekomst[i + 1]),
+        vanSeq: toekomst[i].SequenceNumber, naarSeq: toekomst[i + 1].SequenceNumber,
+        basis: Math.round(basis / 60), via: Math.round((heen + terug) / 60),
+        extra: extra, totaal: totaal,
+        // Wat de rit er netto bij krijgt. Negatief = past ruim, er blijft
+        // zoveel voorsprong over. Dit is het getal dat de gebruiker wil zien.
+        uitloop: totaal - voorsprong,
+        past: voorsprong >= totaal,
+        // Past niet op de voorsprong alleen, maar wel als je meerekent dat de
+        // rit korter gepland staat dan zijn configuratie toelaat.
+        pastRuim: voorsprong + (ruimte || 0) >= totaal,
+        risico: onderweg && i < NIET_PLANBAAR + RISICOVOL
+      });
+    }
+    gaps.sort(vergelijkGaten);
+    return gaps;
+  }
+
+  // De ladder, in deze volgorde:
+  //   1. past het binnen de voorsprong? (kost de rit niets)
+  //   2. is het gat niet krap? (eerstvolgende-na-de-volgende)
+  //   3. hoe lang duurt het
+  // Netwerk komt pas daarna, en alleen tussen ritten onderling.
+  // Ruwe schatting van wat deze rit eraan overhoudt, vóór de router. Bedoeld
+  // om te kiezen wélke ritten de router in gaan, niet om iets te beweren over
+  // de uitkomst — dat doet maakGaps() straks met echte rijtijden.
+  //
+  // Heen en terug over de hemelsbrede afstand tot de dichtstbijzijnde stop is
+  // ruwweg 2 x afstand, en bij een stadssnelheid van zo'n 40 km/u komt dat op
+  // 3 minuten per kilometer. Grof, maar het onderscheid dat het moet maken is
+  // ook grof: een rit met veel voorsprong die wat verder ligt hoort mee te
+  // doen, en dat zag de oude voorselectie op pure afstand niet.
+  function schatUitloop(k, service) {
+    return k.dichtst * KM_NAAR_MIN + service - k.voorsprong;
+  }
+
+  // Hoeveel korter deze rit gepland staat dan hij zou moeten zijn.
+  //
+  // De starttijd ís de configuratie: binnen één netwerk komt een starttijd maar
+  // voor één configuratie voor, en twee configuraties met dezelfde starttijd
+  // worden intern een minuut uit elkaar gezet. Ritten met hetzelfde netwerk én
+  // dezelfde starttijd horen dus even lang te duren, en wie korter is dan de
+  // langste van zijn cohort heeft minder werk gekregen dan de configuratie
+  // toelaat.
+  //
+  // Waarom niet de mediaan per netwerk: die beweegt mee met de groep. Waar de
+  // meeste ritten van een netwerk kort zijn — 1M in Tilburg — zakt de mediaan
+  // mee en zie je de afwijking juist niet. En een korte rit is meestal géén
+  // vrije capaciteit: een Tilburgse rit die vanuit Venlo gereden wordt is korter
+  // omdat de reistijd heen en terug eraf is, en bij een latere start wordt die
+  // tijd van de maximale tourduur afgetrokken. In beide gevallen is de werkdag
+  // gewoon vol. Binnen het cohort vallen die verklaringen tegen elkaar weg.
+  // Depotcode uit de ritnaam: 2M-NLTI-07 → NLTI.
+  function depotCode(naam) {
+    var m = /^[0-9A-Z]{2}-([A-Z]{4})-/i.exec(String(naam || '').trim());
+    return m ? m[1].toUpperCase() : '?';
+  }
+
+  // Twee indexen. `net` is fijnmazig (netwerk + starttijd) en dient als
+  // vergelijkingsbasis; `start` is grover (depot + starttijd, alle netwerken)
+  // en dient om te zien óf een starttijd een volle dag is — zie normDuur.
+  function maakCohort(tours) {
+    var c = { net: {}, start: {} };
+    tours.forEach(function (t) {
+      if (t.duur == null || t.start == null) return;
+      // Een al verlengde rit mag de maat niet zetten: als hij de langste van
+      // zijn cohort wordt, lijken al zijn collega's ineens te kort.
+      if (teLang(t)) return;
+      var kn = netwerkVan(t.naam) + '@' + t.start;
+      var gn = c.net[kn] || (c.net[kn] = { max: 0, aantal: 0 });
+      gn.aantal++;
+      if (t.duur > gn.max) gn.max = t.duur;
+      var ks = depotCode(t.naam) + '@' + t.start;
+      var gs = c.start[ks] || (c.start[ks] = { max: 0, aantal: 0 });
+      gs.aantal++;
+      if (t.duur > gs.max) gs.max = t.duur;
+    });
+    return c;
+  }
+  // Het land van een rit: uit MobileGroupCode in de rittenlijst, en anders uit
+  // de landletters in de routecode (2M-NLTI-07 → NL).
+  function landVanTour(t) {
+    if (t.land) return t.land;
+    var m = /^[0-9A-Z]{2}-(NL|BE|DE)[A-Z]{2}-/i.exec(String(t.naam || ''));
+    return m ? m[1].toUpperCase() : '';
+  }
+
+  // De harde norm, of 0 als die hier niet geldt. Twee voorwaarden.
+  //
+  // Ten eerste het startvenster: alleen ritten die tussen STANDAARD_VAN en
+  // STANDAARD_TOT beginnen zijn standaardritten. Later op de dag bestaan die
+  // praktisch niet, en de aangepaste routes daar hebben elk hun eigen maximum
+  // omdat de latere start van de tourduur af gaat.
+  //
+  // Ten tweede: ook binnen dat venster rijden er configuraties die met reden
+  // korter zijn — de losploeg lost eerst trailers en gaat daarna pas bezorgen.
+  // Zonder tweede voorwaarde zou elke losploeg-rit als "korte rit" opduiken.
+  // Ze zijn te herkennen aan hun eigen starttijd (een andere starttijd is per
+  // definitie een andere configuratie), en aan het feit dat de héle groep ver
+  // onder de norm zit. Zit de langste rit met deze starttijd meer dan
+  // NORM_MARGE onder de norm, dan is dat de configuratie en niet een tekort:
+  // de norm geldt dan niet en we vallen terug op het cohort.
+  //
+  // In Tilburg op 09-09-2026: 07:50 had 17 ritten met een langste van 488 min
+  // (de standaardconfiguratie), 08:05 had er twee met een langste van 312 —
+  // ruim drie uur korter, dus een eigen configuratie.
+  //
+  // Prijs hiervan: een rit met een unieke starttijd in het venster staat in
+  // een groep van één, en dan is zijn eigen duur de langste. Kort betekent dan
+  // geen norm en dus geen melding. Bewust die kant op: liever een korte rit
+  // gemist dan de losploeg elke dag ten onrechte geflagd.
+  function normDuur(cohort, t) {
+    if (t.start == null) return 0;
+    var d = new Date(t.start), m = d.getHours() * 60 + d.getMinutes();
+    if (m < STANDAARD_VAN || m > STANDAARD_TOT) return 0;
+    var norm = TOURDUUR[landVanTour(t)] || 0;
+    if (!norm) return 0;
+    var g = cohort.start[depotCode(t.naam) + '@' + t.start];
+    if (!g || g.max < norm - NORM_MARGE) return 0;
+    return norm;
+  }
+
+  // Een rit die langer duurt dan de maximale tourduur van zijn land is al eens
+  // verlengd — vrijwel altijd doordat wij er eerder op de dag iets aan hebben
+  // toegevoegd. Zo'n rit valt af als kandidaat, hoe groot de voorsprong ook is:
+  // die voorsprong is dan geen ruimte maar het gevolg van eerder ingrijpen.
+  //
+  // De norm is hier een plafond voor élke configuratie, niet alleen voor de
+  // standaardritten, dus het startvenster speelt geen rol. Duitse ritten hebben
+  // geen norm en vallen dus nooit af.
+  //
+  // TE_LANG_MARGE vangt afrondingsruis: 492 minuten is geen toegevoegde stop,
+  // 520 wel.
+  function teLang(t) {
+    var n = TOURDUUR[landVanTour(t)];
+    return !!n && t.duur != null && t.duur > n + TE_LANG_MARGE;
+  }
+
+  // Levert { min, bron, norm } — bron 'norm' of 'cohort', zodat de melding kan
+  // vertellen waar het getal vandaan komt.
+  function ruimteVan(cohort, t) {
+    if (t.duur == null || t.start == null) return { min: 0 };
+    // Een standaardrit meten we tegen de vaste tourduur. Dat is sterker dan het
+    // cohort: het is het werkelijke maximum, en het werkt ook als een rit de
+    // enige is met die starttijd — juist dan zag het cohort niets.
+    var norm = normDuur(cohort, t);
+    if (norm) {
+      var rn = norm - t.duur;
+      return rn >= RUIMTE_MIN ? { min: rn, bron: 'norm', norm: norm } : { min: 0 };
+    }
+    var g = cohort.net[netwerkVan(t.naam) + '@' + t.start];
+    // Eén rit in het cohort betekent geen vergelijkingsmateriaal; dan doen we
+    // geen uitspraak in plaats van een slechte.
+    if (!g || g.aantal < 2) return { min: 0 };
+    var r = g.max - t.duur;
+    return r >= RUIMTE_MIN ? { min: r, bron: 'cohort' } : { min: 0 };
+  }
+
+  // Volgorde: past het binnen de voorsprong · past het dankzij een korte rit ·
+  // niet krap · kortste totaal. De tweede laag is nieuw in v1.12.0 en staat
+  // bewust ónder de eerste: voorsprong is zeker, een korte rit moet de
+  // gebruiker eerst controleren.
+  function vergelijkGaten(a, b) {
+    if (a.past !== b.past) return a.past ? -1 : 1;
+    if (a.pastRuim !== b.pastRuim) return a.pastRuim ? -1 : 1;
+    if (a.risico !== b.risico) return a.risico ? 1 : -1;
+    return a.totaal - b.totaal;
+  }
+
+  function scan(adres, service, eigenRit, netwerken, depots) {
+    var landVooraf = landVanNazorg(adres, eigenRit);
+    if (landVooraf && !landOndersteund(landVooraf)) {
+      return Promise.reject(new Error('Deze tool werkt alleen voor Nederland en België. ' +
+        'De dekking in ' + landVooraf + ' is anders opgezet, dus de uitkomst zou niet kloppen.'));
+    }
+    status('Adres opzoeken…');
+    return geocode(adres).then(function (nieuw) {
+      // Pas hier kan de depotkeuze automatisch: nu zijn de coördinaten van de
+      // nazorg bekend. Een handmatige keuze in het paneel gaat voor.
+      var gekozenDepots = (depots && depots.length)
+        ? depots
+        : autoDepots(nieuw, landVanNazorg(adres, eigenRit), eigenRit);
+      // Kent de tabel de routecode niet, dan is er puur op afstand gezocht en
+      // kan het depot van de klant gemist zijn. Dat hoort niet stil te blijven.
+      var codeOnbekend = (eigenRit && !depotVanRit(eigenRit)) ? String(eigenRit).trim() : '';
+      if (!depotHandmatig) { depotKeuze = gekozenDepots.slice(); tekenDepots(); }
+      // Eerst de Ritmonitor gelijkzetten, dan pas ophalen. Even wachten tot
+      // zijn eigen loadTours klaar is, anders klikt de gebruiker straks op een
+      // rit die net weer uit de lijst valt.
+      var uiGezet = zetRitmonitorFilter(gekozenDepots);
+      status('Ritten ophalen…');
+      return even(uiGezet ? 900 : 0).then(function () {
+        return haalTours(gekozenDepots);
+      }).then(function (alleTours) {
+        if (!alleTours.length) throw new Error('Geen ritten in de lijst gevonden.');
+
+        // Cohort over de héle opgehaalde lijst, dus ook over ritten die zo
+        // meteen wegvallen: hoe meer ritten met dezelfde configuratie, hoe
+        // betrouwbaarder de langste van dat cohort is.
+        var cohort = maakCohort(alleTours);
+
+        // Eerst schiften, dan pas stops ophalen — scheelt tientallen requests.
+        var eigenKern = ritKern(eigenRit);
+        overslag = { eigen: 0, netwerk: 0, klaar: 0, telang: 0, buitenland: 0, gekapt: 0, netwerken: netwerken,
+                     eigenRit: eigenKern, geo: nieuw, orsLoos: !ORS_KEY,
+                     codeOnbekend: codeOnbekend, uiLos: !uiGezet };
+        var tours = alleTours.filter(function (t) {
+          if (eigenKern && ritKern(t.naam) === eigenKern) { overslag.eigen++; return false; }
+          var nw = netwerkVan(t.naam);
+          if (nw && netwerken.indexOf(nw) === -1) { overslag.netwerk++; return false; }
+          // Blijven er minder dan twee stops over, dan is er geen gat mogelijk.
+          // Dat staat al in de rittenlijst, dus die GetVisits kunnen we sparen.
+          if (t.stops !== null && t.gedaan !== null && t.stops - t.gedaan < 2) {
+            overslag.klaar++; return false;
+          }
+          // Al verlengd: geen kandidaat meer, ook niet met veel voorsprong.
+          if (teLang(t)) { overslag.telang++; return false; }
+          // Vangnet: mocht het depotfilter ooit falen, dan mogen er alsnog geen
+          // Duitse ritten in de uitslag komen.
+          var tl = landVanTour(t);
+          if (tl && !landOndersteund(tl)) { overslag.buitenland++; return false; }
+          return true;
+        });
+        if (!tours.length) throw new Error('Geen ritten over in de aangevinkte netwerken.');
+        // Noodrem. Normaal blijven er tientallen ritten over en gaan ze er alle
+        // in, maar met een handvol depots aangevinkt kan dat oplopen tot ver
+        // boven de honderd — evenzoveel GetVisits-calls op DireXtion. Dan
+        // winnen de ritten met de meeste voorsprong, want dat is ook de eerste
+        // sleutel van de ranglijst.
+        if (tours.length > MAX_VISIT_RITTEN) {
+          overslag.gekapt = tours.length - MAX_VISIT_RITTEN;
+          tours = tours.slice().sort(function (a, b) {
+            var va = a.voorsprong == null ? -9999 : a.voorsprong;
+            var vb = b.voorsprong == null ? -9999 : b.voorsprong;
+            return vb - va;
+          }).slice(0, MAX_VISIT_RITTEN);
+        }
+        status('Stops ophalen 0/' + tours.length + '…');
+        return inBatches(tours, PARALLEL_VISITS,
+          function (t) { return haalVisits(t.id); },
+          function (k, n) { status('Stops ophalen ' + k + '/' + n + '…'); }
+        ).then(function (alle) {
+          var kandidaten = [], autoEigen = null;
+          tours.forEach(function (t, i) {
+            var info = verwerkStops(alle[i]);
+            if (!info) return;
+            var toekomst = info.stops.slice(info.vanaf);
+            if (toekomst.length < (info.onderweg ? NIET_PLANBAAR : 0) + 2) return;   // geen bruikbaar gat
+            var dichtst = Infinity;
+            toekomst.forEach(function (s) {
+              var d = afstandKm(nieuw, { lat: s.PlanCoordinates.Latitude, lon: s.PlanCoordinates.Longitude });
+              if (d < dichtst) dichtst = d;
+            });
+            // Staat het adres zelf als stop in deze rit? Dan is dit de rit van
+            // de klant. Werkt ook als het logboek geen route meestuurde.
+            if (dichtst * 1000 <= EIGEN_RIT_M && (!autoEigen || dichtst < autoEigen.dichtst)) {
+              autoEigen = { naam: t.naam, dichtst: dichtst };
+            }
+            var ru = ruimteVan(cohort, t);
+            kandidaten.push({
+              tour: t, toekomst: toekomst, dichtst: dichtst,
+              ruimte: ru.min, ruimteBron: ru.bron, ruimteNorm: ru.norm,
+              gehad: info.vanaf, voorsprong: info.voorsprong, onderweg: info.onderweg
+            });
+          });
+
+          // Geen eigen rit meegekregen, maar wel zelf herkend op het adres.
+          if (!eigenKern && autoEigen) {
+            eigenKern = ritKern(autoEigen.naam);
+            overslag.eigenRit = eigenKern;
+            overslag.auto = true;
+            if (eigenRitInput) eigenRitInput.value = autoEigen.naam;
+            kandidaten = kandidaten.filter(function (k) {
+              if (ritKern(k.tour.naam) === eigenKern) { overslag.eigen++; return false; }
+              return true;
+            });
+          }
+          if (!kandidaten.length) throw new Error('Geen ritten met bruikbare toekomstige stops.');
+          // Twee bakken. De dichtstbijzijnde ritten gaan er altijd in — een rit
+          // die praktisch om de hoek rijdt mag nooit sneuvelen op een schatting.
+          // De overige plaatsen gaan naar de laagste geschatte uitloop, zodat
+          // een rit met flinke voorsprong die iets verder ligt alsnog meedoet.
+          // Zonder die tweede bak sorteerde de voorselectie op afstand terwijl
+          // de ranglijst erna op voorsprong sorteert — twee verschillende
+          // vragen, en de beste rit viel daartussen weg.
+          kandidaten.sort(function (a, b) { return a.dichtst - b.dichtst; });
+          var kort = kandidaten.slice(0, ALTIJD_DICHTSTBIJ);
+          kandidaten.slice(ALTIJD_DICHTSTBIJ).sort(function (a, b) {
+            return schatUitloop(a, service) - schatUitloop(b, service);
+          }).slice(0, MAX_ROUTE_RITTEN - kort.length).forEach(function (k) {
+            kort.push(k);
+          });
+          status('Rijtijden 0/' + kort.length + '…');
+          return inBatches(kort, 2, function (k) {
+            var punten = k.toekomst.map(function (s) {
+              return { lat: s.PlanCoordinates.Latitude, lon: s.PlanCoordinates.Longitude };
+            });
+            punten.push(nieuw);
+            return matrix(punten).then(function (D) {
+              var gaps = maakGaps(k.toekomst, D, punten.length - 1, service, k.onderweg,
+                                  k.voorsprong, k.ruimte);
+              if (!gaps.length) return null;
+              var nw = netwerkVan(k.tour.naam);
+              return {
+                rit: k.tour.naam, tourId: k.tour.id, ref: k.tour.ref,
+                netwerk: nw, rang: netwerkRang(nw),
+                voorsprong: k.voorsprong, service: service, onderweg: k.onderweg,
+                ruimte: k.ruimte, ruimteBron: k.ruimteBron, ruimteNorm: k.ruimteNorm,
+                start: k.tour.start,
+                gaps: gaps
+              };
+            });
+          }, function (k, n) { status('Rijtijden ' + k + '/' + n + '…'); })
+          .then(function (res) {
+            resultaten = res.filter(Boolean);
+            alleRittenTonen = false;   // nieuwe uitslag begint weer ingeklapt
+            if (!resultaten.length) {
+              var eerste = (res.fouten || [])[0];
+              throw new Error('Geen rijtijden terug van de router.' + (eerste ? ' ' + eerste : ''));
+            }
+            // Zelfde ladder als binnen een rit, met het netwerk erachter:
+            //   1. past binnen de voorsprong (kost de rit niets)
+            //   2. past dankzij een korte rit — maar moet gecontroleerd
+            //   3. niet krap
+            //   4. lichtste ploeg — een 2M die het aankan gaat vóór een BI
+            //   5. netto tijd, dan de kortste omweg
+            // Een rit die het gratis kan opvangen wint dus van een lichter
+            // netwerk dat er tijd bij krijgt.
+            resultaten.sort(function (a, b) {
+              var ga = a.gaps[0], gb = b.gaps[0];
+              if (ga.past !== gb.past) return ga.past ? -1 : 1;
+              if (ga.pastRuim !== gb.pastRuim) return ga.pastRuim ? -1 : 1;
+              if (ga.risico !== gb.risico) return ga.risico ? 1 : -1;
+              if (a.rang !== b.rang) return a.rang - b.rang;
+              var na = netto(ga.totaal, a.voorsprong), nb = netto(gb.totaal, b.voorsprong);
+              return na !== nb ? na - nb : ga.totaal - gb.totaal;
+            });
+            bewaar(KEY_RES, resultaten); bewaar(KEY_ADRES, adres);
+            status('');
+            vouwForm(false);
+            render();
+            return huidigeTourId().then(function (id) {
+              var hier = resultaten.filter(function (r) { return r.tourId === id; })[0];
+              if (hier) zetKolom(hier.tourId, hier.gaps);
+            });
+          });
+        });
+      });
+    }).catch(function (e) {
+      var m = String(e && e.message ? e.message : e);
+      if (/Failed to fetch|NetworkError/i.test(m)) {
+        m = 'Netwerkverzoek geblokkeerd (waarschijnlijk CSP). Laat het weten — ' +
+            'dan verhuist de berekening naar buiten de pagina.';
+      }
+      status(m, true);
+    });
+  }
+
+  // ── kolom in de stoplijst ────────────────────────────────────
+  // Groen betekent één ding: de rit loopt er niet door uit. Elke minuut
+  // uitloop is minstens oranje — anders vervaagt precies het onderscheid
+  // waar de ranglijst op sorteert.
+  function kleurUitloop(u) {
+    if (u <= 0) return '#155724';            // past binnen de voorsprong
+    return u <= UITLOOP_ROOD ? '#856404' : '#E50000';
+  }
+  function klok(ms) {
+    if (!ms) return '';
+    var d = new Date(ms);
+    return ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2);
+  }
+  function uitloopTekst(u) { return (u > 0 ? '+' : (u < 0 ? '\u2212' : '')) + Math.abs(u) + ' min'; }
+
+  function gridInstance() {
+    if (!window.jQuery) return null;
+    var g = window.jQuery('#visit-grid-container');
+    return g.data('dxDataGrid') || g.data('dxList') || null;
+  }
+
+  function huidigeTourId() {
+    var inst = gridInstance();
+    if (!inst) return Promise.resolve(null);
+    return Promise.resolve(inst.getDataSource().store().load())
+      .then(function (a) { return (a && a.length) ? a[0].TourId : null; })
+      .catch(function () { return null; });
+  }
+
+  function zetKolom(tourId, gaps) {
+    kolomData = { tourId: tourId, perSeq: {}, risico: {}, beste: gaps.length ? gaps[0].uitloop : null };
+    gaps.forEach(function (g) {          // hangt aan de stop wáárna je invoegt
+      kolomData.perSeq[g.vanSeq] = g.uitloop;
+      if (g.risico) kolomData.risico[g.vanSeq] = true;
+    });
+    var inst = gridInstance();
+    if (!inst || typeof inst.addColumn !== 'function') return;
+    var bestaat = false;
+    try { bestaat = !!inst.columnOption(KOLOM); } catch (e) {}
+    if (!bestaat) {
+      try {
+        inst.addColumn({
+          name: KOLOM, caption: '+ rijtijd', width: 95,
+          allowSorting: false, allowFiltering: false, allowResizing: true,
+          cellTemplate: function (container, opts) {
+            var el = container && container.get ? container.get(0) : container;
+            if (!el) return;
+            var v = opts && opts.data;
+            if (!v || kolomData.tourId === null || v.TourId !== kolomData.tourId) return;
+            var m = kolomData.perSeq[v.SequenceNumber];
+            if (m === undefined) return;
+            var span = document.createElement('span');
+            span.textContent = uitloopTekst(m) + (kolomData.risico[v.SequenceNumber] ? ' \u26A0' : '') +
+                               (m === kolomData.beste ? ' \u2605' : '');
+            span.style.cssText = 'font-weight:700;white-space:nowrap;color:' + kleurUitloop(m);
+            el.appendChild(span);
+          }
+        });
+      } catch (e) { console.warn('[Extra rijtijd] kolom toevoegen mislukt:', e); return; }
+    }
+    try { inst.repaint(); } catch (e) {}
+  }
+
+  function verwijderKolom() {
+    var inst = gridInstance();
+    if (!inst || typeof inst.deleteColumn !== 'function') return;
+    try { inst.deleteColumn(KOLOM); } catch (e) {}
+  }
+
+  function selecteerRit(tourId) {
+    var res = resultaten.filter(function (r) { return r.tourId === tourId; })[0];
+    var root = koRoot();
+    try { if (root && typeof root.selectTourId === 'function') root.selectTourId(tourId); } catch (e) {}
+    if (res) setTimeout(function () { zetKolom(tourId, res.gaps); }, 600);
+  }
+
+  // ── UI ───────────────────────────────────────────────────────
+  function status(tekst, fout) {
+    var el = document.getElementById('er-status');
+    if (!el) return;
+    el.textContent = tekst || '';
+    el.className = fout ? 'er-status fout' : 'er-status';
+  }
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]; }); }
+
+  function voorsprongTekst(v) {
+    if (v > 0) return v + ' min vóór';
+    if (v < 0) return (-v) + ' min achter';
+    return 'op schema';
+  }
+
+  var alleRittenTonen = false;   // staat de rest van de ranglijst open?
+
+  function render() {
+    var body = document.getElementById('er-resultaten');
+    if (body) {
+      if (!resultaten.length) {
+        body.innerHTML = '<div class="er-status">Nog niets berekend.</div>';
+      } else {
+        var html = '';
+        var rangen = resultaten.map(function (r) { return r.rang; });
+        var minRang = Math.min.apply(null, rangen);
+        var gemengd = Math.max.apply(null, rangen) !== minRang;
+        var zicht = alleRittenTonen ? resultaten : resultaten.slice(0, TOON_EERST);
+        zicht.forEach(function (r, idx) {
+          var g = r.gaps[0];
+          var opbouw = r.service
+            ? g.extra + ' rijden + ' + r.service + ' service = ' + g.totaal + ' min'
+            : g.extra + ' min rijden';
+          html += '<div class="er-rij" data-tour="' + r.tourId + '" title="Klik om deze rit te openen">' +
+            '<div class="er-rij-kop"><span class="er-rit">' + esc(r.rit) +
+              (gemengd && r.rang === minRang ? ' <span class="pill pill-green">lichtste ploeg</span>' : '') +
+              (idx === 0 ? ' <span class="er-ster">★</span>' : '') + '</span>' +
+            '<span class="er-uitloop"><span class="er-getal" style="color:' + kleurUitloop(g.uitloop) + '">' +
+              uitloopTekst(g.uitloop) + '</span>' +
+              '<span class="section-label">' + (g.uitloop > 0 ? 'uitloop' : 'speling over') + '</span></span></div>' +
+            '<div class="er-rij-sub"><span class="pill pill-blue">' + g.vanSeq + ' → ' + g.naarSeq + '</span> ' +
+            esc(g.van) + ' → ' + esc(g.naar) +
+            (g.risico ? ' <span class="pill pill-amber">\u26A0 krap</span>' : '') + '</div>' +
+            '<div class="er-opbouw">' +
+              (g.past ? '<span class="pill pill-green">past in de voorsprong</span> '
+                      : (g.pastRuim ? '<span class="pill pill-amber">\u26A0 korte rit</span> ' : '')) +
+              opbouw + ' · <span class="' +
+              (r.voorsprong > 0 ? 'er-goed' : (r.voorsprong < 0 ? 'er-slecht' : '')) + '">' +
+              voorsprongTekst(r.voorsprong) + '</span></div>' +
+            // Alleen als we op de korte rit leunen. Past het al op de voorsprong,
+            // dan is het sowieso een optie en zou de melding ruis zijn.
+            (!g.past && g.pastRuim && r.ruimte
+              ? '<div class="park-melding er-depot">\u2691 <b>Korte rit \u2014 controleer dit.</b> ' +
+                'Deze rit staat ' + r.ruimte + ' min korter gepland dan ' +
+                (r.ruimteBron === 'norm'
+                  ? 'de standaard tourduur van ' + r.ruimteNorm + ' min'
+                  : 'de andere ' + esc(r.netwerk) + '-ritten die om ' + klok(r.start) + ' beginnen') +
+                '. Past alleen als die tijd er echt is.</div>'
+              : '') +
+            (r.onderweg ? '' : '<div class="park-melding er-depot">\u2691 Rit staat nog op het depot \u2014 informeer de TL na het inplannen</div>') +
+            '</div>';
+        });
+        if (resultaten.length > TOON_EERST) {
+          html += '<div class="er-meer"><span class="toggle-link er-meer-link">' +
+            (alleRittenTonen
+              ? 'minder tonen'
+              : '+ ' + (resultaten.length - TOON_EERST) + ' andere overwogen rit' +
+                (resultaten.length - TOON_EERST === 1 ? '' : 'ten')) +
+            '</span></div>';
+        }
+        var uitleg = [];
+        if (overslag.geo && overslag.geo.label) {
+          uitleg.push('adres via ' + esc(overslag.geo.bron) + ': ' + esc(overslag.geo.label));
+        }
+        if (overslag.eigen) uitleg.push('eigen rit ' + esc(overslag.eigenRit) + ' overgeslagen' + (overslag.auto ? ' (zelf herkend op het adres)' : ''));
+        if (overslag.netwerk) uitleg.push(overslag.netwerk + ' rit(ten) buiten het netwerkfilter');
+        if (overslag.klaar) uitleg.push(overslag.klaar + ' rit(ten) (bijna) klaar');
+        if (overslag.telang) uitleg.push(overslag.telang + ' rit(ten) al verlengd (langer dan de max tourduur)');
+        if (overslag.buitenland) uitleg.push(overslag.buitenland + ' rit(ten) buiten NL/BE');
+        if (overslag.gekapt) uitleg.push(overslag.gekapt + ' rit(ten) niet opgehaald (limiet ' + MAX_VISIT_RITTEN + ')');
+        if (overslag.netwerken && overslag.netwerken.length < NETWERKEN.length) {
+          uitleg.push('alleen ' + overslag.netwerken.join(', '));
+        }
+        if (uitleg.length) html += '<div class="er-status">' + uitleg.join(' \u00b7 ') + '</div>';
+        if (overslag.uiLos) {
+          html += '<div class="park-melding er-depot">\u2691 Het filter in de Ritmonitor kon ' +
+                  'niet gelijkgezet worden. De uitslag hieronder klopt, maar een rit uit een ' +
+                  'depot dat je scherm niet toont is mogelijk niet aan te klikken.</div>';
+        }
+        if (overslag.codeOnbekend) {
+          html += '<div class="park-melding er-depot">\u2691 Routecode van ' +
+                  esc(overslag.codeOnbekend) + ' staat niet in de depottabel \u2014 ' +
+                  'er is alleen op afstand tot het adres gezocht. Ligt het eigen depot ' +
+                  'verder weg, vink het er dan zelf bij.</div>';
+        }
+        if (overslag.orsLoos) {
+          html += '<div class="park-melding er-depot">\u2691 Nog geen OpenRouteService-sleutel \u2014 ' +
+                  'rijtijden komen van de OSRM-demoserver, die daar niet voor bedoeld is. ' +
+                  'Vul ORS_KEY in bovenaan het bestand.</div>';
+        }
+        body.innerHTML = html;
+        Array.prototype.forEach.call(body.querySelectorAll('.er-rij'), function (el) {
+          el.onclick = function () { selecteerRit(parseInt(el.getAttribute('data-tour'), 10)); };
+        });
+        var meer = body.querySelector('.er-meer-link');
+        if (meer) meer.onclick = function () { alleRittenTonen = !alleRittenTonen; render(); };
+      }
+    }
+    var b = resultaten.length ? resultaten[0] : null;
+    var pt = document.getElementById('er-pil-tekst');
+    if (pt) pt.textContent = b ? (b.rit + ' · ' + b.gaps[0].vanSeq + '→' + b.gaps[0].naarSeq + ' · ' + uitloopTekst(b.gaps[0].uitloop)) : 'Extra rijtijd';
+    var pi = document.getElementById(PIL_ID);
+    if (pi && b) pi.style.borderLeftColor = kleurUitloop(b.gaps[0].uitloop);
+  }
+
+  function gekozenNetwerken() {
+    var uit = [];
+    NETWERKEN.forEach(function (n) {
+      var el = document.getElementById('er-net-' + n);
+      if (el && el.checked) uit.push(n);
+    });
+    return uit;
+  }
+
+  // Het vinkje stuurt de klasse .selected aan, dezelfde die de widget voor een
+  // gekozen knop gebruikt. Zo staat de groene keuzekleur op één plek (DS_UI).
+  function markeerNetwerken() {
+    NETWERKEN.forEach(function (n) {
+      var vak = document.getElementById('er-net-' + n);
+      var lbl = document.getElementById('er-net-lbl-' + n);
+      if (!vak || !lbl) return;
+      if (vak.checked) { if (lbl.className.indexOf(' selected') === -1) lbl.className += ' selected'; }
+      else lbl.className = lbl.className.replace(' selected', '');
+    });
+  }
+
+  function zetNetwerken(lijst) {
+    NETWERKEN.forEach(function (n) {
+      var el = document.getElementById('er-net-' + n);
+      if (el) el.checked = lijst.indexOf(n) !== -1;
+    });
+    markeerNetwerken();
+    bewaar(KEY_NETWERKEN, lijst);
+  }
+
+  // ── depotkeuze in het paneel ─────────────────────────────────
+  // Normaal kiest de tool zelf, op afstand tot het adres (zie autoDepots).
+  // Het lijstje in het paneel laat zien wat hij koos en is er om die keuze te
+  // overrulen; zodra je zelf een vinkje zet blijft die keuze staan, tot je een
+  // ander adres invult of op 'automatisch' klikt. Er wordt niets bewaard —
+  // een depotkeuze van gisteren zegt niets over de nazorg van vandaag.
+  var depotLijst = [];        // [{id, naam}] uit de TagBox van de Ritmonitor
+  var depotKeuze = [];        // ids waarop gefilterd wordt
+  var depotHandmatig = false; // heeft de gebruiker zelf ingegrepen?
+
+  function depotNamen() {
+    return depotKeuze.map(function (id) {
+      var d = depotLijst.filter(function (o) { return o.id === id; })[0];
+      return d ? d.naam : id;
+    });
   }
 
   // De automatische keuze, en het hele punt van deze functie: bij een nazorg
