@@ -64,7 +64,7 @@
 (function () {
   'use strict';
 
-  var RIJTIJD_VERSION = 'v1.14.0';
+  var RIJTIJD_VERSION = 'v1.15.0';
 
   var PANEL_ID = 'extra-rijtijd-panel';
   var PIL_ID = 'extra-rijtijd-pil';
@@ -391,6 +391,14 @@
   // avondritten) bestaat er geen vaste norm en valt ruimteVan() terug op het
   // cohort. Avondritten beginnen in NL overal om 13:20 en bestaan in BE niet;
   // hun norm is niet bekend.
+  // Nederland en België. Duitsland doet nadrukkelijk niet mee: de dekking daar
+  // is zo anders opgezet dat de aannames van deze tool — stamdepot per stad,
+  // vaste tourduur, netwerken 1M/1X/2M/BI — er niet opgaan. De Duitse depots
+  // staan wel in DEPOTS (dat blijft een volledige lijst van wat er bestaat),
+  // maar ze verschijnen niet in de keuze en hun ritten doen niet mee.
+  var ONDERSTEUNDE_LANDEN = ['NL', 'BE'];
+  function landOndersteund(l) { return ONDERSTEUNDE_LANDEN.indexOf(l) !== -1; }
+
   var TOURDUUR = { NL: 490, BE: 475 };
   var STANDAARD_VAN = 7 * 60 + 45;   // 07:45
   var STANDAARD_TOT = 9 * 60;        // 09:00
@@ -444,8 +452,12 @@
                      : (o.Name || o.name || o.Text || o.text || ''))
         };
       }).filter(function (o) {
-        return o.id && o.id !== 'undefined' && o.naam &&
-               !GEEN_STAMDEPOT.test(o.naam) && UITGESLOTEN_DEPOTS.indexOf(o.naam) === -1;
+        if (!o.id || o.id === 'undefined' || !o.naam) return false;
+        if (GEEN_STAMDEPOT.test(o.naam) || UITGESLOTEN_DEPOTS.indexOf(o.naam) !== -1) return false;
+        // Een depot waarvan we het land niet kennen blijft zichtbaar (nieuw
+        // depot); een depot in een niet-ondersteund land nadrukkelijk niet.
+        var land = (DEPOTS[o.naam] || {}).land;
+        return !land || landOndersteund(land);
       }).sort(function (a, b) { return a.naam.localeCompare(b.naam); });
     } catch (e) { return []; }
   }
@@ -989,6 +1001,11 @@
   }
 
   function scan(adres, service, eigenRit, netwerken, depots) {
+    var landVooraf = landVanNazorg(adres, eigenRit);
+    if (landVooraf && !landOndersteund(landVooraf)) {
+      return Promise.reject(new Error('Deze tool werkt alleen voor Nederland en België. ' +
+        'De dekking in ' + landVooraf + ' is anders opgezet, dus de uitkomst zou niet kloppen.'));
+    }
     status('Adres opzoeken…');
     return geocode(adres).then(function (nieuw) {
       // Pas hier kan de depotkeuze automatisch: nu zijn de coördinaten van de
@@ -1017,7 +1034,7 @@
 
         // Eerst schiften, dan pas stops ophalen — scheelt tientallen requests.
         var eigenKern = ritKern(eigenRit);
-        overslag = { eigen: 0, netwerk: 0, klaar: 0, telang: 0, gekapt: 0, netwerken: netwerken,
+        overslag = { eigen: 0, netwerk: 0, klaar: 0, telang: 0, buitenland: 0, gekapt: 0, netwerken: netwerken,
                      eigenRit: eigenKern, geo: nieuw, orsLoos: !ORS_KEY,
                      codeOnbekend: codeOnbekend, uiLos: !uiGezet };
         var tours = alleTours.filter(function (t) {
@@ -1031,6 +1048,10 @@
           }
           // Al verlengd: geen kandidaat meer, ook niet met veel voorsprong.
           if (teLang(t)) { overslag.telang++; return false; }
+          // Vangnet: mocht het depotfilter ooit falen, dan mogen er alsnog geen
+          // Duitse ritten in de uitslag komen.
+          var tl = landVanTour(t);
+          if (tl && !landOndersteund(tl)) { overslag.buitenland++; return false; }
           return true;
         });
         if (!tours.length) throw new Error('Geen ritten over in de aangevinkte netwerken.');
@@ -1319,6 +1340,7 @@
         if (overslag.netwerk) uitleg.push(overslag.netwerk + ' rit(ten) buiten het netwerkfilter');
         if (overslag.klaar) uitleg.push(overslag.klaar + ' rit(ten) (bijna) klaar');
         if (overslag.telang) uitleg.push(overslag.telang + ' rit(ten) al verlengd (langer dan de max tourduur)');
+        if (overslag.buitenland) uitleg.push(overslag.buitenland + ' rit(ten) buiten NL/BE');
         if (overslag.gekapt) uitleg.push(overslag.gekapt + ' rit(ten) niet opgehaald (limiet ' + MAX_VISIT_RITTEN + ')');
         if (overslag.netwerken && overslag.netwerken.length < NETWERKEN.length) {
           uitleg.push('alleen ' + overslag.netwerken.join(', '));
@@ -1760,6 +1782,9 @@
           'de voorsprong de klus vermoedelijk opvangt.</li>' +
         '<li><b>Volgorde</b> \u2014 1. past binnen de voorsprong \u00b7 2. past dankzij een ' +
           'korte rit \u00b7 3. niet krap \u00b7 4. lichtste ploeg \u00b7 5. kortste omweg.</li>' +
+        '<li><b>Alleen NL en BE</b> \u2014 de tool is niet bedoeld voor Duitsland; de dekking ' +
+          'daar is anders opgezet. Duitse depots staan niet in de keuze en een Duits adres ' +
+          'wordt geweigerd.</li>' +
         '<li><b>Al verlengd</b> \u2014 een rit die langer duurt dan de maximale tourduur ' +
           '(NL ' + TOURDUUR.NL + ' min, BE ' + TOURDUUR.BE + ') valt af, ook met veel ' +
           'voorsprong: daar is eerder op de dag al iets aan toegevoegd.</li>' +
