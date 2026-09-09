@@ -64,7 +64,7 @@
 (function () {
   'use strict';
 
-  var RIJTIJD_VERSION = 'v1.11.0';
+  var RIJTIJD_VERSION = 'v1.12.0';
 
   var PANEL_ID = 'extra-rijtijd-panel';
   var PIL_ID = 'extra-rijtijd-pil';
@@ -384,6 +384,7 @@
   var MIN_DEPOTS = 3;          // ondergrens, ook als er niets binnen de straal ligt
   var DEPOT_MAX_KM = 110;      // maar nooit verder dan dit — zie autoDepots
   var MAX_VISIT_RITTEN = 60;   // noodrem op het aantal GetVisits per Bereken
+  var RUIMTE_MIN = 10;         // minder dan dit heet geen korte rit — zie ruimteVan
 
   // Routecode in de ritnaam → stamdepot. Afgeleid uit de data zelf op
   // 09-09-2026 (`probe-depotfilter.js`-aanpak: per depot GetTours ophalen en
@@ -464,11 +465,17 @@
     // stops/gedaan tellen ook activiteiten mee, dus ze zijn niet gelijk aan wat
     // verwerkStops() straks overhoudt. Ze worden alleen gebruikt om ritten over
     // te slaan die sowieso geen gat kunnen hebben — die kant op is het veilig.
+    // start bepaalt de configuratie (zie ruimteVan), duur is het geplande
+    // aantal minuten van de rit.
+    var start = msUit(uw(t.PlanStartDatestamp) || uw(t.planStartDatestamp));
+    var eind = msUit(uw(t.PlanEndDatestamp) || uw(t.planEndDatestamp));
     return {
       id: id, naam: String(naam || ref || id), ref: String(ref || ''),
       stops: getal(t, 'NumberOfVisits', 'numberOfVisits'),
       gedaan: getal(t, 'NumberOfVisitsCompleted', 'numberOfVisitsCompleted'),
-      voorsprong: voorsprongUitLijst(t)
+      voorsprong: voorsprongUitLijst(t),
+      start: start,
+      duur: (start !== null && eind !== null) ? Math.round((eind - start) / 60000) : null
     };
   }
 
@@ -787,7 +794,7 @@
   // achterstand (negatieve voorsprong) telt er juist bovenop.
   function netto(totaal, voorsprong) { return Math.max(0, totaal - voorsprong); }
 
-  function maakGaps(toekomst, D, nieuwIndex, service, onderweg, voorsprong) {
+  function maakGaps(toekomst, D, nieuwIndex, service, onderweg, voorsprong, ruimte) {
     var gaps = [];
     // i telt vanaf de huidige positie: i = 0 zou de nieuwe stop de
     // eerstvolgende maken (kan niet, sync), i = 1 de tweede (krap).
@@ -807,6 +814,9 @@
         // zoveel voorsprong over. Dit is het getal dat de gebruiker wil zien.
         uitloop: totaal - voorsprong,
         past: voorsprong >= totaal,
+        // Past niet op de voorsprong alleen, maar wel als je meerekent dat de
+        // rit korter gepland staat dan zijn configuratie toelaat.
+        pastRuim: voorsprong + (ruimte || 0) >= totaal,
         risico: onderweg && i < NIET_PLANBAAR + RISICOVOL
       });
     }
@@ -832,8 +842,50 @@
     return k.dichtst * KM_NAAR_MIN + service - k.voorsprong;
   }
 
+  // Hoeveel korter deze rit gepland staat dan hij zou moeten zijn.
+  //
+  // De starttijd ís de configuratie: binnen één netwerk komt een starttijd maar
+  // voor één configuratie voor, en twee configuraties met dezelfde starttijd
+  // worden intern een minuut uit elkaar gezet. Ritten met hetzelfde netwerk én
+  // dezelfde starttijd horen dus even lang te duren, en wie korter is dan de
+  // langste van zijn cohort heeft minder werk gekregen dan de configuratie
+  // toelaat.
+  //
+  // Waarom niet de mediaan per netwerk: die beweegt mee met de groep. Waar de
+  // meeste ritten van een netwerk kort zijn — 1M in Tilburg — zakt de mediaan
+  // mee en zie je de afwijking juist niet. En een korte rit is meestal géén
+  // vrije capaciteit: een Tilburgse rit die vanuit Venlo gereden wordt is korter
+  // omdat de reistijd heen en terug eraf is, en bij een latere start wordt die
+  // tijd van de maximale tourduur afgetrokken. In beide gevallen is de werkdag
+  // gewoon vol. Binnen het cohort vallen die verklaringen tegen elkaar weg.
+  function maakCohort(tours) {
+    var c = {};
+    tours.forEach(function (t) {
+      if (t.duur == null || t.start == null) return;
+      var k = netwerkVan(t.naam) + '@' + t.start;
+      var g = c[k] || (c[k] = { max: 0, aantal: 0 });
+      g.aantal++;
+      if (t.duur > g.max) g.max = t.duur;
+    });
+    return c;
+  }
+  function ruimteVan(cohort, t) {
+    if (t.duur == null || t.start == null) return 0;
+    var g = cohort[netwerkVan(t.naam) + '@' + t.start];
+    // Eén rit in het cohort betekent geen vergelijkingsmateriaal; dan doen we
+    // geen uitspraak in plaats van een slechte.
+    if (!g || g.aantal < 2) return 0;
+    var r = g.max - t.duur;
+    return r >= RUIMTE_MIN ? r : 0;
+  }
+
+  // Volgorde: past het binnen de voorsprong · past het dankzij een korte rit ·
+  // niet krap · kortste totaal. De tweede laag is nieuw in v1.12.0 en staat
+  // bewust ónder de eerste: voorsprong is zeker, een korte rit moet de
+  // gebruiker eerst controleren.
   function vergelijkGaten(a, b) {
     if (a.past !== b.past) return a.past ? -1 : 1;
+    if (a.pastRuim !== b.pastRuim) return a.pastRuim ? -1 : 1;
     if (a.risico !== b.risico) return a.risico ? 1 : -1;
     return a.totaal - b.totaal;
   }
@@ -859,6 +911,11 @@
         return haalTours(gekozenDepots);
       }).then(function (alleTours) {
         if (!alleTours.length) throw new Error('Geen ritten in de lijst gevonden.');
+
+        // Cohort over de héle opgehaalde lijst, dus ook over ritten die zo
+        // meteen wegvallen: hoe meer ritten met dezelfde configuratie, hoe
+        // betrouwbaarder de langste van dat cohort is.
+        var cohort = maakCohort(alleTours);
 
         // Eerst schiften, dan pas stops ophalen — scheelt tientallen requests.
         var eigenKern = ritKern(eigenRit);
@@ -912,7 +969,7 @@
               autoEigen = { naam: t.naam, dichtst: dichtst };
             }
             kandidaten.push({
-              tour: t, toekomst: toekomst, dichtst: dichtst,
+              tour: t, toekomst: toekomst, dichtst: dichtst, ruimte: ruimteVan(cohort, t),
               gehad: info.vanaf, voorsprong: info.voorsprong, onderweg: info.onderweg
             });
           });
@@ -950,13 +1007,15 @@
             });
             punten.push(nieuw);
             return matrix(punten).then(function (D) {
-              var gaps = maakGaps(k.toekomst, D, punten.length - 1, service, k.onderweg, k.voorsprong);
+              var gaps = maakGaps(k.toekomst, D, punten.length - 1, service, k.onderweg,
+                                  k.voorsprong, k.ruimte);
               if (!gaps.length) return null;
               var nw = netwerkVan(k.tour.naam);
               return {
                 rit: k.tour.naam, tourId: k.tour.id, ref: k.tour.ref,
                 netwerk: nw, rang: netwerkRang(nw),
                 voorsprong: k.voorsprong, service: service, onderweg: k.onderweg,
+                ruimte: k.ruimte, start: k.tour.start,
                 gaps: gaps
               };
             });
@@ -967,14 +1026,16 @@
             if (!resultaten.length) throw new Error('Geen rijtijden terug van de router.');
             // Zelfde ladder als binnen een rit, met het netwerk erachter:
             //   1. past binnen de voorsprong (kost de rit niets)
-            //   2. niet krap
-            //   3. lichtste ploeg — een 2M die het aankan gaat vóór een BI
-            //   4. netto tijd, dan de kortste omweg
+            //   2. past dankzij een korte rit — maar moet gecontroleerd
+            //   3. niet krap
+            //   4. lichtste ploeg — een 2M die het aankan gaat vóór een BI
+            //   5. netto tijd, dan de kortste omweg
             // Een rit die het gratis kan opvangen wint dus van een lichter
             // netwerk dat er tijd bij krijgt.
             resultaten.sort(function (a, b) {
               var ga = a.gaps[0], gb = b.gaps[0];
               if (ga.past !== gb.past) return ga.past ? -1 : 1;
+              if (ga.pastRuim !== gb.pastRuim) return ga.pastRuim ? -1 : 1;
               if (ga.risico !== gb.risico) return ga.risico ? 1 : -1;
               if (a.rang !== b.rang) return a.rang - b.rang;
               var na = netto(ga.totaal, a.voorsprong), nb = netto(gb.totaal, b.voorsprong);
@@ -1008,6 +1069,11 @@
   function kleurUitloop(u) {
     if (u <= 0) return '#155724';            // past binnen de voorsprong
     return u <= UITLOOP_ROOD ? '#856404' : '#E50000';
+  }
+  function klok(ms) {
+    if (!ms) return '';
+    var d = new Date(ms);
+    return ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2);
   }
   function uitloopTekst(u) { return (u > 0 ? '+' : (u < 0 ? '\u2212' : '')) + Math.abs(u) + ' min'; }
 
@@ -1115,9 +1181,20 @@
             '<div class="er-rij-sub"><span class="pill pill-blue">' + g.vanSeq + ' → ' + g.naarSeq + '</span> ' +
             esc(g.van) + ' → ' + esc(g.naar) +
             (g.risico ? ' <span class="pill pill-amber">\u26A0 krap</span>' : '') + '</div>' +
-            '<div class="er-opbouw">' + opbouw + ' · <span class="' +
+            '<div class="er-opbouw">' +
+              (g.past ? '<span class="pill pill-green">past in de voorsprong</span> '
+                      : (g.pastRuim ? '<span class="pill pill-amber">\u26A0 korte rit</span> ' : '')) +
+              opbouw + ' · <span class="' +
               (r.voorsprong > 0 ? 'er-goed' : (r.voorsprong < 0 ? 'er-slecht' : '')) + '">' +
               voorsprongTekst(r.voorsprong) + '</span></div>' +
+            // Alleen als we op de korte rit leunen. Past het al op de voorsprong,
+            // dan is het sowieso een optie en zou de melding ruis zijn.
+            (!g.past && g.pastRuim && r.ruimte
+              ? '<div class="park-melding er-depot">\u2691 <b>Korte rit \u2014 controleer dit.</b> ' +
+                'Deze rit staat ' + r.ruimte + ' min korter gepland dan de andere ' +
+                esc(r.netwerk) + '-ritten die om ' + klok(r.start) + ' beginnen. Past alleen ' +
+                'als die tijd er echt is.</div>'
+              : '') +
             (r.onderweg ? '' : '<div class="park-melding er-depot">\u2691 Rit staat nog op het depot \u2014 informeer de TL na het inplannen</div>') +
             '</div>';
         });
@@ -1575,8 +1652,11 @@
         '<li><b>Ritten</b> \u2014 van alle ritten gaan er ' + MAX_ROUTE_RITTEN + ' echt de ' +
           'router in: de ' + ALTIJD_DICHTSTBIJ + ' dichtstbijzijnde, plus de ritten waar ' +
           'de voorsprong de klus vermoedelijk opvangt.</li>' +
-        '<li><b>Volgorde</b> \u2014 1. past binnen de voorsprong \u00b7 2. niet krap \u00b7 ' +
-          '3. lichtste ploeg \u00b7 4. kortste omweg.</li>' +
+        '<li><b>Volgorde</b> \u2014 1. past binnen de voorsprong \u00b7 2. past dankzij een ' +
+          'korte rit \u00b7 3. niet krap \u00b7 4. lichtste ploeg \u00b7 5. kortste omweg.</li>' +
+        '<li><b>Korte rit</b> \u2014 een rit die korter gepland staat dan de andere ritten van ' +
+          'hetzelfde netwerk met dezelfde starttijd (die hebben dezelfde configuratie). ' +
+          'Dat is een aanwijzing, geen zekerheid: controleer of die tijd er echt is.</li>' +
         '<li><b>Eerstvolgende stop</b> \u2014 kan niet: die haalt de sync naar de werktelefoon ' +
           'niet. De stop daarna kan wel, maar staat als \u26A0 krap.</li>' +
         '<li><b>Nog op het depot</b> \u2014 dan geldt die beperking niet, maar moet je de TL ' +

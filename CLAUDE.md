@@ -448,12 +448,25 @@ Die schatting is grof en bedoeld om te *kiezen*, niet om iets te beweren — `ma
 
 **De ranglijst toont er drie (v1.7.0).** `TOON_EERST` = 3. De rest is wel doorgerekend en staat achter *"+ n andere overwogen ritten"*; `alleRittenTonen` klapt open en dicht, en elke nieuwe berekening begint weer ingeklapt. In de praktijk kies je uit de bovenste paar, en een lijst van zes duwde de uitleg eronder van het scherm.
 
-**Ranglijst — vier sleutels op volgorde.** Dezelfde ladder geldt binnen een rit (welk gat) en tussen ritten onderling (`vergelijkGaten` en de sortering van `resultaten`):
+**Korte ritten — de starttijd is de configuratie (v1.12.0).** Een rit kan ruimte hebben zonder voorsprong te lopen: het plán is dan simpelweg kleiner dan de configuratie toelaat. De tool zag dat niet — zo'n rit kreeg net als een volle rit `+45 min uitloop` en zakte naar beneden.
+
+**De vergelijkingsbasis is netwerk + exacte starttijd.** Binnen één netwerk hoort een starttijd bij precies één configuratie; wil de planning twee configuraties met dezelfde starttijd, dan wordt er intern een minuut verschil gezet. Ritten met hetzelfde netwerk én dezelfde starttijd horen dus even lang te duren. `ruimteVan()` neemt de langste rit van dat cohort als maat: `ruimte = langste − eigen duur`, en pas vanaf `RUIMTE_MIN` (10 min) heet dat iets. Alles komt uit `PlanStartDatestamp` en `PlanEndDatestamp` in de rittenlijst — geen extra request.
+
+**Waarom niet de mediaan per netwerk**, wat de eerste opzet was: die beweegt mee met de groep. In Tilburg zijn vier van de zeven 1M-ritten kort, dus de mediaan zakt naar 5,5 u — waarna een rit van 4,2 u nog maar 78 min "ruimte" krijgt en een volle rit van 7,9 u als *"144 min langer"* wordt gemeld, alsof die overladen is.
+
+**Kort betekent meestal geen vrije capaciteit.** Een Tilburgse rit die vanuit Venlo gereden wordt — het achtervoegsel `(VEN)` — is korter omdat de reistijd heen en terug van de tourduur af is; de werkdag is gewoon vol. Bij een latere start (de ploeg heeft eerst ander werk) wordt die tijd van de maximale tourduur afgetrokken, met hetzelfde gevolg. Binnen het cohort vallen die verklaringen tegen elkaar weg, want ze gelden voor alle ritten met dezelfde starttijd. Op de Tilburgse dag van 09-09-2026 hield dat van 28 ritten er drie over: `2M-NLTI-03` (24 min), `BI-NLTI-02` (18 min), `1M-NLTI-01` (12 min) — de twee `(VEN)`-ritten en de 10:45-ritten vielen terecht af.
+
+**Het blijft een aanwijzing, geen zekerheid, en dat is in de UI te zien.** Past de klus binnen de voorsprong, dan staat er een groene pil `past in de voorsprong` — dat is zeker en hoeft niemand na te lopen. Past hij alleen dankzij de korte rit, dan staat er een amberen pil `⚠ korte rit` plus een blok eronder: *"Korte rit — controleer dit. Deze rit staat 24 min korter gepland dan de andere 2M-ritten die om 07:50 beginnen."* Die melding verschijnt alléén als er op de ruimte geleund wordt; past het al op de voorsprong, dan zou hij ruis zijn.
+
+**Twee blinde vlekken.** Een cohort van één rit levert geen vergelijking op — dan doet de tool geen uitspraak in plaats van een slechte. En is een hele configuratie onderbezet (rustige dag, alle ritten even kort), dan valt er binnen het cohort niets op; de tool meet afwijking, geen absolute leegte.
+
+**Ranglijst — vijf sleutels op volgorde.** Dezelfde ladder geldt binnen een rit (welk gat) en tussen ritten onderling (`vergelijkGaten` en de sortering van `resultaten`):
 
 1. **Past het binnen de voorsprong?** Kost de planning dan niets, en dat weegt zwaarder dan welk netwerk ook. Een BI-rit die de klus gratis opvangt gaat dus vóór een 2M-rit die er tijd bij krijgt.
-2. **Is het gat niet krap?** Een `⚠ krap` gat zakt onder alles wat wél past en niet krap is.
-3. **De lichtste aangevinkte ploeg.** `NETWERKEN` (`['1M','1X','2M','BI']`) is licht → zwaar. Kan een 2M het werk ook, dan gaat die vóór een BI — BI-tijd is te duur voor werk dat een lichtere ploeg aankan. Label `lichtste ploeg`, alleen zichtbaar als er meerdere netwerken in de uitslag staan. Aanname: **1X vóór 2M**, oftewel één installateur is goedkoper dan twee man — niet geverifieerd, omwisselen is één regel.
-4. **Netto tijd**, dan de kortste omweg.
+2. **Past het dankzij een korte rit?** (v1.12.0) Staat bewust ónder de voorsprong: voorsprong is zeker, een korte rit moet de gebruiker eerst controleren. Zie **Korte ritten** hierboven.
+3. **Is het gat niet krap?** Een `⚠ krap` gat zakt onder alles wat wél past en niet krap is.
+4. **De lichtste aangevinkte ploeg.** `NETWERKEN` (`['1M','1X','2M','BI']`) is licht → zwaar. Kan een 2M het werk ook, dan gaat die vóór een BI — BI-tijd is te duur voor werk dat een lichtere ploeg aankan. Label `lichtste ploeg`, alleen zichtbaar als er meerdere netwerken in de uitslag staan. Aanname: **1X vóór 2M**, oftewel één installateur is goedkoper dan twee man — niet geverifieerd, omwisselen is één regel.
+5. **Netto tijd**, dan de kortste omweg.
 
 Netwerk weegt dus zwaarder dan rijtijd, maar lichter dan "past in de voorsprong" en "niet krap".
 
