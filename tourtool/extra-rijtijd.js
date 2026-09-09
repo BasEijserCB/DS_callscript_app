@@ -64,7 +64,7 @@
 (function () {
   'use strict';
 
-  var RIJTIJD_VERSION = 'v1.9.0';
+  var RIJTIJD_VERSION = 'v1.10.0';
 
   var PANEL_ID = 'extra-rijtijd-panel';
   var PIL_ID = 'extra-rijtijd-pil';
@@ -382,6 +382,8 @@
   // Venlo alleen blijven staan — die liggen nu eenmaal ver van de rest.
   var DEPOT_STRAAL_KM = 75;
   var MIN_DEPOTS = 3;          // ondergrens, ook als er niets binnen de straal ligt
+  var DEPOT_MAX_KM = 110;      // maar nooit verder dan dit — zie autoDepots
+  var MAX_VISIT_RITTEN = 60;   // noodrem op het aantal GetVisits per Bereken
 
   // Routecode in de ritnaam → stamdepot. Afgeleid uit de data zelf op
   // 09-09-2026 (`probe-depotfilter.js`-aanpak: per depot GetTours ophalen en
@@ -437,12 +439,37 @@
 
 
   // ── rittenlijst ──────────────────────────────────────────────
+  // Voorsprong uit de rittenlijst zelf, in minuten, positief = vóór op schema.
+  // Het teken van TimelinessMinutes is niet gedocumenteerd — bij een rit met
+  // label 'TooEarly' zagen we -43 — dus we leiden het af uit het label en niet
+  // uit het teken. Zonder label vallen we terug op die waarneming.
+  function voorsprongUitLijst(t) {
+    var m = uw(t.TimelinessMinutes); if (m == null) m = uw(t.timelinessMinutes);
+    if (typeof m !== 'number') return null;
+    var label = String(uw(t.Timeliness) || uw(t.timeliness) || '');
+    if (/late/i.test(label)) return -Math.abs(m);
+    if (/early/i.test(label)) return Math.abs(m);
+    return -m;
+  }
+  function getal(t, a, b) {
+    var v = uw(t[a]); if (v == null) v = uw(t[b]);
+    return typeof v === 'number' ? v : null;
+  }
+
   function normTour(t) {
     var id = uw(t.id); if (id == null) id = uw(t.TourId); if (id == null) id = uw(t.Id);
     if (id == null) return null;
     var naam = uw(t.name) || uw(t.Name) || uw(t.Alias) || '';
     var ref = uw(t.referenceId) || uw(t.ReferenceId) || '';
-    return { id: id, naam: String(naam || ref || id), ref: String(ref || '') };
+    // stops/gedaan tellen ook activiteiten mee, dus ze zijn niet gelijk aan wat
+    // verwerkStops() straks overhoudt. Ze worden alleen gebruikt om ritten over
+    // te slaan die sowieso geen gat kunnen hebben — die kant op is het veilig.
+    return {
+      id: id, naam: String(naam || ref || id), ref: String(ref || ''),
+      stops: getal(t, 'NumberOfVisits', 'numberOfVisits'),
+      gedaan: getal(t, 'NumberOfVisitsCompleted', 'numberOfVisitsCompleted'),
+      voorsprong: voorsprongUitLijst(t)
+    };
   }
 
   function uitObservable(root) {
@@ -812,15 +839,34 @@
 
         // Eerst schiften, dan pas stops ophalen — scheelt tientallen requests.
         var eigenKern = ritKern(eigenRit);
-        overslag = { eigen: 0, netwerk: 0, netwerken: netwerken, eigenRit: eigenKern,
-                     geo: nieuw, orsLoos: !ORS_KEY, codeOnbekend: codeOnbekend };
+        overslag = { eigen: 0, netwerk: 0, klaar: 0, gekapt: 0, netwerken: netwerken,
+                     eigenRit: eigenKern, geo: nieuw, orsLoos: !ORS_KEY,
+                     codeOnbekend: codeOnbekend };
         var tours = alleTours.filter(function (t) {
           if (eigenKern && ritKern(t.naam) === eigenKern) { overslag.eigen++; return false; }
           var nw = netwerkVan(t.naam);
           if (nw && netwerken.indexOf(nw) === -1) { overslag.netwerk++; return false; }
+          // Blijven er minder dan twee stops over, dan is er geen gat mogelijk.
+          // Dat staat al in de rittenlijst, dus die GetVisits kunnen we sparen.
+          if (t.stops !== null && t.gedaan !== null && t.stops - t.gedaan < 2) {
+            overslag.klaar++; return false;
+          }
           return true;
         });
         if (!tours.length) throw new Error('Geen ritten over in de aangevinkte netwerken.');
+        // Noodrem. Normaal blijven er tientallen ritten over en gaan ze er alle
+        // in, maar met een handvol depots aangevinkt kan dat oplopen tot ver
+        // boven de honderd — evenzoveel GetVisits-calls op DireXtion. Dan
+        // winnen de ritten met de meeste voorsprong, want dat is ook de eerste
+        // sleutel van de ranglijst.
+        if (tours.length > MAX_VISIT_RITTEN) {
+          overslag.gekapt = tours.length - MAX_VISIT_RITTEN;
+          tours = tours.slice().sort(function (a, b) {
+            var va = a.voorsprong == null ? -9999 : a.voorsprong;
+            var vb = b.voorsprong == null ? -9999 : b.voorsprong;
+            return vb - va;
+          }).slice(0, MAX_VISIT_RITTEN);
+        }
         status('Stops ophalen 0/' + tours.length + '…');
         return inBatches(tours, PARALLEL_VISITS,
           function (t) { return haalVisits(t.id); },
@@ -1066,6 +1112,8 @@
         }
         if (overslag.eigen) uitleg.push('eigen rit ' + esc(overslag.eigenRit) + ' overgeslagen' + (overslag.auto ? ' (zelf herkend op het adres)' : ''));
         if (overslag.netwerk) uitleg.push(overslag.netwerk + ' rit(ten) buiten het netwerkfilter');
+        if (overslag.klaar) uitleg.push(overslag.klaar + ' rit(ten) (bijna) klaar');
+        if (overslag.gekapt) uitleg.push(overslag.gekapt + ' rit(ten) niet opgehaald (limiet ' + MAX_VISIT_RITTEN + ')');
         if (overslag.netwerken && overslag.netwerken.length < NETWERKEN.length) {
           uitleg.push('alleen ' + overslag.netwerken.join(', '));
         }
@@ -1190,8 +1238,15 @@
     // Zeeland en Zuid-Limburg ligt er geen enkel depot binnen 75 km; zonder
     // die ondergrens zocht de tool daar in één depot.
     mee.forEach(function (d, i) {
-      if (d.km <= DEPOT_STRAAL_KM || i < MIN_DEPOTS) voegToe(d.id);
+      // Het plafond geldt alleen voor de ondergrens, niet voor de straal zelf.
+      // Zonder plafond sleepte de derde plek in Zeeland en Zuid-Limburg Utrecht
+      // mee op 128 respectievelijk 144 km — daar komt nooit een rit vandaan,
+      // en het kostte wel een GetVisits per rit van dat depot.
+      if (d.km <= DEPOT_STRAAL_KM || (i < MIN_DEPOTS && d.km <= DEPOT_MAX_KM)) voegToe(d.id);
     });
+    // Ligt zelfs het dichtstbijzijnde depot buiten het plafond, dan toch dat
+    // ene — een lege lijst betekent in dit filter 'alle depots'.
+    if (!ids.length && mee.length) voegToe(mee[0].id);
     return ids;
   }
 
