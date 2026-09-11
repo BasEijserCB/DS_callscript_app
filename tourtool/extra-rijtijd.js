@@ -64,7 +64,7 @@
 (function () {
   'use strict';
 
-  var RIJTIJD_VERSION = 'v1.16.1';
+  var RIJTIJD_VERSION = 'v1.17.0';
 
   var PANEL_ID = 'extra-rijtijd-panel';
   var PIL_ID = 'extra-rijtijd-pil';
@@ -774,8 +774,61 @@
   }
 
   // Allebei leveren dezelfde vorm op: durations[i][j] in seconden.
+  //
+  // Valt de eerste engine weg, dan neemt de ander het over — maar nooit stil:
+  // welke engine de getallen leverde staat onder de uitslag, want ze rekenen
+  // niet gelijk. Aanleiding (11-09-2026): ORS weigerde verbindingen
+  // (ERR_CONNECTION_REFUSED, een storing bij HeiGIT zelf, niet bij ons), en
+  // omdat matrix() een harde òf/òf was viel de hele tool stil terwijl OSRM
+  // gewoon antwoordde.
+  //
+  // Het vangnet werkt maar één kant op. Zonder sleutel ís OSRM al de keuze en
+  // is er geen tweede engine om naar uit te wijken — dan is een mislukking
+  // het eindstation.
+  var routerBron = '';     // engine die deze scan de getallen leverde
+  var routerWissel = '';   // waarom er uitgeweken is, leeg als er niets misging
+  var routerWeg = {};      // engine → true zodra hij deze scan onbereikbaar bleek
+
+  function resetRouter() { routerBron = ''; routerWissel = ''; routerWeg = {}; }
+
+  // Onderscheid dat ertoe doet: is de engine wég (dan hem deze scan niet meer
+  // proberen — zes kandidaten betekent anders zes keer dezelfde mislukking
+  // afwachten), of ging er iets mis met déze aanvraag? Een 400 op één set
+  // punten zegt niets over de volgende rit.
+  function engineWeg(m) {
+    return /Failed to fetch|NetworkError|Load failed|gaf (5\d\d|429|403|401)/i.test(m);
+  }
+
+  function roepRouter(naam, punten) {
+    return naam === 'ORS' ? matrixOrs(punten) : matrixOsrm(punten);
+  }
+
   function matrix(punten) {
-    return ORS_KEY ? matrixOrs(punten) : matrixOsrm(punten);
+    var keten = (ORS_KEY ? ['ORS', 'OSRM'] : ['OSRM']).filter(function (n) {
+      return !routerWeg[n];
+    });
+    if (!keten.length) {
+      return Promise.reject(new Error(routerWissel || 'Geen router beschikbaar.'));
+    }
+    return probeerRouter(punten, keten, 0);
+  }
+
+  function probeerRouter(punten, keten, i) {
+    var naam = keten[i];
+    return roepRouter(naam, punten).then(function (d) {
+      routerBron = naam;
+      return d;
+    }, function (e) {
+      var reden = String(e && e.message ? e.message : e);
+      if (engineWeg(reden)) routerWeg[naam] = true;
+      if (i + 1 >= keten.length) {
+        // Laatste engine in de keten. Als er eerder al een uitwijk was,
+        // noemt de melding ze allebei — anders zoek je naar de verkeerde.
+        throw new Error(routerWissel ? routerWissel + ' · daarna ' + reden : reden);
+      }
+      routerWissel = reden + ' — uitgeweken naar ' + keten[i + 1];
+      return probeerRouter(punten, keten, i + 1);
+    });
   }
 
   function matrixOrs(punten) {
@@ -802,10 +855,10 @@
   function matrixOsrm(punten) {
     var coords = punten.map(function (p) { return p.lon + ',' + p.lat; }).join(';');
     return externFetch(OSRM + coords + '?annotations=duration').then(function (r) {
-      if (!r.ok) throw new Error('Router gaf ' + r.status);
+      if (!r.ok) throw new Error('OSRM gaf ' + r.status);
       return r.json();
     }).then(function (j) {
-      if (j.code !== 'Ok' || !j.durations) throw new Error('Geen route gevonden');
+      if (j.code !== 'Ok' || !j.durations) throw new Error('OSRM vond geen route');
       return j.durations;
     });
   }
@@ -1024,6 +1077,7 @@
   }
 
   function scan(adres, service, eigenRit, netwerken, depots) {
+    resetRouter();
     var landVooraf = landVanNazorg(adres, eigenRit);
     if (landVooraf && !landOndersteund(landVooraf)) {
       return Promise.reject(new Error('Deze tool werkt alleen voor Nederland en België. ' +
@@ -1191,6 +1245,8 @@
               var na = netto(ga.totaal, a.voorsprong), nb = netto(gb.totaal, b.voorsprong);
               return na !== nb ? na - nb : ga.totaal - gb.totaal;
             });
+            overslag.routerBron = routerBron;
+            overslag.routerWissel = routerWissel;
             bewaar(KEY_RES, resultaten); bewaar(KEY_ADRES, adres);
             status('');
             vouwForm(false);
@@ -1204,9 +1260,16 @@
       });
     }).catch(function (e) {
       var m = String(e && e.message ? e.message : e);
-      if (/Failed to fetch|NetworkError/i.test(m)) {
-        m = 'Netwerkverzoek geblokkeerd (waarschijnlijk CSP). Laat het weten — ' +
-            'dan verhuist de berekening naar buiten de pagina.';
+      if (/Failed to fetch|NetworkError|Load failed/i.test(m)) {
+        // Tot v1.17.0 wees deze melding altijd naar CSP. Dat was een gok, en
+        // een dure: bij de ORS-storing van 11-09-2026 had de Ritmonitor
+        // helemaal geen CSP-header en lag alleen de router eruit. De browser
+        // vertelt niet wat de oorzaak is, dus noemt de melding nu de
+        // mogelijkheden op volgorde van waarschijnlijkheid \u2014 en zegt waar
+        // je het antwoord wel vindt.
+        m = 'Netwerkverzoek mislukt: ' + m + '. Meestal ligt de dienst eruit of ' +
+            'blokkeert het netwerk hem; CSP is de minst waarschijnlijke oorzaak. ' +
+            'In de console staat welke host faalt.';
       }
       status(m, true);
     });
@@ -1371,6 +1434,10 @@
         if (overslag.netwerken && overslag.netwerken.length < NETWERKEN.length) {
           uitleg.push('alleen ' + overslag.netwerken.join(', '));
         }
+        // Welke engine de getallen leverde hoort zichtbaar te zijn: ORS en
+        // OSRM rekenen niet gelijk, dus zonder dit zou een uitwijk een stille
+        // sprong in de rijtijden zijn.
+        if (overslag.routerBron) uitleg.push('rijtijden via ' + esc(overslag.routerBron));
         if (uitleg.length) html += '<div class="er-status">' + uitleg.join(' \u00b7 ') + '</div>';
         if (overslag.uiLos) {
           html += '<div class="park-melding er-depot">\u2691 Het filter in de Ritmonitor kon ' +
@@ -1386,7 +1453,12 @@
         if (overslag.orsLoos) {
           html += '<div class="park-melding er-depot">\u2691 Nog geen OpenRouteService-sleutel \u2014 ' +
                   'rijtijden komen van de OSRM-demoserver, die daar niet voor bedoeld is. ' +
-                  'Vul ORS_KEY in bovenaan het bestand.</div>';
+                  'Vul je eigen sleutel in via het veld bovenaan het paneel.</div>';
+        }
+        if (overslag.routerWissel) {
+          html += '<div class="park-melding er-depot">\u2691 ' + esc(overslag.routerWissel) +
+                  '. De rijtijden hieronder komen dus van de tweede engine; die rekent net ' +
+                  'iets anders, dus een paar minuten verschil met normaal is te verwachten.</div>';
         }
         body.innerHTML = html;
         Array.prototype.forEach.call(body.querySelectorAll('.er-rij'), function (el) {
