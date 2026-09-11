@@ -64,7 +64,7 @@
 (function () {
   'use strict';
 
-  var RIJTIJD_VERSION = 'v1.17.0';
+  var RIJTIJD_VERSION = 'v1.18.0';
 
   var PANEL_ID = 'extra-rijtijd-panel';
   var PIL_ID = 'extra-rijtijd-pil';
@@ -245,8 +245,19 @@
   // ── opslag ───────────────────────────────────────────────────
   function laad(k, d) { try { var v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } }
   function bewaar(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+  function vergeet(k) { try { localStorage.removeItem(k); } catch (e) {} }
 
-  var resultaten = laad(KEY_RES, []);
+  // De scheidslijn: instellingen blijven, bevindingen niet. Netwerkvinkjes en
+  // de ORS-sleutel overleven een sessie, een uitslag nooit.
+  //
+  // Tot v1.17.0 werd de vorige uitslag uit localStorage teruggehaald bij het
+  // openen van het paneel, en bleef hij ook staan als een scan faalde. Een
+  // lijst met ritnamen en minuten leest als een antwoord, ongeacht wat er
+  // boven staat — dus stond er bij een storing een ranglijst voor een ándere
+  // nazorg, waar iemand een toezegging op kon doen. Liever een leeg paneel en
+  // een keer extra op Bereken.
+  vergeet(KEY_RES); vergeet(KEY_ADRES);
+  var resultaten = [];
   var kolomData = { tourId: null, perSeq: {}, risico: {}, beste: null };
   var overslag = { eigen: 0, netwerk: 0, keuze: null, eigenRit: '' };
   var laatsteTaak = '';   // uit het logboek; leeggemaakt zodra je zelf een adres typt
@@ -1077,6 +1088,10 @@
   }
 
   function scan(adres, service, eigenRit, netwerken, depots) {
+    // Eerst opruimen, dan pas zoeken. Elke uitweg hieronder — een geweigerd
+    // land, een mislukte geocode, een router die eruit ligt — laat daardoor
+    // een leeg paneel achter in plaats van de vorige uitslag.
+    wisUitslag();
     resetRouter();
     var landVooraf = landVanNazorg(adres, eigenRit);
     if (landVooraf && !landOndersteund(landVooraf)) {
@@ -1247,7 +1262,6 @@
             });
             overslag.routerBron = routerBron;
             overslag.routerWissel = routerWissel;
-            bewaar(KEY_RES, resultaten); bewaar(KEY_ADRES, adres);
             status('');
             vouwForm(false);
             render();
@@ -1342,6 +1356,21 @@
     var inst = gridInstance();
     if (!inst || typeof inst.deleteColumn !== 'function') return;
     try { inst.deleteColumn(KOLOM); } catch (e) {}
+  }
+
+  // Alles wat een uitkomst voorstelt in één keer weg: de ranglijst, de
+  // toelichting eronder, de kolom in de stoplijst en het pilletje (dat leest
+  // uit resultaten[0]). Eén routine, want een hálve opruiming is het gevaar —
+  // een achtergebleven kolom of pil hoort bij een zoektocht die niet meer
+  // bestaat. Vouwt bewust niet: scan() wil het formulier laten staan, de
+  // Wissen-knop wil het openklappen, dus dat bepaalt de aanroeper.
+  function wisUitslag() {
+    resultaten = [];
+    overslag = { eigen: 0, netwerk: 0, keuze: null, eigenRit: '' };
+    alleRittenTonen = false;
+    kolomData = { tourId: null, perSeq: {}, risico: {}, beste: null };
+    var inst = gridInstance(); if (inst) { try { inst.repaint(); } catch (e) {} }
+    render();
   }
 
   function selecteerRit(tourId) {
@@ -1917,7 +1946,7 @@
   var adresInput = document.getElementById('er-adres');
   var serviceInput = document.getElementById('er-servicetijd');
   var eigenRitInput = document.getElementById('er-eigenrit');
-  adresInput.value = laad(KEY_ADRES, '') || '';
+  adresInput.value = '';
   zetNetwerken(laad(KEY_NETWERKEN, NETWERKEN.slice()));
 
   depotLijst = depotOpties();
@@ -2012,11 +2041,9 @@
          depotHandmatig ? depotKeuze.slice() : null);
   };
   panel.querySelector('.er-wis').onclick = function () {
-    resultaten = []; bewaar(KEY_RES, resultaten);
-    kolomData = { tourId: null, perSeq: {}, risico: {}, beste: null };
-    var inst = gridInstance(); if (inst) { try { inst.repaint(); } catch (e) {} }
+    wisUitslag();
     vouwForm(true);
-    render(); status('');
+    status('');
   };
   function opEnter(e) { if (e.key === 'Enter') panel.querySelector('.er-bereken').click(); }
   adresInput.addEventListener('keydown', opEnter);
