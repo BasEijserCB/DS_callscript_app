@@ -64,7 +64,7 @@
 (function () {
   'use strict';
 
-  var RIJTIJD_VERSION = 'v1.19.0';
+  var RIJTIJD_VERSION = 'v1.19.1';
 
   var PANEL_ID = 'extra-rijtijd-panel';
   var PIL_ID = 'extra-rijtijd-pil';
@@ -1420,8 +1420,7 @@
     gekozenTour = tourId;
     selecteerRit(tourId);   // in die rit plan je de stop, dus meteen openen
     render();
-    status('\u2713 ' + keuze.rit + ' klaargezet \u2014 klik in het logboek bij de routevraag op ' +
-           '"Rit uit Extra rijtijd".');
+    status('\u2713 ' + keuze.rit + ' klaargezet \u2014 klik in het logboek op \u2193 Rijtijd in het routeveld.');
   }
 
   // ── UI ───────────────────────────────────────────────────────
@@ -1460,7 +1459,13 @@
           html += '<div class="er-rij" data-tour="' + r.tourId + '" title="Klik om deze rit te openen">' +
             '<div class="er-rij-kop"><span class="er-rit">' + esc(r.rit) +
               (gemengd && r.rang === minRang ? ' <span class="pill pill-green">lichtste ploeg</span>' : '') +
-              (idx === 0 ? ' <span class="er-ster">★</span>' : '') + '</span>' +
+              (idx === 0 ? ' <span class="er-ster">★</span>' : '') +
+              (r.tourId === gekozenTour
+                ? ' <button class="er-kies-btn gekozen" data-tour="' + r.tourId + '" ' +
+                    'title="Klaargezet voor het DS Logboek \u2014 klik om opnieuw klaar te zetten">\u2713 gekozen</button>'
+                : ' <button class="er-kies-btn" data-tour="' + r.tourId + '" ' +
+                    'title="Zet deze rit klaar voor de routevraag in het DS Logboek">Kies</button>') +
+              '</span>' +
             '<span class="er-uitloop"><span class="er-getal" style="color:' + kleurUitloop(g.uitloop) + '">' +
               uitloopTekst(g.uitloop) + '</span>' +
               '<span class="section-label">' + (g.uitloop > 0 ? 'uitloop' : 'speling over') + '</span></span></div>' +
@@ -1484,13 +1489,6 @@
                 '. Past alleen als die tijd er echt is.</div>'
               : '') +
             (r.onderweg ? '' : '<div class="park-melding er-depot">\u2691 Rit staat nog op het depot \u2014 informeer de TL na het inplannen</div>') +
-            '<div class="er-kies">' +
-              (r.tourId === gekozenTour
-                ? '<button class="er-kies-btn gekozen" data-tour="' + r.tourId + '" ' +
-                    'title="Nog een keer klaarzetten">\u2713 Gekozen</button>'
-                : '<button class="er-kies-btn" data-tour="' + r.tourId + '" ' +
-                    'title="Zet deze rit klaar voor de routevraag in het DS Logboek">Kies deze rit</button>') +
-            '</div>' +
             '</div>';
         });
         if (resultaten.length > TOON_EERST) {
@@ -1880,10 +1878,9 @@
     '#' + PANEL_ID + ' .er-goed{color:#155724;font-weight:600;}',
     '#' + PANEL_ID + ' .er-slecht{color:#E50000;font-weight:600;}',
     '#' + PANEL_ID + ' .er-ster{color:#ff6600;}',
-    '#' + PANEL_ID + ' .er-kies{margin-top:7px;text-align:right;}',
-    '#' + PANEL_ID + ' .er-kies-btn{padding:5px 12px;border:1px solid #0090e3;border-radius:8px;background:#fff;' +
-      'color:#0090e3;font-size:12px;font-weight:600;font-family:inherit;cursor:pointer;}',
-    '#' + PANEL_ID + ' .er-kies-btn:hover{background:#F2F7FC;}',
+    '#' + PANEL_ID + ' .er-kies-btn{margin-left:4px;padding:1px 7px;border:1px solid #cce9f9;border-radius:4px;' +
+      'background:#F2F7FC;color:#285dab;font-size:11px;font-weight:600;font-family:inherit;cursor:pointer;vertical-align:1px;}',
+    '#' + PANEL_ID + ' .er-kies-btn:hover{border-color:#0090e3;color:#0090e3;}',
     '#' + PANEL_ID + ' .er-kies-btn.gekozen{background:#d4edda;border-color:#00B900;color:#155724;}',
     '#' + PANEL_ID + ' .er-depot{margin:6px 0 0;padding:6px 9px;font-size:11px;}',
     '#' + PANEL_ID + ' .er-sleutel-hint{margin-top:6px;font-size:11px;color:#856404;line-height:1.5;}',

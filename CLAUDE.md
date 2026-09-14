@@ -57,6 +57,7 @@ Tot en met v1.38.0 bestond er een parallelle staging build (`staging/ds-logboek-
 
 | Versie | Wijziging |
 |---|---|
+| v1.42.1 | Update: de ophaalknop voor de gekozen rit is een klein knopje **"↓ Rijtijd"** rechts ín het routeveld (`.rit-veld` / `.rit-chip` in `DS_WIDGET`), met één grijze uitlegregel in het "Vermeld altijd"-blokje. De melding verschijnt pas na een klik, onder het veld. Was een volle knop onder Next Day met een vaste hulptekst. Tegenhanger in `tourtool/extra-rijtijd.js` v1.19.1: "Kies" is een klein knopje naast de ritnaam. |
 | v1.42.0 | Add: knop **"↓ Rit uit Extra rijtijd"** onder de routevraag ("Op welke route gepland?"). Leest `ds_reistijd_keuze` uit `localStorage` én het klembord, de jongste wint, niet ouder dan 30 min, en vult het veld in — de medewerker klikt zelf op Volgende. Weigert een rit die voor een andere `orderBron` is gekozen. Een ingevulde ritkern gaat niet door `parseToTourAlias()` (die maakt van `2M-NLTI-03 (VEN)` anders `2M-NLVE-03`); past de medewerker het veld aan, dan wel. Tegenhanger van "Kies deze rit" in `tourtool/extra-rijtijd.js` v1.19.0. |
 | v1.41.2 | Update: de bevestiging onder "Adres klaarzetten voor reistijd-check" zei "open de Ritmonitor en klik Bereken". Dat klopte niet meer sinds `tourtool/extra-rijtijd.js` v1.4.0 het adres niet meer automatisch invult; de tekst verwijst nu naar de knop "Adres uit DS Logboek". Alleen een meldingstekst. |
 | v1.41.1 | Fix: de knopvarianten in de "Anders"-lijst waren hun kleur kwijt na v1.41.0. `.advies-btn` (oranje), `.advies-knop` (bleekgroen) en `.afwijkend-knop` (bleekgeel) hebben dezelfde specificiteit als `.ux-btn`, dus de volgorde bepaalt wie wint — en het style-blok zette `DS_WIDGET` vóór `DS_UI`, waardoor de gedeelde `.ux-btn` ze alle drie overschreef en elke knop weer blauw werd. Nu `DS_UI.join('') + DS_WIDGET.join('')`: eerst de gedeelde basis, daarna de widget-eigen varianten. |
@@ -334,7 +335,7 @@ Beantwoordt één vraag: als we deze aftercare tussen twee stops proppen, hoevee
 
 **Vormgeving: één gedeeld stijlblok (v1.2.0).** De tool en de widget dragen allebei een letterlijk identieke lijst `DS_UI` — 42 CSS-regels met de onderdelen die ze delen: `.header`, `.content`, `label`, `.section-label`, `input`, `.ux-btn` (+ `.selected`), `.action-btn`, `.submit-btn`, `.back-btn`, `.info-box`, `.warning-box`, `.park-melding`, `.summary-box`, `.status-bar`, `.toggle-btn`, `.close-btn`, `.toggle-link`, `.footer`, `.version-bar` en `.pill-blue/-green/-amber`. Ze kunnen die code niet importeren: het zijn twee losse bestanden die elk apart door een bookmarklet geladen worden. Zie de sectie **Gedeelde stijl** hierboven.
 
-Wat per tool verschilt staat in een eigen lijst: `DS_WIDGET` (14 regels — het iframe-document, de twee-koloms weergave, de knopvarianten in de "Anders"-lijst) en `DS_PANEEL` (45 regels — de omhulling, de uitslaglijst, de samenvattingsbalk, het pilletje).
+Wat per tool verschilt staat in een eigen lijst: `DS_WIDGET` (19 regels — het iframe-document, de twee-koloms weergave, de knopvarianten in de "Anders"-lijst, het knopje in het routeveld) en `DS_PANEEL` (56 regels — de omhulling, de uitslaglijst, de samenvattingsbalk, het pilletje, het kiesknopje).
 
 **De ORS-sleutel staat niet in het bestand.** Dat bestand gaat naar GitHub en wordt door de loader opgehaald, dus een sleutel erin zou publiek zijn. Hij staat in `localStorage` (`rijtijd_ors_key`) en wordt gezet via een veld dat het paneel alleen toont zolang er geen sleutel is. Iedereen zet dus zijn eigen sleutel, één keer per browser. Lokaal staat er een gitignored `tourtool/zet-ors-sleutel.local.js` om dat in één plak te doen.
 
@@ -407,7 +408,7 @@ Voor later: OSRM zelf draaien (container met een NL+BE-extract) lost naleving, p
 4. **Eventueel bijstellen**: netwerkvinkjes, servicetijd, eigen rit — en desgewenst zelf depots aanvinken, wat de automatische keuze uitschakelt.
 5. **Bereken.** In deze volgorde: adres geocoderen (PDOK, anders Nominatim) → land bepalen → depots kiezen binnen `DEPOT_STRAAL_KM` → **het filter in de Ritmonitor gelijkzetten en op Filteren drukken** → `GetTours` met die depots → eigen rit eruit → netwerkfilter op de ritnaam → stops per overgebleven rit → `MAX_ROUTE_RITTEN` kandidaten door de router (zie **Voorselectie**) → ranglijst. Het depotblok toont intussen *"Automatisch gekozen: …"*, en het invulblok klapt aan het eind dicht tot de samenvattingsbalk.
 6. **Uitslag lezen**: de bovenste `TOON_EERST` (3) ritten staan meteen in beeld, de rest achter *"+ n andere overwogen ritten"*; de kolom `+ rijtijd` in de stoplijst van de geselecteerde rit; en het pilletje als het paneel klein staat. Klikken op een regel selecteert die rit in de Ritmonitor — dat werkt omdat stap 5 de rittenlijst al op dezelfde depots heeft gezet.
-7. **Rit kiezen** (v1.19.0): knop *"Kies deze rit"* onder elke regel. Zet de ritkern klaar voor de routevraag in het logboek en opent de rit in de Ritmonitor. In het logboek: *"↓ Rit uit Extra rijtijd"*. Zie **De gekozen rit terug** hieronder.
+7. **Rit kiezen** (v1.19.0): knopje *"Kies"* naast de ritnaam. Zet de ritkern klaar voor de routevraag in het logboek en opent de rit in de Ritmonitor. In het logboek: knopje *"↓ Rijtijd"* in het routeveld. Zie **De gekozen rit terug** hieronder.
 8. **Breder of smaller zoeken**: een depot aan- of uitvinken zet de keuze op *"Zelf gekozen"* en die blijft staan tot je op *automatisch* klikt of een ander adres invult. Opnieuw Bereken doet de ronde over met de nieuwe keuze.
 
 Een nieuw adres — zelf getypt of uit het logboek — zet de depotkeuze altijd terug op automatisch. Er wordt niets van die keuze bewaard tussen sessies.
@@ -579,13 +580,15 @@ Tot v1.3.0 vulde de tool zichzelf: bij het opstarten las hij `localStorage`, en 
 
 Wie dat ooit terugdraait: het probleem is niet de listener maar de asymmetrie. Automatisch invullen op beide bronnen kan alleen als de klembordlezing zonder gebruikersactie mag, en dat staat de browser niet toe.
 
-**De gekozen rit terug (v1.19.0, logboek v1.42.0).** Dezelfde koppeling de andere kant op. *"Kies deze rit"* onder een uitslagregel publiceert `ds_reistijd_keuze`:
+**De gekozen rit terug (v1.19.0, logboek v1.42.0).** Dezelfde koppeling de andere kant op. Het knopje *"Kies"* naast de ritnaam publiceert `ds_reistijd_keuze`:
 
 ```javascript
 { _soort:'ds-reistijd-keuze', rit, orderBron, adres, time }
 ```
 
-naar `localStorage` én het klembord; de knop *"↓ Rit uit Extra rijtijd"* onder de routevraag in het logboek leest allebei, net als *"↓ Adres uit DS Logboek"*. Vier keuzes die bewust zo zijn:
+naar `localStorage` én het klembord; het knopje *"↓ Rijtijd"* rechts in het routeveld van het logboek leest allebei, net als *"↓ Adres uit DS Logboek"*. Vijf keuzes die bewust zo zijn:
+
+- **Klein, en op de plek waar het over gaat (v1.19.1 / v1.42.1).** De eerste versie had volle knoppen: onder elke uitslag een eigen regel (veel wit tussen de ritten), en in het logboek een losse knop onder Next Day die niet duidelijk bij het veld hoorde. Nu staat "Kies" in de kopregel naast de ritnaam en zit "↓ Rijtijd" ín het veld dat het vult; één grijze regel in het "Vermeld altijd"-blokje legt het uit.
 
 - **Een eigen knop, niet de regel.** Klikken op een regel blijft `selecteerRit()` — even kijken in de Ritmonitor. Wie drie ritten bekijkt, mag niet per ongeluk de laatste klaarzetten. De kiesknop opent de rit wél, want daar wordt de stop gepland.
 - **Alleen de ritkern (`ritKern()`), en die gaat niet door `parseToTourAlias()`.** De parser zoekt depotnamen als substring: `2M-NLTI-03 (VEN)` wordt `2M-NLVE-03` omdat "ven" op Venlo matcht, en `2M-NLRO-07-7` blijft ongewijzigd staan. Het logboek zet de ingevulde waarde in `data-rit` op het veld en slaat de parser over zolang het veld die waarde nog heeft. `normaliseerRit()` accepteert alleen `1M/1X/2M/BI-XXXX-n` en vult het nummer aan tot twee cijfers.
