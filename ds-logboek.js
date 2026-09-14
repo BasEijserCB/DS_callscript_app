@@ -1273,7 +1273,7 @@
             '<span style="font-size:11px;color:'+(geenOrderMode?'#ff6600':'#999999')+';">'+(geenOrderMode?'Gegevens gewist':'Geen order')+'</span>' +
           '</div>' : '') +
         '</div></div>' +
-        '<div class="version-bar">DS Logboek v1.41.2' +
+        '<div class="version-bar">DS Logboek v1.42.0' +
           (callData.user ? ' · <span style="color:#999999;">'+callData.user+'</span> ' + (nameEditConfirm ? '<span style="color:#999999;margin-left:4px;">Naam wissen?</span> <span id="btn-edit-name-yes" style="cursor:pointer;color:#E50000;font-weight:600;margin-left:4px;">Ja</span> <span id="btn-edit-name-no" style="cursor:pointer;color:#999999;margin-left:4px;">Nee</span>' : '<span id="btn-edit-name" title="Naam wijzigen" style="cursor:pointer;opacity:0.45;margin-left:1px;">✎</span>') : '') +
         '</div>' +
       '</div>';
@@ -2110,9 +2110,13 @@
       if (stap.type==='route-input') iH+='<button id="nd" class="action-btn" style="background:#F2F7FC;color:#0090e3;border:1px solid #0090e3;margin-top:6px;">Next Day</button>';
       container.innerHTML+=iH;
       var f=idoc.getElementById('i'); f.focus();
+      if (stap.type==='route-input') renderRitUitRijtijd(container, f);
       var nT=function(){
         if (!f.value.trim()) return;
-        var v=f.value.trim(); if (stap.type==='route-input') v=parseToTourAlias(v);
+        // Een rit uit de Extra rijtijd-tool is al een ritkern en gaat niet door
+        // de parser: die maakt van een onbekende depotcode soms een verkeerde.
+        // Zelf aangepast? Dan wel, want dan is het weer vrije invoer.
+        var v=f.value.trim(); if (stap.type==='route-input' && v!==f.getAttribute('data-rit')) v=parseToTourAlias(v);
         callData[stap.key]=v; answeredKeys.push(stap.key);
         if (stap.key==='lname') { callData.user=localStorage.getItem('ds_fname')+' '+callData.lname; localStorage.setItem('ds_lname',callData.lname); }
         if (stap.key==='fname') localStorage.setItem('ds_fname',callData.fname);
@@ -2443,6 +2447,88 @@
       } else {
         melding.textContent = 'Klaarzetten niet gelukt \u2014 kopieer het adres handmatig.';
         melding.style.color = '#E50000';
+      }
+    };
+    wrap.appendChild(btn); wrap.appendChild(melding);
+    container.appendChild(wrap);
+  }
+
+  // ── Gekozen rit terug uit de Extra rijtijd-tool ─────────────────
+  // De tegenhanger van het reistijd-verzoek. De tool zet met "Kies deze rit"
+  // de ritkern klaar in localStorage (Basic) én het klembord (consumer
+  // portal); deze knop leest allebei en de jongste wint. Vult het veld alleen
+  // in — Volgende blijft het moment waarop de medewerker bevestigt.
+  var KEUZE_KEY = 'ds_reistijd_keuze';
+  var KEUZE_MAX_MIN = 30;
+
+  function leesRitKeuze(json) {
+    try {
+      var k = JSON.parse(json);
+      if (!k || k._soort !== 'ds-reistijd-keuze' || !k.rit) return null;
+      return k;
+    } catch (e) { return null; }
+  }
+
+  // '2M-NLRO-8' → '2M-NLRO-08', dezelfde vorm als parseToTourAlias() oplevert.
+  function normaliseerRit(rit) {
+    var m = /^(1M|1X|2M|BI)-([A-Z]{4})-(\d{1,2})$/i.exec(String(rit || '').trim());
+    return m ? (m[1] + '-' + m[2] + '-' + m[3].padStart(2, '0')).toUpperCase() : '';
+  }
+
+  function renderRitUitRijtijd(container, veld) {
+    var wrap = idoc.createElement('div');
+    wrap.style.cssText = 'margin-top:10px;padding-top:10px;border-top:1px solid #DDDDDD;';
+    var btn = idoc.createElement('button');
+    btn.className = 'ux-btn';
+    btn.style.cssText = 'background:#F2F7FC;color:#285dab;border:1px solid #cce9f9;font-size:12px;';
+    btn.innerText = '\u2193 Rit uit Extra rijtijd';
+    var melding = idoc.createElement('div');
+    melding.style.cssText = 'font-size:11px;color:#999999;margin-top:5px;line-height:1.4;';
+    melding.innerText = 'Rit gekozen in de Extra rijtijd-tool? Haal hem hier op.';
+    function meld(tekst, kleur) { melding.textContent = tekst; melding.style.color = kleur; }
+
+    function beslis(uitOpslag, uitKlembord, klembordGeweigerd) {
+      var k = uitOpslag;
+      if (uitKlembord && (!k || (uitKlembord.time || 0) > (k.time || 0))) k = uitKlembord;
+      if (!k) {
+        meld(klembordGeweigerd
+          ? 'Klembord lezen mag niet \u2014 sta klembordtoegang toe, of typ de route zelf.'
+          : 'Nog geen rit gekozen. Klik in de Extra rijtijd-tool op "Kies deze rit".', '#E50000');
+        return;
+      }
+      if (Date.now() - (k.time || 0) > KEUZE_MAX_MIN * 60 * 1000) {
+        meld('De gekozen rit is ouder dan ' + KEUZE_MAX_MIN + ' minuten \u2014 kies hem opnieuw in de Extra rijtijd-tool.', '#E50000');
+        return;
+      }
+      var rit = normaliseerRit(k.rit);
+      if (!rit) { meld('Ritnaam "' + k.rit + '" niet herkend \u2014 typ de route zelf.', '#E50000'); return; }
+      // Een rit die voor een andere order is doorgerekend, leest net zo
+      // overtuigend als een goede. Dus weigeren, niet invullen met een waarschuwing.
+      if (k.orderBron && callData.orderBron && k.orderBron !== callData.orderBron) {
+        meld('Deze rit is gekozen voor order ' + k.orderBron + ', niet voor deze order. Bereken opnieuw in de Extra rijtijd-tool.', '#E50000');
+        return;
+      }
+      veld.value = rit;
+      veld.setAttribute('data-rit', rit);
+      veld.focus();
+      if (k.orderBron && callData.orderBron) {
+        meld('\u2713 ' + rit + ' ingevuld. Klopt het? Klik Volgende.', '#155724');
+      } else {
+        // Geen-order modus, of een adres dat in de tool zelf getypt is.
+        meld('\u2713 ' + rit + ' ingevuld \u2014 niet te controleren op order' +
+          (k.adres ? ' (berekend voor ' + k.adres + ')' : '') + '. Klopt het? Klik Volgende.', '#856404');
+      }
+    }
+
+    btn.onclick = function() {
+      var uitOpslag = null;
+      try { uitOpslag = leesRitKeuze(localStorage.getItem(KEUZE_KEY)); } catch (e) {}
+      if (navigator.clipboard && navigator.clipboard.readText) {
+        navigator.clipboard.readText()
+          .then(function(t) { beslis(uitOpslag, leesRitKeuze(t), false); })
+          .catch(function() { beslis(uitOpslag, null, true); });
+      } else {
+        beslis(uitOpslag, null, false);
       }
     };
     wrap.appendChild(btn); wrap.appendChild(melding);

@@ -57,6 +57,7 @@ Tot en met v1.38.0 bestond er een parallelle staging build (`staging/ds-logboek-
 
 | Versie | Wijziging |
 |---|---|
+| v1.42.0 | Add: knop **"↓ Rit uit Extra rijtijd"** onder de routevraag ("Op welke route gepland?"). Leest `ds_reistijd_keuze` uit `localStorage` én het klembord, de jongste wint, niet ouder dan 30 min, en vult het veld in — de medewerker klikt zelf op Volgende. Weigert een rit die voor een andere `orderBron` is gekozen. Een ingevulde ritkern gaat niet door `parseToTourAlias()` (die maakt van `2M-NLTI-03 (VEN)` anders `2M-NLVE-03`); past de medewerker het veld aan, dan wel. Tegenhanger van "Kies deze rit" in `tourtool/extra-rijtijd.js` v1.19.0. |
 | v1.41.2 | Update: de bevestiging onder "Adres klaarzetten voor reistijd-check" zei "open de Ritmonitor en klik Bereken". Dat klopte niet meer sinds `tourtool/extra-rijtijd.js` v1.4.0 het adres niet meer automatisch invult; de tekst verwijst nu naar de knop "Adres uit DS Logboek". Alleen een meldingstekst. |
 | v1.41.1 | Fix: de knopvarianten in de "Anders"-lijst waren hun kleur kwijt na v1.41.0. `.advies-btn` (oranje), `.advies-knop` (bleekgroen) en `.afwijkend-knop` (bleekgeel) hebben dezelfde specificiteit als `.ux-btn`, dus de volgorde bepaalt wie wint — en het style-blok zette `DS_WIDGET` vóór `DS_UI`, waardoor de gedeelde `.ux-btn` ze alle drie overschreef en elke knop weer blauw werd. Nu `DS_UI.join('') + DS_WIDGET.join('')`: eerst de gedeelde basis, daarna de widget-eigen varianten. |
 | v1.41.0 | Refactor (alleen vormgeving): het style-blok is gesplitst in `DS_UI` (42 regels die letterlijk ook in `tourtool/extra-rijtijd.js` staan) en `DS_WIDGET` (14 widget-eigen regels). Daarmee delen de widget en de Extra rijtijd-tool hun knoppen, velden, meldingsblokken en kleuren; `build.py` faalt als de twee kopieën uiteenlopen. Verder: paneelbreedte 340 → 360px (gelijk aan het rijtijd-paneel), de twee formaatknoppen in de kop gebruiken `.toggle-btn` in plaats van de verwijderde `.resize-btn`, de versiestrip onderaan is `.version-bar`, en losse inline kleuren (`#666`, `#888`, `#E63946`, `#C1121F`, `#FFE6E6`, `#FFD54F`, `#5D4037`, `#E0E0E0`, `#D50000`, `#008a00`) zijn op tokens gezet. De Fornuis/Kookplaat-melding gebruikt nu `.warning-box`, het "vermeld altijd"-blokje `.park-melding`. Geen flow-, log- of vocabulairewijziging. |
@@ -406,7 +407,8 @@ Voor later: OSRM zelf draaien (container met een NL+BE-extract) lost naleving, p
 4. **Eventueel bijstellen**: netwerkvinkjes, servicetijd, eigen rit — en desgewenst zelf depots aanvinken, wat de automatische keuze uitschakelt.
 5. **Bereken.** In deze volgorde: adres geocoderen (PDOK, anders Nominatim) → land bepalen → depots kiezen binnen `DEPOT_STRAAL_KM` → **het filter in de Ritmonitor gelijkzetten en op Filteren drukken** → `GetTours` met die depots → eigen rit eruit → netwerkfilter op de ritnaam → stops per overgebleven rit → `MAX_ROUTE_RITTEN` kandidaten door de router (zie **Voorselectie**) → ranglijst. Het depotblok toont intussen *"Automatisch gekozen: …"*, en het invulblok klapt aan het eind dicht tot de samenvattingsbalk.
 6. **Uitslag lezen**: de bovenste `TOON_EERST` (3) ritten staan meteen in beeld, de rest achter *"+ n andere overwogen ritten"*; de kolom `+ rijtijd` in de stoplijst van de geselecteerde rit; en het pilletje als het paneel klein staat. Klikken op een regel selecteert die rit in de Ritmonitor — dat werkt omdat stap 5 de rittenlijst al op dezelfde depots heeft gezet.
-7. **Breder of smaller zoeken**: een depot aan- of uitvinken zet de keuze op *"Zelf gekozen"* en die blijft staan tot je op *automatisch* klikt of een ander adres invult. Opnieuw Bereken doet de ronde over met de nieuwe keuze.
+7. **Rit kiezen** (v1.19.0): knop *"Kies deze rit"* onder elke regel. Zet de ritkern klaar voor de routevraag in het logboek en opent de rit in de Ritmonitor. In het logboek: *"↓ Rit uit Extra rijtijd"*. Zie **De gekozen rit terug** hieronder.
+8. **Breder of smaller zoeken**: een depot aan- of uitvinken zet de keuze op *"Zelf gekozen"* en die blijft staan tot je op *automatisch* klikt of een ander adres invult. Opnieuw Bereken doet de ronde over met de nieuwe keuze.
 
 Een nieuw adres — zelf getypt of uit het logboek — zet de depotkeuze altijd terug op automatisch. Er wordt niets van die keuze bewaard tussen sessies.
 
@@ -576,6 +578,21 @@ naar `localStorage` (werkt Basic ↔ Ritmonitor, zelfde origin) én het klembord
 Tot v1.3.0 vulde de tool zichzelf: bij het opstarten las hij `localStorage`, en een `storage`-listener nam een adres live over zodra het logboek in een ander tabblad publiceerde. Dat werkte alleen op dezelfde origin. Vanaf de consumer portal kán dat niet — een klembordlezing mag pas na een gebruikersactie — dus stond het adres er op Basic ineens en moest je er vanaf de portal om vragen. Twee ervaringen voor dezelfde handeling. Het automatisch invullen en de `storage`-listener zijn daarom weg: liever overal één klik dan ergens nul en elders één.
 
 Wie dat ooit terugdraait: het probleem is niet de listener maar de asymmetrie. Automatisch invullen op beide bronnen kan alleen als de klembordlezing zonder gebruikersactie mag, en dat staat de browser niet toe.
+
+**De gekozen rit terug (v1.19.0, logboek v1.42.0).** Dezelfde koppeling de andere kant op. *"Kies deze rit"* onder een uitslagregel publiceert `ds_reistijd_keuze`:
+
+```javascript
+{ _soort:'ds-reistijd-keuze', rit, orderBron, adres, time }
+```
+
+naar `localStorage` én het klembord; de knop *"↓ Rit uit Extra rijtijd"* onder de routevraag in het logboek leest allebei, net als *"↓ Adres uit DS Logboek"*. Vier keuzes die bewust zo zijn:
+
+- **Een eigen knop, niet de regel.** Klikken op een regel blijft `selecteerRit()` — even kijken in de Ritmonitor. Wie drie ritten bekijkt, mag niet per ongeluk de laatste klaarzetten. De kiesknop opent de rit wél, want daar wordt de stop gepland.
+- **Alleen de ritkern (`ritKern()`), en die gaat niet door `parseToTourAlias()`.** De parser zoekt depotnamen als substring: `2M-NLTI-03 (VEN)` wordt `2M-NLVE-03` omdat "ven" op Venlo matcht, en `2M-NLRO-07-7` blijft ongewijzigd staan. Het logboek zet de ingevulde waarde in `data-rit` op het veld en slaat de parser over zolang het veld die waarde nog heeft. `normaliseerRit()` accepteert alleen `1M/1X/2M/BI-XXXX-n` en vult het nummer aan tot twee cijfers.
+- **`orderBron` hangt aan de berekening, niet aan het laatst opgehaalde verzoek.** `scan()` legt `laatsteOrder` vast bij de start en zet hem op elk resultaat. Haalt iemand na Bereken een ander adres uit het logboek zonder opnieuw te rekenen, dan hoort een gekozen rit nog steeds bij de oude order — en weigert het logboek hem. Zelf een adres typen in de tool wist `laatsteOrder`.
+- **Wel invullen, niet doorgaan.** Kiezen in de tool is nog niet plannen in DireXtion; Volgende blijft het moment van bevestigen. Kan de order niet gecontroleerd worden (geen-order modus, of een adres dat in de tool getypt is), dan vult het logboek toch in, met een amberen melding en het adres waarvoor gerekend is.
+
+`gekozenTour` staat alleen in het geheugen en wordt door `wisUitslag()` gewist, net als de rest van de uitslag. Een klaargezette keuze in `localStorage` blijft staan, maar vervalt na 30 minuten en wordt door de ordercheck tegengehouden.
 
 **Waarom geen Chrome-extensie.** Die is niet toegestaan, en voor deze koppeling ook niet nodig: cross-tab communicatie kan via localStorage (zelfde origin) en het klembord (cross-origin). Een extensie zou wél helpen bij auto-injectie, gedeelde opslag over origins heen, en het omzeilen van CSP/CORS voor externe API's — dat laatste is het echte risico hier. Blokkeert DireXtion ooit `connect-src`, dan meldt de tool dat expliciet en moet de berekening naar een eigen pagina verhuizen.
 

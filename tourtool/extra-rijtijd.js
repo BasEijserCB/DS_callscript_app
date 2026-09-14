@@ -64,7 +64,7 @@
 (function () {
   'use strict';
 
-  var RIJTIJD_VERSION = 'v1.18.0';
+  var RIJTIJD_VERSION = 'v1.19.0';
 
   var PANEL_ID = 'extra-rijtijd-panel';
   var PIL_ID = 'extra-rijtijd-pil';
@@ -101,6 +101,10 @@
   var RISICOVOL = 1;           // aantal gaten daarna dat als risicovol geldt
   var UITLOOP_ROOD = 15;       // uitloop t/m 15 min oranje, daarboven rood
   var REISTIJD_KEY = 'ds_reistijd_verzoek';
+  // De andere kant op: de gekozen rit terug naar de routevraag in het logboek.
+  // Zelfde twee sporen als het verzoek — localStorage voor Basic, het klembord
+  // voor de consumer portal — en ook daar pas na een klik gelezen.
+  var KEUZE_KEY = 'ds_reistijd_keuze';
 
   // ── NETWERKEN ────────────────────────────────────────────────
   //   1M  één man, alleen begane grond
@@ -227,6 +231,7 @@
     if (v.route) eigenRitInput.value = v.route;
     laatsteTaak = v.taak || '';
     laatsteFormaat = v.formaatTV || '';
+    laatsteOrder = v.orderBron || '';
     var nets = netwerkenVoor(v.taak, laatsteFormaat);
     if (nets) zetNetwerken(nets);
     var st = servicetijdVoor(v.taak, v.dienstType);
@@ -262,6 +267,8 @@
   var overslag = { eigen: 0, netwerk: 0, keuze: null, eigenRit: '' };
   var laatsteTaak = '';   // uit het logboek; leeggemaakt zodra je zelf een adres typt
   var laatsteFormaat = '';   // formaatTV uit het logboek: bepaalt bij TV's het netwerk
+  var laatsteOrder = '';     // orderBron uit het logboek: gaat mee met de gekozen rit
+  var gekozenTour = null;    // tourId van de rit die met "Kies deze rit" is klaargezet
 
   // ── knockout root ────────────────────────────────────────────
   function koRoot() {
@@ -1093,6 +1100,10 @@
     // een leeg paneel achter in plaats van de vorige uitslag.
     wisUitslag();
     resetRouter();
+    // Vastgeklonken aan déze berekening: haalt iemand daarna een ander adres
+    // uit het logboek zonder opnieuw te berekenen, dan hoort een gekozen rit
+    // nog steeds bij de order waarvoor hij doorgerekend is.
+    var order = laatsteOrder;
     var landVooraf = landVanNazorg(adres, eigenRit);
     if (landVooraf && !landOndersteund(landVooraf)) {
       return Promise.reject(new Error('Deze tool werkt alleen voor Nederland en België. ' +
@@ -1232,6 +1243,7 @@
                 voorsprong: k.voorsprong, service: service, onderweg: k.onderweg,
                 ruimte: k.ruimte, ruimteBron: k.ruimteBron, ruimteNorm: k.ruimteNorm,
                 start: k.tour.start,
+                orderBron: order,
                 gaps: gaps
               };
             });
@@ -1368,6 +1380,7 @@
     resultaten = [];
     overslag = { eigen: 0, netwerk: 0, keuze: null, eigenRit: '' };
     alleRittenTonen = false;
+    gekozenTour = null;
     kolomData = { tourId: null, perSeq: {}, risico: {}, beste: null };
     var inst = gridInstance(); if (inst) { try { inst.repaint(); } catch (e) {} }
     render();
@@ -1378,6 +1391,37 @@
     var root = koRoot();
     try { if (root && typeof root.selectTourId === 'function') root.selectTourId(tourId); } catch (e) {}
     if (res) setTimeout(function () { zetKolom(tourId, res.gaps); }, 600);
+  }
+
+  // Zet de rit klaar voor de routevraag in het logboek. Alleen de ritkern:
+  // parseToTourAlias() in het logboek maakt van '2M-NLTI-03 (VEN)' anders
+  // '2M-NLVE-03', omdat "ven" op Venlo matcht.
+  function kiesRit(tourId) {
+    var r = resultaten.filter(function (x) { return x.tourId === tourId; })[0];
+    if (!r) return;
+    var keuze = {
+      _soort: 'ds-reistijd-keuze',
+      rit: ritKern(r.rit),
+      orderBron: r.orderBron || '',
+      adres: (overslag.geo && overslag.geo.label) || '',
+      time: Date.now()
+    };
+    var json = JSON.stringify(keuze), gelukt = false;
+    try { localStorage.setItem(KEUZE_KEY, json); gelukt = true; } catch (e) {}
+    try {
+      var p = navigator.clipboard.writeText(json);
+      if (p && p.catch) p.catch(function () {});
+      gelukt = true;
+    } catch (e) {}
+    if (!gelukt) {
+      status('Klaarzetten niet gelukt \u2014 typ ' + keuze.rit + ' zelf in het logboek.', true);
+      return;
+    }
+    gekozenTour = tourId;
+    selecteerRit(tourId);   // in die rit plan je de stop, dus meteen openen
+    render();
+    status('\u2713 ' + keuze.rit + ' klaargezet \u2014 klik in het logboek bij de routevraag op ' +
+           '"Rit uit Extra rijtijd".');
   }
 
   // ── UI ───────────────────────────────────────────────────────
@@ -1440,6 +1484,13 @@
                 '. Past alleen als die tijd er echt is.</div>'
               : '') +
             (r.onderweg ? '' : '<div class="park-melding er-depot">\u2691 Rit staat nog op het depot \u2014 informeer de TL na het inplannen</div>') +
+            '<div class="er-kies">' +
+              (r.tourId === gekozenTour
+                ? '<button class="er-kies-btn gekozen" data-tour="' + r.tourId + '" ' +
+                    'title="Nog een keer klaarzetten">\u2713 Gekozen</button>'
+                : '<button class="er-kies-btn" data-tour="' + r.tourId + '" ' +
+                    'title="Zet deze rit klaar voor de routevraag in het DS Logboek">Kies deze rit</button>') +
+            '</div>' +
             '</div>';
         });
         if (resultaten.length > TOON_EERST) {
@@ -1492,6 +1543,14 @@
         body.innerHTML = html;
         Array.prototype.forEach.call(body.querySelectorAll('.er-rij'), function (el) {
           el.onclick = function () { selecteerRit(parseInt(el.getAttribute('data-tour'), 10)); };
+        });
+        // Een eigen knop, niet de regel zelf: klikken op een regel blijft
+        // "even kijken in de Ritmonitor", zonder dat er iets klaargezet wordt.
+        Array.prototype.forEach.call(body.querySelectorAll('.er-kies-btn'), function (el) {
+          el.onclick = function (e) {
+            e.stopPropagation();
+            kiesRit(parseInt(el.getAttribute('data-tour'), 10));
+          };
         });
         var meer = body.querySelector('.er-meer-link');
         if (meer) meer.onclick = function () { alleRittenTonen = !alleRittenTonen; render(); };
@@ -1821,6 +1880,11 @@
     '#' + PANEL_ID + ' .er-goed{color:#155724;font-weight:600;}',
     '#' + PANEL_ID + ' .er-slecht{color:#E50000;font-weight:600;}',
     '#' + PANEL_ID + ' .er-ster{color:#ff6600;}',
+    '#' + PANEL_ID + ' .er-kies{margin-top:7px;text-align:right;}',
+    '#' + PANEL_ID + ' .er-kies-btn{padding:5px 12px;border:1px solid #0090e3;border-radius:8px;background:#fff;' +
+      'color:#0090e3;font-size:12px;font-weight:600;font-family:inherit;cursor:pointer;}',
+    '#' + PANEL_ID + ' .er-kies-btn:hover{background:#F2F7FC;}',
+    '#' + PANEL_ID + ' .er-kies-btn.gekozen{background:#d4edda;border-color:#00B900;color:#155724;}',
     '#' + PANEL_ID + ' .er-depot{margin:6px 0 0;padding:6px 9px;font-size:11px;}',
     '#' + PANEL_ID + ' .er-sleutel-hint{margin-top:6px;font-size:11px;color:#856404;line-height:1.5;}',
     '#' + PANEL_ID + ' .er-uitleg{margin-top:14px;font-size:11px;color:#999999;}',
@@ -2055,7 +2119,7 @@
   // de afstand te volgen, ook als je hem daarvoor met de hand had gezet.
   function adresGewijzigd() { depotHandmatig = false; depotKeuze = []; tekenDepots(); }
   adresInput.addEventListener('input', function () {
-    laatsteTaak = ''; laatsteFormaat = ''; adresGewijzigd();
+    laatsteTaak = ''; laatsteFormaat = ''; laatsteOrder = ''; adresGewijzigd();
   });
   eigenRitInput.addEventListener('input', adresGewijzigd);
   // Vinkjes meteen onthouden, niet pas bij Bereken.
