@@ -57,6 +57,7 @@ Tot en met v1.38.0 bestond er een parallelle staging build (`staging/ds-logboek-
 
 | Versie | Wijziging |
 |---|---|
+| v1.42.2 | Fix: same day koos altijd de Nazorg-service, ook als de medewerker Extra dienst koos. `kopieerNaarKlembord()` gebruikte `isNazorg` alleen bij de stapelkit. Nu met eigen Extra dienst-ID voor trekschakelaar (`277243`), inbouwen (`276172`), TV installeren (`427819`), TV ophangen (`427820`), TV + Soundbar (`490319`) en TV + Soundbar ophangen (`490320`). Die bestaan alleen onder Built-in: `paste-bookmarklet.js` zet ze in `builtInServices` én `keepBuiltInNetwork`. Fix: `TV + Soundbar ophangen en installeren` matchte op `'ophangen'` en kreeg de service van alleen TV ophangen (`254508`); de soundbar-checks staan nu vóór de losse TV-checks. Next day ongewijzigd, want de sjablonen kozen al N/E. |
 | v1.42.1 | Update: de ophaalknop voor de gekozen rit is een klein knopje **"↓ Rijtijd"** rechts ín het routeveld (`.rit-veld` / `.rit-chip` in `DS_WIDGET`), met één grijze uitlegregel in het "Vermeld altijd"-blokje. De melding verschijnt pas na een klik, onder het veld. Was een volle knop onder Next Day met een vaste hulptekst. Tegenhanger in `tourtool/extra-rijtijd.js` v1.19.1: "Kies" is een klein knopje naast de ritnaam. |
 | v1.42.0 | Add: knop **"↓ Rit uit Extra rijtijd"** onder de routevraag ("Op welke route gepland?"). Leest `ds_reistijd_keuze` uit `localStorage` én het klembord, de jongste wint, niet ouder dan 30 min, en vult het veld in — de medewerker klikt zelf op Volgende. Weigert een rit die voor een andere `orderBron` is gekozen. Een ingevulde ritkern gaat niet door `parseToTourAlias()` (die maakt van `2M-NLTI-03 (VEN)` anders `2M-NLVE-03`); past de medewerker het veld aan, dan wel. Tegenhanger van "Kies deze rit" in `tourtool/extra-rijtijd.js` v1.19.0. |
 | v1.41.2 | Update: de bevestiging onder "Adres klaarzetten voor reistijd-check" zei "open de Ritmonitor en klik Bereken". Dat klopte niet meer sinds `tourtool/extra-rijtijd.js` v1.4.0 het adres niet meer automatisch invult; de tekst verwijst nu naar de knop "Adres uit DS Logboek". Alleen een meldingstekst. |
@@ -645,7 +646,7 @@ Geldt voor zowel `isSameDay` als `isPickup` (Pick-up handmatig gepland). Twee va
 kanaal = 16 (2mans) → wacht 800ms → netwerk = 12 → wacht 400ms → service (last)
 ```
 
-**Built-in services** `[277249, 51068, 322997, 277248, 254509, 254508, 490316, 490317]`:
+**Built-in services** `[277249, 247513, 301445, 322997, 277248, 254509, 254508, 490316, 490317]` plus de Extra dienst-varianten `[277243, 276172, 427819, 427820, 490319, 490320]`. Die laatste zes en deur omdraaien (`247513`/`301445`) staan ook in `keepBuiltInNetwork`: netwerk blijft op Built-in (132137) in plaats van terug naar 12, anders wist DireXtion de service:
 ```
 kanaal = 132134 → wacht 800ms → service → wacht 400ms → netwerk = 12 → wacht 400ms → kanaal = 16 (last)
 ```
@@ -689,10 +690,26 @@ isLogOnlyProduct()              // true als effectiefProduct() 'Fornuis' of 'Koo
 LEGACY_LABEL_ALIASES            // mapping van oude → nieuwe label-waarden; toegepast in herstelSessie() om geparkeerde sessies te migreren na hernoemen van keuze-opties. Huidig: 'Pakket niet meegenomen (manco)' + 'Pakje niet ingeladen' → 'Pakket niet meegenomen / niet ingeladen', plus eerder hernoemde uitkomsten
 ```
 
-**serviceTypeId mapping** (in `kopieerNaarKlembord()`): bepaalt welke DireXtion service geselecteerd wordt voor same-day/pick-up. Meeste services hebben één ID voor zowel Nazorg als Extra dienst (geen aparte Extra dienst variant beschikbaar). Uitzonderingen:
-- `stapelkit`: Nazorg=727124, Extra dienst=727123
-- `Pick-up` (milieuretour_type=Pick-up): 427807
-- Alle anderen: Nazorg-ID ook gebruikt als Extra dienst default
+**serviceTypeId mapping** (in `kopieerNaarKlembord()`): bepaalt welke DireXtion service geselecteerd wordt voor same-day/pick-up. ID's uit de service-TagBox van het Import-formulier (22-09-2026):
+
+| Taak | Nazorg | Extra dienst |
+|---|---|---|
+| Plaatsen / tillen | 51072 | — (Nazorg-ID) |
+| Aansluiting controleren | 51060 | — |
+| Afvoerslang | 51064 | — |
+| Trekschakelaar | 277249 | 277243 |
+| Apparaat inbouwen | 322997 | 276172 |
+| Stapelkit | 727124 | 727123 |
+| Deur omdraaien | — | 247513 · koel-vries 301445 (altijd) |
+| TV installeren | 254509 | 427819 |
+| TV ophangen en installeren | 254508 | 427820 |
+| TV + Soundbar installeren | 490316 | 490319 |
+| TV + Soundbar ophangen en installeren | 490317 | 490320 |
+| Frontpaneel | 277248 | — |
+| Spullen achtergelaten | 51076 | — |
+| Milieuretour / Pick-up | 20 / 427807 | — |
+
+Onder kanaal 2Mans (16) + netwerk 12 staan alleen de niet-built-in Nazorg-services plus stapelkit Extra dienst; alle andere Extra dienst-varianten staan alleen onder Built-in. Niet gebruikt maar wel beschikbaar: Amerikaanse koelkast (N `526884`/`526882`, E `526885`/`526886`/`526887`), Europese side-by-side (N `760052`, E `760053`), soundbar los (N `524678`/`524679`, E `524680`/`524682`), 2M herhaal drempellevering `1038675`, waterpas zetten `51068`.
 
 ---
 

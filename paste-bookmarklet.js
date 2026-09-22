@@ -1,6 +1,6 @@
 javascript:(async function(){
 try {
-  const PASTE_VERSION = 'v1.42.1';
+  const PASTE_VERSION = 'v1.42.2';
   const clipboardText = await navigator.clipboard.readText();
   const orderData = JSON.parse(clipboardText);
   if (!orderData.time || (Date.now() - orderData.time) > 300000) {
@@ -538,12 +538,14 @@ try {
 
   // ── STAP 4b: SAME DAY — KANAAL / NETWERK / SERVICE ───────────
   if ((isSameDay || isPickup) && orderData.serviceTypeId) {
-    const builtInServices = [277249, 247513, 301445, 322997, 277248, 254509, 254508, 490316, 490317];
+    // Nazorg-varianten eerst, dan de Extra dienst-varianten (die bestaan alleen onder Built-in).
+    const builtInServices = [277249, 247513, 301445, 322997, 277248, 254509, 254508, 490316, 490317,
+                             277243, 276172, 427819, 427820, 490319, 490320];
     const needsBuiltIn = builtInServices.includes(parseInt(orderData.serviceTypeId));
-    // Deur omdraaien (Extra dienst) bestaat alleen onder netwerk Coolblue Built-in.
+    // Extra dienst-services bestaan alleen onder netwerk Coolblue Built-in.
     // Na kanaal terug naar 2Mans moet netwerk op Built-in (132137) BLIJVEN — anders
     // herlaadt DireXtion de service-lijst en wist de geselecteerde service.
-    const keepBuiltInNetwork = [247513, 301445];
+    const keepBuiltInNetwork = [247513, 301445, 277243, 276172, 427819, 427820, 490319, 490320];
     const stayBuiltInNetwork = keepBuiltInNetwork.includes(parseInt(orderData.serviceTypeId));
     if (needsBuiltIn) {
       setDxDropdown('_channelId', 132134);

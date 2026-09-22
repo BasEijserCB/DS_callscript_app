@@ -1278,7 +1278,7 @@
             '<span style="font-size:11px;color:'+(geenOrderMode?'#ff6600':'#999999')+';">'+(geenOrderMode?'Gegevens gewist':'Geen order')+'</span>' +
           '</div>' : '') +
         '</div></div>' +
-        '<div class="version-bar">DS Logboek v1.42.1' +
+        '<div class="version-bar">DS Logboek v1.42.2' +
           (callData.user ? ' · <span style="color:#999999;">'+callData.user+'</span> ' + (nameEditConfirm ? '<span style="color:#999999;margin-left:4px;">Naam wissen?</span> <span id="btn-edit-name-yes" style="cursor:pointer;color:#E50000;font-weight:600;margin-left:4px;">Ja</span> <span id="btn-edit-name-no" style="cursor:pointer;color:#999999;margin-left:4px;">Nee</span>' : '<span id="btn-edit-name" title="Naam wijzigen" style="cursor:pointer;opacity:0.45;margin-left:1px;">✎</span>') : '') +
         '</div>' +
       '</div>';
@@ -2568,22 +2568,25 @@
     else if (!/[A-Z]/.test(pNS)&&pNS.length===4) { country='België'; lang='nl'; }
     var prob=(callData.probleem||'').toLowerCase();
     var isNazorg = callData.dienstType !== 'Extra dienst (betaald)';
+    // Nazorg- en Extra dienst-ID's uit de service-TagBox van het Import-formulier (22-09-2026).
+    // Plaatsen, aansluiting, slang, milieuretour, spullen en frontpaneel hebben geen Extra dienst-variant.
+    // TV + Soundbar vóór de losse TV-checks: 'tv + soundbar ophangen' bevat ook 'ophangen'.
     var serviceTypeId=null;
     if (prob.includes('plaatsen')||prob.includes('tillen')) serviceTypeId=51072;
     else if (prob.includes('aansluiting')) serviceTypeId=51060;
     else if (prob.includes('slang')) serviceTypeId=51064;
-    else if (prob.includes('trekschakelaar')) serviceTypeId=277249;
+    else if (prob.includes('trekschakelaar')) serviceTypeId=isNazorg?277249:277243;
     else if (prob.includes('milieuretour') && callData.milieuretour_type==='Pick-up') serviceTypeId=427807;
     else if (prob.includes('milieuretour')) serviceTypeId=20;
     else if (prob.includes('deur omdraaien')) serviceTypeId=effectiefProduct().toLowerCase().includes('koel-vries')?301445:247513;
-    else if (prob.includes('inbouwen')) serviceTypeId=322997;
+    else if (prob.includes('inbouwen')) serviceTypeId=isNazorg?322997:276172;
     else if (prob.includes('stapelkit')) serviceTypeId=isNazorg?727124:727123;
     else if (prob.includes('spullen achtergelaten')) serviceTypeId=51076;
     else if (prob.includes('frontpaneel')) serviceTypeId=277248;
-    else if (prob.includes('tv ophangen')||prob.includes('ophangen')) serviceTypeId=254508;
-    else if (prob.includes('tv installeren')||prob.includes('aansluiten')) serviceTypeId=254509;
-    else if (prob.includes('tv + soundbar ophang')) serviceTypeId=490317;
-    else if (prob.includes('tv + soundbar')) serviceTypeId=490316;
+    else if (prob.includes('tv + soundbar ophang')) serviceTypeId=isNazorg?490317:490320;
+    else if (prob.includes('tv + soundbar')) serviceTypeId=isNazorg?490316:490319;
+    else if (prob.includes('tv ophangen')||prob.includes('ophangen')) serviceTypeId=isNazorg?254508:427820;
+    else if (prob.includes('tv installeren')||prob.includes('aansluiten')) serviceTypeId=isNazorg?254509:427819;
     var pickupProbleem = callData.milieuretour_type ? (callData.milieuretour_type==='Pick-up' ? 'Pick-up (handmatig gepland)' : 'Milieuretour ophalen') : callData.probleem;
     // Inbouw koelkast/vriezer + aansluitcontrole → gebruik inbouwen sjabloon voor betere sjabloonmatch
     var payloadProbleem = pickupProbleem;
