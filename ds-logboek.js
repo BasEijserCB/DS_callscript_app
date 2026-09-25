@@ -50,7 +50,9 @@
       const el = document.querySelector("[data-bind*='" + sel + "']");
       return el ? el.innerText.trim() : '';
     };
-    scrapedOrder = (getTxt('OrderNumberTransport').match(/\d{8}/) || [''])[0];
+    // {8,} en niet {8}: sinds sept. 2026 zijn ordernummers negen cijfers
+    // ("A-100152904-511379217"), en {8} kapte daar het laatste cijfer af.
+    scrapedOrder = (getTxt('OrderNumberTransport').match(/\d{8,}/) || [''])[0];
     scrapedRoute  = getTxt('Static.TourName');
     scrapedAdres  = getTxt('Static.Visit.Address') || getTxt('ConsigneeAddress') || '';
     scrapedPC     = (getTxt('Static.Visit.PostalCode').match(/^\d{4}\s?[A-Z]{2}|^\d{4,5}/i) || [''])[0].trim();
@@ -72,7 +74,7 @@
     // ── BASIC MODULE ───────────────────────────────────────────
     // Ordernummer: uit DOM velden via basicField
     var rawOrder = basicField('Pakbonnummer') || basicField('Order nr. verlader') || basicField('Afnemer nummer') || '';
-    scrapedOrder  = (rawOrder.match(/\d{8}/) || [''])[0];
+    scrapedOrder  = (rawOrder.match(/\d{8,}/) || [''])[0];
 
     // Route: Alias geeft het korte formaat ("2M-BEAN-07"), Ritnaam het lange ("2M-BEAN-07-7")
     scrapedRoute  = basicField('Alias') || basicField('Ritnaam') || '';
@@ -1278,7 +1280,7 @@
             '<span style="font-size:11px;color:'+(geenOrderMode?'#ff6600':'#999999')+';">'+(geenOrderMode?'Gegevens gewist':'Geen order')+'</span>' +
           '</div>' : '') +
         '</div></div>' +
-        '<div class="version-bar">DS Logboek v1.42.2' +
+        '<div class="version-bar">DS Logboek v1.42.3' +
           (callData.user ? ' · <span style="color:#999999;">'+callData.user+'</span> ' + (nameEditConfirm ? '<span style="color:#999999;margin-left:4px;">Naam wissen?</span> <span id="btn-edit-name-yes" style="cursor:pointer;color:#E50000;font-weight:600;margin-left:4px;">Ja</span> <span id="btn-edit-name-no" style="cursor:pointer;color:#999999;margin-left:4px;">Nee</span>' : '<span id="btn-edit-name" title="Naam wijzigen" style="cursor:pointer;opacity:0.45;margin-left:1px;">✎</span>') : '') +
         '</div>' +
       '</div>';
@@ -2639,7 +2641,7 @@
     var orderReady = false;
     if (!isBasicPage) {
       var el = document.querySelector("[data-bind*='OrderNumberTransport']");
-      orderReady = !!(el && el.innerText.trim().match(/\d{8}/));
+      orderReady = !!(el && el.innerText.trim().match(/\d{8,}/));
     } else {
       var fields = document.querySelectorAll('.details-field');
       for (var i = 0; i < fields.length; i++) {
