@@ -396,6 +396,7 @@
     product:'', formaatTV:'',
     uitkomst:'', geplandeRoute:'',
     next_day_reden:'', geen_oplossing_reden:'',
+    oprek_30:'',
     advies_gelukt:'',
     onderweg_type:'', onderweg_uitkomst:'',
     ks_reden:'', ks_uitkomst:'',
@@ -735,7 +736,7 @@
   }
 
   // ── FLOW ENGINE ───────────────────────────────────────────────
-  function bepaalStappen() {
+  function bepaalBasisStappen() {
     var s=[];
     s.push({key:'fname',label:'Voornaam',type:'text'});
     s.push({key:'lname',label:'Achternaam',type:'text'});
@@ -1089,6 +1090,25 @@
     return s;
   }
 
+  // ── TIJDELIJK: meting "30 minuten oprekken" (v1.43.0) ─────────
+  // Eén extra vraag na elke next day-reden en elke 'Geen oplossing gepland',
+  // gelogd in kolom AB (oprek30). Weghalen: zet OPREK_VRAAG_AAN op false, of
+  // verwijder alles waar 'oprek' in staat (hier, callData, statusbalk, bouwLogParams).
+  var OPREK_VRAAG_AAN = true;
+  var OPREK_NA = ['next_day_reden','geen_oplossing_reden'];
+
+  function bepaalStappen() {
+    var s=bepaalBasisStappen();
+    var laatste=s[s.length-1];
+    if (OPREK_VRAAG_AAN && laatste && OPREK_NA.indexOf(laatste.key)>-1 && answeredKeys.includes(laatste.key)) {
+      s.push({key:'oprek_30',label:'Had deze stop opgelost kunnen worden wanneer we een BI/1X rit met 30 minuten hadden mogen oprekken?',type:'ux-select',opties:['Ja','Nee','Weet ik niet']});
+    } else if (answeredKeys.includes('oprek_30')) {
+      // De flow is een andere kant op gegaan: een oud antwoord mag niet meeliften.
+      callData.oprek_30=''; answeredKeys.splice(answeredKeys.indexOf('oprek_30'),1);
+    }
+    return s;
+  }
+
   function getNextStep() {
     var st=bepaalStappen();
     for (var i=0;i<st.length;i++) { if (!answeredKeys.includes(st[i].key)) return st[i]; }
@@ -1218,7 +1238,7 @@
     if (callData.user)  h+='<span class="status-line">DS medewerker: <b>'+callData.user+'</b></span>';
     if (callData.route) h+='<span class="status-line">Route: <b>'+callData.route+'</b></span>';
     if (callData.bellerType) h+='<span class="status-line">Beller: <b>'+callData.bellerType+'</b></span>';
-    var lbl={product_keuze:'Model',locatie:'Locatie',probleem:'Taak',ks_reden:'Reden',ks_uitkomst:'KS uitkomst',afwijkend_reden:'Reden',afwijkend_toelichting:'Toelichting',milieuretour_type:'Type ophaling',formaatTV:'TV formaat',uitkomst:'Uitkomst',geplandeRoute:'Route gepland',next_day_reden:'Reden next day',geen_oplossing_reden:'Reden geen oplossing',advies_gelukt:'Advies uitkomst',onderweg_type:'Probleem',onderweg_uitkomst:'Uitkomst',cbf_depot_reden:'Vraag',cbf_depot_toelichting:'Toelichting',cbb_hub_reden:'Hub vraag',cbb_hub_toelichting:'Toelichting',tl_reden:'Vraag TL',tl_uitkomst:'Uitkomst TL'};
+    var lbl={product_keuze:'Model',locatie:'Locatie',probleem:'Taak',ks_reden:'Reden',ks_uitkomst:'KS uitkomst',afwijkend_reden:'Reden',afwijkend_toelichting:'Toelichting',milieuretour_type:'Type ophaling',formaatTV:'TV formaat',uitkomst:'Uitkomst',geplandeRoute:'Route gepland',next_day_reden:'Reden next day',geen_oplossing_reden:'Reden geen oplossing',oprek_30:'30 min oprekken',advies_gelukt:'Advies uitkomst',onderweg_type:'Probleem',onderweg_uitkomst:'Uitkomst',cbf_depot_reden:'Vraag',cbf_depot_toelichting:'Toelichting',cbb_hub_reden:'Hub vraag',cbb_hub_toelichting:'Toelichting',tl_reden:'Vraag TL',tl_uitkomst:'Uitkomst TL'};
     // Apparaat + model tonen
     if (callData.model) {
       if (meerdereProducten && !answeredKeys.includes('product_keuze')) {
@@ -1232,7 +1252,7 @@
         }
       }
     }
-    ['locatie','ks_reden','ks_uitkomst','afwijkend_reden','afwijkend_toelichting','probleem','milieuretour_type','formaatTV','uitkomst','geplandeRoute','next_day_reden','geen_oplossing_reden','advies_gelukt','onderweg_type','onderweg_uitkomst','cbf_depot_reden','cbf_depot_toelichting','cbb_hub_reden','cbb_hub_toelichting','tl_reden','tl_uitkomst'].forEach(function(k){
+    ['locatie','ks_reden','ks_uitkomst','afwijkend_reden','afwijkend_toelichting','probleem','milieuretour_type','formaatTV','uitkomst','geplandeRoute','next_day_reden','geen_oplossing_reden','oprek_30','advies_gelukt','onderweg_type','onderweg_uitkomst','cbf_depot_reden','cbf_depot_toelichting','cbb_hub_reden','cbb_hub_toelichting','tl_reden','tl_uitkomst'].forEach(function(k){
       if (answeredKeys.includes(k)&&callData[k]&&k!=='fname'&&k!=='lname')
         h+='<span class="status-line">'+lbl[k]+': <b>'+callData[k]+'</b></span>';
     });
@@ -1280,7 +1300,7 @@
             '<span style="font-size:11px;color:'+(geenOrderMode?'#ff6600':'#999999')+';">'+(geenOrderMode?'Gegevens gewist':'Geen order')+'</span>' +
           '</div>' : '') +
         '</div></div>' +
-        '<div class="version-bar">DS Logboek v1.42.3' +
+        '<div class="version-bar">DS Logboek v1.43.0' +
           (callData.user ? ' · <span style="color:#999999;">'+callData.user+'</span> ' + (nameEditConfirm ? '<span style="color:#999999;margin-left:4px;">Naam wissen?</span> <span id="btn-edit-name-yes" style="cursor:pointer;color:#E50000;font-weight:600;margin-left:4px;">Ja</span> <span id="btn-edit-name-no" style="cursor:pointer;color:#999999;margin-left:4px;">Nee</span>' : '<span id="btn-edit-name" title="Naam wijzigen" style="cursor:pointer;opacity:0.45;margin-left:1px;">✎</span>') : '') +
         '</div>' +
       '</div>';
@@ -2374,7 +2394,7 @@
     var extraInfo = extraDetails.filter(function(d){ return d; }).join(' | ');
     var extraDienst = (callData.locatie==='Klantenservice'||callData.locatie==='Winkel') && callData.ks_reden==='Nazorg nodig' ? 'Ja' : '';
     var categorie = berekenCategorie();
-    return '?id='+Date.now()+'&user='+encodeURIComponent(callData.user)+'&route='+encodeURIComponent(callData.route)+'&depot='+encodeURIComponent(callData.depot)+'&driver1='+encodeURIComponent(logDriver1)+'&driver2='+encodeURIComponent(logDriver2)+'&orderBron='+encodeURIComponent(logOrderBron)+'&product='+encodeURIComponent(prodLog)+'&probleem='+encodeURIComponent(probLog)+'&redenGeenOplossing='+encodeURIComponent(redenGeenOplossing)+'&redenNextDay='+encodeURIComponent(redenNextDay)+'&orderOplossing='+encodeURIComponent(orderOplLog)+'&geplandeRoute='+encodeURIComponent(routeLog)+'&dsWaarde='+encodeURIComponent(callData.dsWaarde)+'&bellerType='+encodeURIComponent(bellerLog)+'&tijdvak='+encodeURIComponent(callData.tijdvak)+'&aankomsttijd='+encodeURIComponent(callData.aankomsttijd)+'&extra_info='+encodeURIComponent(extraInfo)+'&extra_dienst='+encodeURIComponent(extraDienst)+'&categorie='+encodeURIComponent(categorie)+'&locatie='+encodeURIComponent(logLocatie)+'&ingang='+encodeURIComponent(logIngang)+'&probleemCategorie='+encodeURIComponent(probleemCategorie(probLog));
+    return '?id='+Date.now()+'&user='+encodeURIComponent(callData.user)+'&route='+encodeURIComponent(callData.route)+'&depot='+encodeURIComponent(callData.depot)+'&driver1='+encodeURIComponent(logDriver1)+'&driver2='+encodeURIComponent(logDriver2)+'&orderBron='+encodeURIComponent(logOrderBron)+'&product='+encodeURIComponent(prodLog)+'&probleem='+encodeURIComponent(probLog)+'&redenGeenOplossing='+encodeURIComponent(redenGeenOplossing)+'&redenNextDay='+encodeURIComponent(redenNextDay)+'&orderOplossing='+encodeURIComponent(orderOplLog)+'&geplandeRoute='+encodeURIComponent(routeLog)+'&dsWaarde='+encodeURIComponent(callData.dsWaarde)+'&bellerType='+encodeURIComponent(bellerLog)+'&tijdvak='+encodeURIComponent(callData.tijdvak)+'&aankomsttijd='+encodeURIComponent(callData.aankomsttijd)+'&extra_info='+encodeURIComponent(extraInfo)+'&extra_dienst='+encodeURIComponent(extraDienst)+'&categorie='+encodeURIComponent(categorie)+'&locatie='+encodeURIComponent(logLocatie)+'&ingang='+encodeURIComponent(logIngang)+'&probleemCategorie='+encodeURIComponent(probleemCategorie(probLog))+'&oprek30='+encodeURIComponent(callData.oprek_30||'');
   }
 
   // ── KLEMBORD ALLEEN ─────────────────────────────────────────

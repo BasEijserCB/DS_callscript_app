@@ -57,6 +57,7 @@ Tot en met v1.38.0 bestond er een parallelle staging build (`staging/ds-logboek-
 
 | Versie | Wijziging |
 |---|---|
+| v1.43.0 | Add (**tijdelijk**): meetvraag *"Had deze stop opgelost kunnen worden wanneer we een BI/1X rit met 30 minuten hadden mogen oprekken?"* (`oprek_30`: `Ja` / `Nee` / `Weet ik niet`), gesteld na elke `next_day_reden` en na `geen_oplossing_reden`. Gelogd in **kolom AB** (`oprek30`). Niet per flow-pad ingebouwd maar als wrapper: `bepaalStappen()` roept `bepaalBasisStappen()` (de oude functie) aan en plakt de vraag erachter. Zie "Tijdelijke meetvraag". `gas-backend.js` moet handmatig naar de GAS-editor. |
 | v1.42.3 | Fix: het ordernummer werd op het achtste cijfer afgekapt. Coolblue is in sept. 2026 voorbij 99.999.999 gegaan, dus het middendeel van `A-100152904-511379217` telt negen cijfers, en `/\d{8}/` pakte daar `10015290` uit — een bestaande maar verkeerde order in kolom H, in `orderNr` (`-DS`) op het Import-formulier en in de parkeersleutel. Nu `/\d{8,}/` op alle drie de plekken: de consumer portal (`OrderNumberTransport`), Basic (`Pakbonnummer` / `Order nr. verlader` / `Afnemer nummer`) en de DOM-poll die op het ordernummer wacht. Het achterste deel van de referentie komt niet mee, want de eerste cijferreeks wint. |
 | v1.42.2 | Fix: same day koos altijd de Nazorg-service, ook als de medewerker Extra dienst koos. `kopieerNaarKlembord()` gebruikte `isNazorg` alleen bij de stapelkit. Nu met eigen Extra dienst-ID voor trekschakelaar (`277243`), inbouwen (`276172`), TV installeren (`427819`), TV ophangen (`427820`), TV + Soundbar (`490319`) en TV + Soundbar ophangen (`490320`). Die bestaan alleen onder Built-in: `paste-bookmarklet.js` zet ze in `builtInServices` én `keepBuiltInNetwork`. Fix: `TV + Soundbar ophangen en installeren` matchte op `'ophangen'` en kreeg de service van alleen TV ophangen (`254508`); de soundbar-checks staan nu vóór de losse TV-checks. Next day ongewijzigd, want de sjablonen kozen al N/E. |
 | v1.42.1 | Update: de ophaalknop voor de gekozen rit is een klein knopje **"↓ Rijtijd"** rechts ín het routeveld (`.rit-veld` / `.rit-chip` in `DS_WIDGET`), met één grijze uitlegregel in het "Vermeld altijd"-blokje. De melding verschijnt pas na een klik, onder het veld. Was een volle knop onder Next Day met een vaste hulptekst. Tegenhanger in `tourtool/extra-rijtijd.js` v1.19.1: "Kies" is een klein knopje naast de ritnaam. |
@@ -223,10 +224,21 @@ Wat overblijft is iets in de omgeving — autorisatie, quota, of een serverstatu
 | Y | locatie | waar het speelde: `Onderweg` / `Bij de klant` / `Depot / hub` / `Stop aanpassen` / `Buiten DS` / leeg |
 | Z | ingang | reden van het belletje bij KS/Winkel/Teamleider (`ks_reden` / `tl_reden` via `INGANG_MAP`), anders leeg |
 | AA | probleemCategorie | **probleem categorie** — de groep van kolom J (zie `PROBLEEM_CATEGORIEEN`) |
+| AB | oprek30 | **tijdelijk** — antwoord op de 30-minuten-oprekvraag: `Ja` / `Nee` / `Weet ik niet`, leeg als de vraag niet gesteld is |
 
 **Twee categoriekolommen, twee vragen.** Kolom U (`Oplossing categorie`) zegt *hoe het afliep*, kolom AA (`Probleem categorie`) zegt *waar het over ging*. Ze zijn onafhankelijk: een `Nazorg nodig` kan `Same day gepland` of `Geen oplossing` worden. De kruising AA × U is de kernanalyse.
 
 **Let op — `Nazorg nodig` staat in twee kolommen met verschillende betekenis:** in Z (ingang) betekent het dat KS/Winkel mét een nazorgverzoek belde, in AA (probleemcategorie) dat het nazorgwerk betrof. In draaitabellen botsen ze niet, maar bouw je een rapport waarin beide voorkomen, benoem ze dan expliciet.
+
+### Tijdelijke meetvraag — 30 minuten oprekken (v1.43.0, kolom AB)
+
+Meet hoe vaak een stop die next day of zonder oplossing eindigde wél same day had gekund als een BI/1X-rit 30 minuten had mogen uitlopen. De vraag komt na elke `next_day_reden` (alle zeven flow-paden) en na `geen_oplossing_reden`; in alle andere gesprekken blijft kolom AB leeg. Hij wordt altijd gesteld, ook bij redenen als `Klant vandaag geen tijd meer` waar het antwoord vanzelf Nee is — filter in de analyse op kolom L in plaats van in de flow.
+
+Niet gedekt: de knop "Next Day" in het routeveld (uitkomst blijft same day, er komt geen `next_day_reden`) en de overige geen-oplossing-uitkomsten (`'Nee, geen oplossing door DS'` e.d.).
+
+**Weghalen.** Alles hangt aan `OPREK_VRAAG_AAN` in `ds-logboek.js`: op `false` verdwijnt de vraag en blijft AB leeg. Helemaal opruimen = alles met `oprek` verwijderen (de wrapper `bepaalStappen()` — hernoem `bepaalBasisStappen()` dan terug —, `oprek_30` in `callData` en de statusbalk, `&oprek30=` in `bouwLogParams()`, de regel in `gas-backend.js`). Kolom AB in de sheet kan blijven staan; `appendRow` schrijft dan gewoon een kolom minder.
+
+**Volgorde van uitrollen maakt niet uit.** Een oude GAS-versie negeert de onbekende parameter, een nieuwe GAS-versie schrijft een lege cel voor een oude widget.
 
 ### Kolom J — gesloten vocabulaire (v1.32.0, gegroepeerd v1.33.0)
 
