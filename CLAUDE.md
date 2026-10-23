@@ -15,10 +15,15 @@ Browsergebaseerde widget voor het Coolblue Delivery Support team. Draait bovenop
 | `install.html` | Installatiepagina voor de widget: de loader- en paste-bookmarklet als sleepbare knoppen, plus een doorverwijzing naar de installatiepagina van de Extra rijtijd-tool. |
 | `build.py` | Syntax-checkt `ds-logboek.js` en `paste-bookmarklet.js`, detecteert versienummer uit `ds-logboek.js` en synchroniseert `PASTE_VERSION` in `paste-bookmarklet.js`. |
 | `gas-backend.js` | Broncode van het Google Apps Script backend (`doGet`). Schrijft elke log-entry als rij naar de actieve Google Sheet. Moet handmatig gekopieerd worden naar de GAS editor bij wijzigingen — een commit hier verandert niets in productie. |
+| `gas-dagmail.js` | Dagmail "Same day stops nalopen": leest het tabblad Database voor vandaag en mailt alle rijen met oplossing categorie `Same day gepland` naar `gl-deliverysupport@coolblue.nl`, met per stop een link naar DireXtion Basic. Hoort in hetzelfde GAS-project als `gas-backend.js` en moet er net zo handmatig heen. Zie "Dagmail". |
 | `tourtool/extra-rijtijd.js` | **Losse tool**, geen onderdeel van de widget. Draait op de Ritmonitor en berekent wat een extra stop aan rijtijd kost, per gat en over meerdere ritten. Eigen `RIJTIJD_VERSION`, los van de widgetversie. Zie "Extra rijtijd-tool". |
 | `tourtool/install-rijtijd.html` | Eigen installatiepagina voor de Extra rijtijd-tool: bookmarklet, instructie voor een eigen ORS-sleutel, gebruik en de regels die de tool zelf toepast. Bewust los van `install.html` — die gaat over de widget. Beide pagina's verwijzen naar elkaar en delen hetzelfde style-blok (gekopieerd, niet gedeeld). |
 | `tourtool/loader-rijtijd-bookmarklet.js` | Leesbare broncode van de loader voor de Extra rijtijd-tool. Eigen cache key (`ds_rijtijd_prod_cache`), groene toast, versie uit `RIJTIJD_VERSION`. Zelfde stale-while-revalidate als de andere twee. |
 | `tourtool/probe-ritmonitor.js` | Eenmalige recon van de Ritmonitor (frameworks, DOM, netwerk, viewmodels). Alleen lezen; bewaard als naslag voor als DireXtion verandert. |
+| `laadvermogen/laadvermogen.js` | **Losse tool.** Zet in de planningsmodule (`ModulePlanningBeta`) het echte laadvermogen uit Fleetio in de kolom "Maximale gewicht voertuig", die sinds de Fleetio-overstap overal 730 kg toont. Eigen `LAADVERMOGEN_VERSION`. Zie "Laadvermogen-tool". |
+| `laadvermogen/gas-laadvermogen.js` | `doGet` voor het Apps Script-project van de sheet "Unplanneds tool Delivery Support": geeft `route_id → kg` voor vandaag terug als JSONP. Handmatig naar de GAS-editor, net als `gas-backend.js`. |
+| `laadvermogen/install-laadvermogen.html` | Installatiepagina voor de Laadvermogen-tool: bookmarklet, gebruik, wat cursief / gestippeld / de kleur betekent. Stijlblok gekopieerd uit `tourtool/install-rijtijd.html`; `install.html` verwijst ernaar. |
+| `laadvermogen/loader-laadvermogen-bookmarklet.js` | Loader voor de Laadvermogen-tool. Cache key `ds_laadvermogen_prod_cache`, paarse toast (`#6f42c1`), zelfde geharde stale-while-revalidate als de andere drie. |
 | `tourtool/probe-depotfilter.js` | Recon van het filterpaneel: inventariseert de tagboxes en knoppen, leest optielijsten uit (`__opties`), en kan een filter zetten en op Filteren drukken. Waarmee vastgesteld is dat het depotfilter in de `filter=`-parameter van `GetTours` landt. Naslag; niet nodig in productie. |
 
 ---
@@ -192,6 +197,20 @@ Tussen **10-08 13:58** (laatste geschreven rij) en **11-08 10:39** (eerste rij e
 Wat overblijft is iets in de omgeving — autorisatie, quota, of een serverstatus van het document — dat geen spoor in het bestand achterlaat. De `catch` in `doGet` schreef destijds wel `console.error`, maar die logs waren niet meer in te zien. Zonder foutmelding was verder zoeken gokken, en de zoektocht is bewust gestaakt ten gunste van de garanties hierboven.
 
 **Leerpunt voor volgende keer:** de status in de Apps Script-executielijst zegt niets. Een `doGet` die zijn eigen exception afvangt en netjes returnt, staat daar op "Voltooid". Wie hier opnieuw naar kijkt, heeft dus eerst een expliciete `console.log`/`console.error` per uitvoering nodig — dát is het signaal, niet de statuskolom.
+
+### Dagmail — same day stops nalopen (`gas-dagmail.js`)
+
+Eén mail per dag, zodat wie als laatste werkt de same day oplossingen van die dag kan nalopen in DireXtion. Stand 13-10-2026: de mail is goedgekeurd op basis van testmails uit de GAS-editor. Live is hij pas als `installeerTrigger()` daar één keer is uitgevoerd — of dat gebeurd is, staat niet in de repo maar onder Triggers in het GAS-project. De mail gaat uit vanaf het account dat de trigger installeerde.
+
+- **Selectie:** kolom A = vandaag én kolom U = `Same day gepland`. Twee groepen: met ordernummer-DS in kolom M ("DS-stop gepland", gesorteerd op de geplande rit uit kolom N) en zonder ("Zonder DS-stop", bijv. `Teamleider stuurt helden terug`).
+- **Datumvergelijking op ruwe waarden.** Kolom A wordt met `getValues()` gelezen en zelf naar `yyyy-MM-dd` gezet (`datumIso_()`), omdat de sheet die cellen zelf formatteert — dezelfde valkuil als bij v1.34.0. De rest komt uit `getDisplayValues()`.
+- **DireXtion-link:** `direxUrl_()` bouwt `/Basic/Orders?filter=` met `ShipperOrderNumber` = bron-ordernummer en Start/EndDate op de dag zelf. Die sleutel komt uit de widget van vóór v1.15.2 en is **niet opnieuw geverifieerd**; klopt hij niet, dan is dit de enige plek om aan te passen.
+- **Functies:** `stuurTestmail()` (naar jezelf, voorbeelddata op een lege dag), `stuurTestmailDemo()` / `stuurTestmailLeeg()` (naar jezelf: altijd voorbeelddata, resp. de mail van een lege dag), `stuurDagmail()` (naar de groep), `installeerTrigger()` / `verwijderTrigger()` (zeven wekelijkse triggers, één per dag: ma–vr rond 18:30 uit `DAGMAIL.DOORDEWEEKS`, za–zo rond 17:00 uit `DAGMAIL.WEEKEND`, omdat het weekendrooster eerder eindigt; Apps Script garandeert alleen ± 15 minuten). Op een lege dag gaat er toch een mail uit (`MAIL_ALS_LEEG`), zodat zichtbaar is dat het script liep.
+- **Meldinstructie:** boven de lijst staat een amber blok: wie ziet of vermoedt dat een stop bewust niet is uitgevoerd, meldt dat aan `DAGMAIL.MELDEN_AAN` (Brigitte) in de chatspace `DAGMAIL.MELDEN_IN` (DS - Zakelijk), als link naar `DAGMAIL.MELDEN_URL`. Niet op een lege dag.
+- **Logo optioneel:** staat er een `LOGO_PNG_B64` in het project, dan komt het in de kopbalk; anders alleen tekst.
+- **Beperking:** wat ná het versturen gelogd wordt, staat er niet in.
+
+Lokaal voorbeelden renderen kan zonder GAS: `bouwDagmail_()` en `stopsUitRijen_()` gebruiken geen Apps Script-diensten zolang kolom A als tekst wordt aangeleverd. De map `dagmail-voorbeelden/` is gitignored (echte namen en ordernummers uit de export).
 
 **GAS backend kolommen** (`doGet` → `appendRow`):
 
@@ -612,6 +631,24 @@ naar `localStorage` én het klembord; het knopje *"↓ Rijtijd"* rechts in het r
 `gekozenTour` staat alleen in het geheugen en wordt door `wisUitslag()` gewist, net als de rest van de uitslag. Een klaargezette keuze in `localStorage` blijft staan, maar vervalt na 30 minuten en wordt door de ordercheck tegengehouden.
 
 **Waarom geen Chrome-extensie.** Die is niet toegestaan, en voor deze koppeling ook niet nodig: cross-tab communicatie kan via localStorage (zelfde origin) en het klembord (cross-origin). Een extensie zou wél helpen bij auto-injectie, gedeelde opslag over origins heen, en het omzeilen van CSP/CORS voor externe API's — dat laatste is het echte risico hier. Blokkeert DireXtion ooit `connect-src`, dan meldt de tool dat expliciet en moet de berekening naar een eigen pagina verhuizen.
+
+## Laadvermogen-tool (`laadvermogen/`) — los van de widget
+
+**Probleem (okt. 2026).** Sinds de overstap naar Fleetio wijst het nieuwe systeem de bussen goed toe, maar toont de planningsmodule voor elke bus `730,00 kg` als "Maximale gewicht voertuig" en kleurt de rit daarop. Het echte laadvermogen staat per route in de sheet "Unplanneds tool Delivery Support" (tabblad `Unplanneds Potentieel`, BigQuery `dirextionv2_plannedroutes` + XLOOKUP op Fleetio, ververst 's nachts 04–05, alleen vandaag). De sheet zelf zit niet in de repo (`*.xlsx` is gitignored).
+
+**De planningsmodule** (`/ModulePlanningBeta`, vastgesteld met een HAR op 23-10-2026 — `*.har` is gitignored, er staan sessietokens in):
+
+- Rit overzicht = DevExpress **ASP.NET MVC GridView** `window.TourGrid`, niet DevExtreme zoals de Ritmonitor. De server rendert de HTML bij elke actie (`POST /ModulePlanningBeta/Tour/TourGridPartial`, `DXCallbackName=TourGrid`); er is geen JSON met ritdata om te onderscheppen.
+- Elke rij is `<tr class="dxgvDataRow" data-id="<route_id>" data-tourname="…">` — exact `route_id` uit de sheet.
+- Velden: `MaxLoadCapacity` (kop `TourGrid_col15`), `TotalWeight` (`col14`), en verborgen in de kolomkiezer `AvailableLoadCapacity` ("Beschikbaar gewicht", 16) en `AvailableLoadCapacityPercentage` (17). Koptabel (`TourGrid_DXHeaderTable`) en rijtabel (`TourGrid_DXMainTable`) hebben dezelfde celvolgorde, inclusief de selectiekolom (`col0`).
+- Kleur komt van de server als inline `background-color: … !important`: groen `#51A351`, oranje `#F89406`, rood `#FF5046`. Op de 730 kg: groen t/m 32 %, oranje vanaf 52 %, rood boven 100 % — de grens op 50 % is een aanname.
+- DireXtion hangt zelf aan `TourGrid.EndCallback`; de tool ook. Planningsdatum: `#FilterDate_I` (`dd-MM-yyyy`). Geen CSP, dus een `<script>`-tag naar Google mag.
+
+**Werking.** Data via JSONP uit `gas-laadvermogen.js` (alleen `route_id → kg` en de routes zonder Fleetio-voertuig, geen kentekens), 30 min gecachet in `localStorage['laadvermogen_data']`. Na elke callback: max-cel overschrijven (cursief, oude waarde in de tooltip), kleur van max én totaal herberekenen, en beschikbaar gewicht/percentage alleen als de oude waarde aantoonbaar uit dezelfde 730 kg kwam. Route zonder Fleetio-voertuig: DireXtion-waarde blijft, gestippelde rand. Sheetdatum ≠ planningsdatum: niets toegepast, amber pilletje.
+
+**Gat in de sheet: kolom I is een doorgetrokken formule.** Op 23-10-2026 liep die t/m rij 344 en de query t/m 349 — vijf Groningse ritten met een kenteken dat Fleetio wél kent bleven leeg. Dezelfde dag in de sheet zelf gerepareerd; het vangnet hieronder blijft voor als het terugkomt. Het endpoint zoekt bij een lege I daarom zelf op kenteken in `Fleetio Data` (`aangevuld` in het antwoord, en in de tooltip). Tekst in I (`geen Fleetio voertuig`, `Geen match gevonden…`) is een echt antwoord en blijft staan. Van de ~100 "zonder" per dag zijn ~60 geen echte ritten (geen alias, geen kenteken) en ~36 echte missers: BE-bakwagens op BI/1X, Duitse depots en RP-ritten.
+
+**Niet gedekt:** de voertuigen-quickview (`VehiclesGridPartial`) en de planningslogica zelf — DireXtion plant en waarschuwt nog steeds op 730 kg; dit is alleen weergave.
 
 ## Clipboard payload (ds-logboek.js → paste-bookmarklet.js)
 

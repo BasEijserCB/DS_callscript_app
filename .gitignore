@@ -5,3 +5,9 @@
 
 # Lokale sleutels — nooit committen
 *.local.js
+
+# Lokaal gerenderde voorbeeldmails van gas-dagmail.js — bevatten echte namen en ordernummers uit de export
+dagmail-voorbeelden/
+
+# HAR-exports bevatten sessietokens
+*.har
