@@ -22,7 +22,7 @@
   de balk dicht; nog een klik op de bookmarklet ook.
 */
 (function () {
-  var LAUNCHER_VERSION = '1.2.0';
+  var LAUNCHER_VERSION = '1.2.1';
   var ID = 'ds-tools-launcher';
   var BASE = 'https://raw.githubusercontent.com/BasEijserCB/DS_callscript_app/main/';
   var BEHEER_URL = 'https://baseijsercb.github.io/DS_callscript_app/launcher/beheer.html';
@@ -47,59 +47,60 @@
   // versieconstante van zijn eigen loader, zodat de caches gedeeld worden.
   // start: in plaats van bestanden, een functie die de tool zelf start.
   // alleenHier: nergens anders tonen, ook niet onder "Andere tools".
+  // waar: voor mensen, op de installatiepagina (index.html).
   var TOOLS = [
-    { id: 'ds-logboek', status: 'productie', naam: 'DS Logboek', icoon: '📋', uitleg: 'Gesprek registreren',
+    { id: 'ds-logboek', waar: 'DireXtion Basic en de consumer portal', status: 'productie', naam: 'DS Logboek', icoon: '📋', uitleg: 'Gesprek registreren',
       hier: opPortal || (opDirextion && /\/basic/i.test(pad)),
       kleur: '#285dab',
       bestanden: [{ naam: 'DS Logboek', cache: 'ds_app_prod_cache', src: 'ds-logboek.js', versie: /DS Logboek (v\d+\.\d+\.\d+)/ }] },
-    { id: 'ds-plakken', status: 'productie', naam: 'DS Plakken', icoon: '🚀', uitleg: 'Import-formulier invullen vanuit het logboek',
+    { id: 'ds-plakken', waar: 'Import-formulier (Import → ShipmentFiles)', status: 'productie', naam: 'DS Plakken', icoon: '🚀', uitleg: 'Import-formulier invullen vanuit het logboek',
       hier: opDirextion && /^\/Import\//i.test(pad),
       kleur: '#e67e22',
       bestanden: [{ naam: 'DS Paste', cache: 'ds_paste_prod_cache', src: 'paste-bookmarklet.js', versie: /PASTE_VERSION\s*=\s*['"]([^'"]+)['"]/ }] },
-    { id: 'planning-combi', status: 'productie', naam: 'Planning-combi', icoon: '⚙️', uitleg: 'Vaste instellingen + echt laadvermogen',
+    { id: 'planning-combi', waar: 'Planningsmodule', status: 'productie', naam: 'Planning-combi', icoon: '⚙️', uitleg: 'Vaste instellingen + echt laadvermogen',
       hier: opPlanning,
       kleur: '#6f42c1',
       bestanden: [
         { naam: 'Planning-instellingen', cache: 'ds_planning_combi_inst_cache', src: 'laadvermogen/planning-instellingen.js', versie: /PLANNING_VERSION\s*=\s*['"]([^'"]+)['"]/ },
         { naam: 'Laadvermogen', cache: 'ds_planning_combi_lv_cache', src: 'laadvermogen/laadvermogen.js', versie: /LAADVERMOGEN_VERSION\s*=\s*['"]([^'"]+)['"]/ }] },
-    { id: 'schuifalias', status: 'productie', naam: 'Schuifritten alias', icoon: '🔁', uitleg: 'Sturend depot achter de alias',
+    { id: 'schuifalias', waar: 'Planningsmodule', status: 'productie', naam: 'Schuifritten alias', icoon: '🔁', uitleg: 'Sturend depot achter de alias',
       hier: opPlanning,
       kleur: '#0f766e',
       bestanden: [{ naam: 'Schuifalias', cache: 'ds_schuifalias_prod_cache', src: 'schuifalias/schuifalias.js', versie: /SCHUIFALIAS_VERSION\s*=\s*['"]([^'"]+)['"]/ }] },
-    { id: 'extra-rijtijd', status: 'productie', naam: 'Extra rijtijd', icoon: '🚚', uitleg: 'Wat kost een extra stop aan rijtijd',
+    { id: 'extra-rijtijd', waar: 'Ritmonitor', status: 'productie', naam: 'Extra rijtijd', icoon: '🚚', uitleg: 'Wat kost een extra stop aan rijtijd',
       hier: opRitmonitor,
       kleur: '#1a7f37',
       bestanden: [{ naam: 'Extra rijtijd', cache: 'ds_rijtijd_prod_cache', src: 'tourtool/extra-rijtijd.js', versie: /RIJTIJD_VERSION\s*=\s*['"]([^'"]+)['"]/ }] },
-    { id: 'same-day-text', status: 'productie', naam: 'Same day text', icoon: '🎉', uitleg: 'Opmerking: wordt vandaag nog opgelost',
+    { id: 'same-day-text', waar: 'Order in Basic', status: 'productie', naam: 'Same day text', icoon: '🎉', uitleg: 'Opmerking: wordt vandaag nog opgelost',
       hier: opBasicOrders,
       start: function () { opmerkingTekst('Wordt al opgelost, via nieuw bezoek van bezorger(s) op dezelfde dag'); } },
-    { id: 'next-day-text', status: 'productie', naam: 'Next day text', icoon: '🥲', uitleg: 'Opmerking: vervolgstop ingepland',
+    { id: 'next-day-text', waar: 'Order in Basic', status: 'productie', naam: 'Next day text', icoon: '🥲', uitleg: 'Opmerking: vervolgstop ingepland',
       hier: opBasicOrders,
       start: function () { opmerkingTekst('Vervolg stop al ingepland door Delivery Support'); } },
-    { id: 'service-check', status: 'productie', naam: 'Service Check', icoon: '⇢', uitleg: 'Welke services Coolblue aanbiedt voor dit product',
+    { id: 'service-check', waar: 'Order in Basic, en Coolblue-productpagina’s', status: 'productie', naam: 'Service Check', icoon: '⇢', uitleg: 'Welke services Coolblue aanbiedt voor dit product',
       hier: opBasicOrders || opCoolblue,
       kleur: '#333333',
       bestanden: [{ naam: 'Service Check', cache: 'ds_servicecheck_cache', src: 'extern/service-check.js', versie: /SERVICECHECK_VERSION = '([^']+)'/ }] },
     // Sophia Filter Tool (~/Documents/Sophia tool). Hoort bij een ander team, dus alleen
     // zichtbaar op Sophia zelf. Hun loaders draaien ongewijzigd: eigen GAS-bron en cache.
-    { id: 'sft', status: 'productie', naam: 'SFT', icoon: '🤚', uitleg: 'Sophia Filter Tool',
+    { id: 'sft', waar: 'Sophia', status: 'productie', naam: 'SFT', icoon: '🤚', uitleg: 'Sophia Filter Tool',
       hier: opSophia, alleenHier: true,
       start: function () { (function(){var U='https://script.google.com/a/macros/coolblue.nl/s/AKfycbwXqmqcF-y0skdfEcAGkcDGJM-t9WIa9sJVi8pWyoUJT8vdaOTWqklkUYKf_ECsDPzWNA/exec';var c=localStorage.getItem('sft_code_cache');if(c){try{eval(c)}catch(e){}}fetch(U).then(function(r){return r.text()}).then(function(t){if(t&&t.indexOf('javascript:')!==-1&&t!==c){localStorage.setItem('sft_code_cache',t);var m=t.match(/Sophia Filter Tool v([0-9.]+)/);if(m){localStorage.setItem('sft_version',m[1])}if(!c){try{eval(t)}catch(e){alert('SFT fout: '+e.message)}}}}).catch(function(e){if(!c){alert('SFT kon niet laden: '+e.message)}})})(); } },
-    { id: 'sft-autopilot', status: 'test', naam: 'SFT autopilot', icoon: '🤖', uitleg: 'Persoonlijke build',
+    { id: 'sft-autopilot', waar: 'Sophia', status: 'test', naam: 'SFT autopilot', icoon: '🤖', uitleg: 'Persoonlijke build',
       hier: opSophia, alleenHier: true,
       start: function () { (function(){var U='https://script.google.com/a/macros/coolblue.nl/s/AKfycbzvJcH6rRJNkWjepNzg6Ohuua0zNU95s31cBBY5XdlT5wxJkGaiOZGnMY0YSM1vBAjdmw/exec';var c=localStorage.getItem('sft_p_code_cache');if(c){try{eval(c)}catch(e){}}fetch(U).then(function(r){return r.text()}).then(function(t){if(t&&t.indexOf('javascript:')!==-1&&t!==c){localStorage.setItem('sft_p_code_cache',t);var m=t.match(/Sophia Filter Tool v([0-9.]+)/);if(m){localStorage.setItem('sft_p_version',m[1])}if(!c){try{eval(t)}catch(e){alert('SFT fout: '+e.message)}}}}).catch(function(e){if(!c){alert('SFT kon niet laden: '+e.message)}})})(); } },
     // Vanessa (~/Documents/Vanessa en Vanessa-Refurbished): bedient Vanessa via AppStream.
     // Ze sturen hun toetsen naar het element dat focus heeft bij het starten; sluit()
     // zet die focus daarom eerst terug op de stream.
-    { id: 'vanessa-orders', status: 'test', naam: 'Vanessa orders', icoon: '🧾', uitleg: 'Factuurorders witgoedreparaties',
+    { id: 'vanessa-orders', waar: 'Vanessa (AppStream)', status: 'test', naam: 'Vanessa orders', icoon: '🧾', uitleg: 'Factuurorders witgoedreparaties',
       hier: opAppStream, alleenHier: true,
       kleur: '#333333',
       bestanden: [{ naam: 'Vanessa orders', cache: 'ds_vanessa_orders_cache', src: 'extern/vanessa-order.js', versie: /VERSIE\s*=\s*'([^']+)'/ }] },
-    { id: 'vanessa-refurbished', status: 'test', naam: 'Vanessa Refurbished', icoon: '♻️', uitleg: 'Factuurorder per levering',
+    { id: 'vanessa-refurbished', waar: 'Vanessa (AppStream)', status: 'test', naam: 'Vanessa Refurbished', icoon: '♻️', uitleg: 'Factuurorder per levering',
       hier: opAppStream, alleenHier: true,
       kleur: '#333333',
       bestanden: [{ naam: 'Vanessa Refurbished', cache: 'ds_vanessa_refurbished_cache', src: 'extern/vanessa-refurbished.js', versie: /VERSIE\s*=\s*'([^']+)'/ }] },
-    { id: 'vanessa-deck', status: 'test', naam: 'Vanessa Deck', icoon: '🎛️', uitleg: 'Knoppen met toetsreeksen',
+    { id: 'vanessa-deck', waar: 'Vanessa (AppStream)', status: 'test', naam: 'Vanessa Deck', icoon: '🎛️', uitleg: 'Knoppen met toetsreeksen',
       hier: opAppStream, alleenHier: true,
       kleur: '#333333',
       bestanden: [{ naam: 'Vanessa Deck', cache: 'ds_vanessa_deck_cache', src: 'extern/vanessa-deck.js', versie: /VERSIE\s*=\s*'([^']+)'/ }] },
@@ -107,7 +108,7 @@
 
   // Beheerpagina: alleen de lijst, geen balk.
   if (MODUS === 'lijst') {
-    window.__dsToolsLijst = TOOLS.map(function (t) { return { id: t.id, naam: t.naam, icoon: t.icoon, uitleg: t.uitleg, status: t.status }; });
+    window.__dsToolsLijst = TOOLS.map(function (t) { return { id: t.id, naam: t.naam, icoon: t.icoon, uitleg: t.uitleg, waar: t.waar, status: t.status }; });
     return;
   }
 

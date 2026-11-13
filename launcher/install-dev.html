@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DS Tools dev</title>
+<style>
+  :root { color-scheme: light; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #F2F7FC; font: 14px "Segoe UI", Arial, sans-serif; color: #333333; }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 32px 16px 48px; }
+  h1 { font-size: 22px; color: #285dab; margin: 0 0 4px; }
+  .sub { color: #999999; margin: 0 0 24px; }
+  .card { background: #fff; border: 1px solid #cce9f9; border-radius: 10px; padding: 18px 20px; margin-bottom: 16px; }
+  h2 { font-size: 15px; margin: 0 0 12px; color: #285dab; }
+  p { line-height: 1.5; margin: 0 0 10px; }
+  table { width: 100%; border-collapse: collapse; }
+  td { padding: 8px 6px; border-top: 1px solid #DDDDDD; vertical-align: middle; }
+  tr:first-child td { border-top: none; }
+  tr.gewijzigd td { background: #fff8e1; }
+  .ic { font-size: 18px; width: 28px; text-align: center; }
+  .naam { font-weight: 600; }
+  .uitleg { font-size: 12px; color: #999999; }
+  .id { font: 11px ui-monospace, Menlo, monospace; color: #999999; }
+  .seg { display: inline-flex; border: 1px solid #DDDDDD; border-radius: 8px; overflow: hidden; white-space: nowrap; }
+  .seg button { border: none; background: #fff; padding: 6px 12px; font: inherit; font-size: 13px; cursor: pointer; color: #333333; }
+  .seg button + button { border-left: 1px solid #DDDDDD; }
+  .seg button.aan[data-s="productie"] { background: #d4edda; color: #155724; font-weight: 600; }
+  .seg button.aan[data-s="test"] { background: #fff8e1; color: #856404; font-weight: 600; }
+  .knop { background: #0090e3; color: #fff; border: none; border-radius: 8px; padding: 9px 16px; font: inherit; font-weight: 600; cursor: pointer; }
+  .knop:hover { background: #007bc4; }
+  .knop:disabled { background: #DDDDDD; color: #999999; cursor: default; }
+  .link { background: none; border: none; color: #0090e3; cursor: pointer; font: inherit; padding: 0; text-decoration: underline; }
+  input[type=password] { width: 100%; padding: 8px 10px; border: 1px solid #DDDDDD; border-radius: 6px; font: inherit; margin: 4px 0 10px; }
+  .melding { border-radius: 6px; padding: 10px 12px; margin-top: 12px; font-size: 13px; line-height: 1.5; }
+  .ok { background: #d4edda; color: #155724; }
+  .fout { background: #fff0f0; color: #E50000; }
+  .let { background: #fff8e1; color: #856404; }
+  .rij { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+  .bm { display: inline-block; background: #ff6600; color: #fff; text-decoration: none; padding: 10px 18px; border-radius: 8px; font-weight: 700; }
+  ol { margin: 0 0 10px; padding-left: 20px; line-height: 1.6; }
+  code { font: 12px ui-monospace, Menlo, monospace; background: #F3F3F3; padding: 1px 4px; border-radius: 4px; }
+  @media (max-width: 560px) { .uitleg, .id { display: none; } }
+
+  .bm-zone { background: #F2F7FC; border: 2px dashed #cce9f9; border-radius: 10px; padding: 22px; text-align: center; margin: 6px 0 4px; }
+  .bm-zone .bm { font-size: 16px; padding: 12px 24px; cursor: grab; }
+  .hint { font-size: 12px; color: #999999; margin-top: 10px; }
+  .waar { font-size: 12px; color: #285dab; white-space: nowrap; }
+  @media (max-width: 560px) { .waar { white-space: normal; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🧰 DS Tools dev</h1>
+  <p class="sub">Persoonlijke versie: alle tools, ook die nog in test zijn. Niet voor collega’s — die gebruiken <a href="../">DS Tools</a>.</p>
+
+  <div class="card">
+    <h2>Installeren</h2>
+    <p>Sleep de knop naar je bladwijzerbalk. Hij vervangt je gewone DS Tools: zelfde balk, zelfde cache, maar test-tools staan erin met een label, en er is een knop <b>⚙ Beheer</b>.</p>
+    <div class="bm-zone">
+      <a class="bm" href="javascript:%28function%28%29%7B%20var%20DS_TOOLS_MODUS%3D%27dev%27%3B%20var%20CACHE%3D%27ds_launcher_prod_cache%27%3B%20var%20SRC%3D%27https%3A//raw.githubusercontent.com/BasEijserCB/DS_callscript_app/main/launcher/launcher.js%27%3B%20function%20getVersion%28code%29%7Bvar%20m%3Dcode%26%26code.match%28/LAUNCHER_VERSION%5Cs%2A%3D%5Cs%2A%5B%27%22%5D%28%5B%5E%27%22%5D%2B%29%5B%27%22%5D/%29%3Breturn%20m%3Fm%5B1%5D%3A%27%3F%27%3B%7D%20function%20bewaar%28code%29%7Btry%7BlocalStorage.setItem%28CACHE%2Ccode%29%3Breturn%201%3B%7Dcatch%28e%29%7Btry%7BlocalStorage.removeItem%28CACHE%29%3BlocalStorage.setItem%28CACHE%2Ccode%29%3Breturn%201%3B%7Dcatch%28e2%29%7Breturn%200%3B%7D%7D%7D%20var%20cached%3DlocalStorage.getItem%28CACHE%29%3B%20var%20stuk%3D0%3B%20if%28cached%29%7Btry%7Beval%28cached%29%3B%7Dcatch%28e%29%7Bstuk%3D1%3Bconsole.error%28%27%5BDS%20Tools%5D%20gecachete%20versie%20faalt%3A%27%2Ce%29%3B%7D%7D%20fetch%28SRC%2B%27%3Ft%3D%27%2BDate.now%28%29%2C%7Bcache%3A%27no-store%27%7D%29%20.then%28function%28r%29%7Breturn%20r.ok%3Fr.text%28%29%3Anull%3B%7D%29%20.then%28function%28code%29%7B%20if%28%21code%29return%3B%20if%28code%3D%3D%3Dcached%29%7Bif%28stuk%29console.error%28%27%5BDS%20Tools%5D%20ook%20de%20nieuwste%20versie%20faalt%27%29%3Breturn%3B%7D%20var%20ok%3Dbewaar%28code%29%3B%20if%28%21cached%7C%7Cstuk%29%7Beval%28code%29%3Breturn%3B%7D%20var%20t%3Ddocument.createElement%28%27div%27%29%3B%20t.innerHTML%3D%27%E2%86%BB%20%3Cb%3EDS%20Tools%20dev%20%27%2BgetVersion%28code%29%2B%27%20gedownload%3C/b%3E%3Cbr%3E%3Cspan%20style%3D%22font-weight%3A400%3B%22%3E%27%2B%28ok%3F%27Nu%20actief%3A%20%27%2BgetVersion%28cached%29%2B%27%20%E2%80%94%20druk%20opnieuw%20om%20de%20nieuwe%20versie%20te%20laden%27%3A%27Opslaan%20mislukt%20%E2%80%94%20draai%20localStorage.removeItem%28%5C%27%27%2BCACHE%2B%27%5C%27%29%27%29%2B%27%3C/span%3E%3Cbutton%20onclick%3D%22this.parentNode.remove%28%29%22%20style%3D%22position%3Aabsolute%3Btop%3A8px%3Bright%3A10px%3Bbackground%3Anone%3Bborder%3Anone%3Bcolor%3A%23fff%3Bfont-size%3A18px%3Bcursor%3Apointer%3Bline-height%3A1%3Bopacity%3A0.8%3B%22%3E%C3%97%3C/button%3E%27%3B%20t.style.cssText%3D%27position%3Afixed%3Bbottom%3A20px%3Bright%3A20px%3Bz-index%3A1000001%3Bbackground%3A%27%2B%28ok%3F%27%23333333%27%3A%27%23c0392b%27%29%2B%27%3Bcolor%3A%23fff%3Bpadding%3A12px%2036px%2012px%2014px%3Bborder-radius%3A8px%3Bfont%3A13px%20%22Segoe%20UI%22%2Csans-serif%3Bbox-shadow%3A0%204px%2016px%20rgba%280%2C0%2C0%2C.35%29%3Bmax-width%3A300px%3Bline-height%3A1.5%3B%27%3B%20document.body.appendChild%28t%29%3B%20%7D%29%20.catch%28function%28e%29%7Bconsole.error%28%27%5BDS%20Tools%5D%20update%20ophalen%20mislukt%3A%27%2Ce%29%3B%7D%29%3B%20%7D%29%28%29%3B">🧰 DS Tools dev</a>
+      <div class="hint">Slepen, niet klikken.</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Beheer</h2>
+    <p>Per tool bepalen of hij productie (iedereen) of test (alleen deze bladwijzer) is: <a href="beheer.html">beheer.html</a>. Ook bereikbaar via ⚙ Beheer in de dev-balk.</p>
+  </div>
+
+  <div class="card">
+    <h2>Alle tools</h2>
+    <div id="lijst">Laden…</div>
+  </div>
+</div>
+<script>
+(function () {
+  // De lijst komt uit launcher.js zelf en status.json: precies wat de team-bookmarklet toont.
+  var BASE = 'https://raw.githubusercontent.com/BasEijserCB/DS_callscript_app/main/launcher/';
+  var MODUS = 'dev';
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  Promise.all([
+    fetch(BASE + 'launcher.js?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); }),
+    fetch(BASE + 'status.json?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : {}; }).catch(function () { return {}; })
+  ]).then(function (x) {
+    window.__dsToolsLijst = null;
+    new Function('DS_TOOLS_MODUS', x[0])('lijst');
+    var st = (x[1] && x[1].tools) || {};
+    var tools = (window.__dsToolsLijst || []).map(function (t) { t.s = st[t.id] || t.status; return t; })
+      .filter(function (t) { return MODUS === 'dev' || t.s === 'productie'; });
+    document.getElementById('lijst').innerHTML = '<table>' + tools.map(function (t) {
+      return '<tr><td class="ic">' + t.icoon + '</td><td><div class="naam">' + esc(t.naam) +
+        (t.s === 'test' ? ' <span style="font-size:11px;font-weight:600;color:#856404;background:#fff8e1;border:1px solid #ffc107;border-radius:4px;padding:0 4px;">test</span>' : '') +
+        '</div><div class="uitleg">' + esc(t.uitleg) + '</div></td><td class="waar">' + esc(t.waar) + '</td></tr>';
+    }).join('') + '</table>';
+  }).catch(function (e) {
+    document.getElementById('lijst').innerHTML = '<div class="melding fout">Lijst laden mislukt: ' + esc(e.message) + '</div>';
+  });
+})();
+</script>
+</body>
+</html>
