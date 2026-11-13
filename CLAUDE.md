@@ -12,7 +12,7 @@ Browsergebaseerde widget voor het Coolblue Delivery Support team. Draait bovenop
 | `loader-bookmarklet.js` | Leesbare broncode van de loader bookmarklet. Haalt `ds-logboek.js` op, cached in localStorage (`ds_app_prod_cache`), stale-while-revalidate met `{cache:'no-store'}` om CDN-cache te omzeilen. |
 | `paste-bookmarklet.js` | Volledige paste logica. Bevat `PASTE_VERSION` constante. Gehost op GitHub, geladen via raw URL door de paste loader. |
 | `paste-loader-bookmarklet.js` | Leesbare broncode van de paste bookmarklet loader. Haalt `paste-bookmarklet.js` op, cached in localStorage (`ds_paste_prod_cache`), stale-while-revalidate. Toont oranje toast als nieuwe versie gedownload is. |
-| `install.html` | Installatiepagina voor de widget: de loader- en paste-bookmarklet als sleepbare knoppen, plus een doorverwijzing naar de installatiepagina van de Extra rijtijd-tool. |
+| `install.html` | Installatiepagina: bovenaan de DS Tools-launcher, daarna de loader- en paste-bookmarklet als sleepbare knoppen, plus een doorverwijzing naar de installatiepagina van de Extra rijtijd-tool. |
 | `build.py` | Syntax-checkt `ds-logboek.js` en `paste-bookmarklet.js`, detecteert versienummer uit `ds-logboek.js` en synchroniseert `PASTE_VERSION` in `paste-bookmarklet.js`. |
 | `gas-backend.js` | Broncode van het Google Apps Script backend (`doGet`). Schrijft elke log-entry als rij naar de actieve Google Sheet. Moet handmatig gekopieerd worden naar de GAS editor bij wijzigingen — een commit hier verandert niets in productie. |
 | `gas-dagmail.js` | Dagmail "Same day stops nalopen": leest het tabblad Database voor vandaag en mailt alle rijen met oplossing categorie `Same day gepland` naar `gl-deliverysupport@coolblue.nl`, met per stop een link naar DireXtion Basic. Hoort in hetzelfde GAS-project als `gas-backend.js` en moet er net zo handmatig heen. Zie "Dagmail". |
@@ -29,6 +29,9 @@ Browsergebaseerde widget voor het Coolblue Delivery Support team. Draait bovenop
 | `schuifalias/schuifalias.js` | **Losse tool.** Zet in de planningsmodule de code van het sturende depot achter de alias van elke schuifrit (`2M-DETR-04` → `2M-DETR-04 (DEDU)`). Data uit het Schuifritten-project (`~/Documents/Schuifritten/Alias.gs`, `?format=alias`). Eigen `SCHUIFALIAS_VERSION`. Zie "Schuifalias-tool". |
 | `schuifalias/loader-schuifalias-bookmarklet.js` | Loader voor de Schuifalias-tool. Cache key `ds_schuifalias_prod_cache`, teal toast (`#0f766e`), zelfde geharde stale-while-revalidate. |
 | `schuifalias/install-schuifalias.html` | Installatiepagina voor de Schuifalias-tool: bookmarklet, gebruik, betekenis van de meldingen. Stijlblok gekopieerd uit `laadvermogen/install-laadvermogen.html`; `install.html` verwijst ernaar. |
+| `launcher/launcher.js` | **DS Tools**: één bookmarklet voor alle tools. Paneel rechtsboven (shadow DOM) met de tools die bij de huidige pagina horen bovenaan en de rest ingeklapt; laadt een tool met dezelfde cache key, geharde stale-while-revalidate en toastkleur als zijn eigen loader. Eigen `LAUNCHER_VERSION`. Zie "DS Tools-launcher". |
+| `launcher/loader-launcher-bookmarklet.js` | Loader voor de launcher. Cache key `ds_launcher_prod_cache`, grijze toast (`#333333`). Sleepknop bovenaan `install.html`. |
+| `extern/service-check.js` | Kopie van de Service Check-bladwijzer uit `~/Documents/Tool David/Service Check bladwijzer.txt`, zodat de launcher hem kan laden (cache `ds_servicecheck_cache`). Niet hier bewerken: daar wijzigen, opnieuw kopiëren, `SERVICECHECK_VERSION`-datum in de kopregel ophogen. |
 | `tourtool/probe-depotfilter.js` | Recon van het filterpaneel: inventariseert de tagboxes en knoppen, leest optielijsten uit (`__opties`), en kan een filter zetten en op Filteren drukken. Waarmee vastgesteld is dat het depotfilter in de `filter=`-parameter van `GetTours` landt. Naslag; niet nodig in productie. |
 
 ---
@@ -636,6 +639,21 @@ naar `localStorage` én het klembord; het knopje *"↓ Rijtijd"* rechts in het r
 `gekozenTour` staat alleen in het geheugen en wordt door `wisUitslag()` gewist, net als de rest van de uitslag. Een klaargezette keuze in `localStorage` blijft staan, maar vervalt na 30 minuten en wordt door de ordercheck tegengehouden.
 
 **Waarom geen Chrome-extensie.** Die is niet toegestaan, en voor deze koppeling ook niet nodig: cross-tab communicatie kan via localStorage (zelfde origin) en het klembord (cross-origin). Een extensie zou wél helpen bij auto-injectie, gedeelde opslag over origins heen, en het omzeilen van CSP/CORS voor externe API's — dat laatste is het echte risico hier. Blokkeert DireXtion ooit `connect-src`, dan meldt de tool dat expliciet en moet de berekening naar een eigen pagina verhuizen.
+
+## DS Tools-launcher (`launcher/`)
+
+Eén bookmarklet in plaats van een volle bladwijzerbalk (nov. 2026). Klik opent een paneel; nog een klik of `Esc` sluit het, `1`–`9` start de zoveelste tool (niet als je in een veld van de pagina typt).
+
+- **Paginaherkenning** per tool in `TOOLS[].hier`: `ModulePlanning` → Planning-combi, Schuifritten alias · `ModuleTourMonitor` → Extra rijtijd · `coolbluebezorgt.dirextion.nl` en `/Basic` → DS Logboek · `/Import/` (Import-formulier, `coolblue.dirextion.nl/Import/ShipmentFiles`) → DS Plakken · `/Basic/orders` → ook Same day text, Next day text, Service Check · coolblue.nl/.be/.de → Service Check · Sophia → SFT. Een misser is onschuldig: alles blijft bereikbaar onder "Andere tools", en op een onbekende pagina staat alles open.
+- **Gedeelde cache.** Elke tool laadt met de cache key van zijn eigen loader (`ds_app_prod_cache`, `ds_paste_prod_cache`, `ds_planning_combi_*`, `ds_schuifalias_prod_cache`, `ds_rijtijd_prod_cache`). De losse bookmarklets blijven daardoor werken zonder dubbele downloads.
+- **Synchrone eval binnen de klik.** De gecachete code draait direct in de click-handler; de paste-tool leest het klembord en heeft die gebruikersactie nodig. Direct `eval`, niet `(0,eval)`: zoals de losse loaders, zodat top-level declaraties van een tool niet in de globale scope landen en een tweede start niet botst.
+- **Een tool toevoegen** = een regel in `TOOLS` en `LAUNCHER_VERSION` ophogen. De launcher haalt zichzelf ook stale-while-revalidate op, dus niemand hoeft opnieuw te slepen. Losse `Laadvermogen` en `planning refresh` staan er bewust niet apart in: Planning-combi doet beide.
+- **Tools van buiten deze repo** (sinds 13-11-2026 erin):
+  - **Same day text / Next day text** — bestonden alleen als bladwijzer, nergens als bestand. Eén script met een andere tekst; staat nu letterlijk als `opmerkingTekst(TXT)` in `launcher.js`. Draait op `/Basic/orders`: klikt op de `+`, vult `Remark_I` en drukt op Opslaan (`btnUpdate`).
+  - **Service Check** — via `extern/service-check.js`, op `/Basic/orders` en op coolblue.nl/.be/.de.
+  - **SFT 🤚 / SFT 🤖** — de loaders uit `~/Documents/Sophia tool/Working Files/install.html` en `install_autopilot.html`, letterlijk als `start`-functie; ze halen zelf de tool uit hun eigen GAS-project met hun eigen cache. `alleenHier`: alleen zichtbaar op `sophia.mendixcloud.com` (ander team, dus niet in "Andere tools" bij DS). De autopilot is daarnaast `verborgen` tenzij `sft_p_version` in `localStorage` staat — in de praktijk alleen bij Bas. Beide GAS-URL's staan daarmee in de publieke repo; ze werken alleen met een Coolblue-login.
+  - Wijzigt een van deze tools in zijn eigen project, dan moet de kopie hier met de hand mee.
+- **Velden in `TOOLS`:** `bestanden` (geladen via stale-while-revalidate) óf `start` (inline functie), `hier` (relevant op deze pagina), `alleenHier` (nergens anders tonen), `verborgen`.
 
 ## Laadvermogen-tool (`laadvermogen/`) — los van de widget
 

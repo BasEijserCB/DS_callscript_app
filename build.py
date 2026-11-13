@@ -44,6 +44,10 @@ syntax_check('laadvermogen/laadvermogen.js')
 syntax_check('laadvermogen/planning-instellingen.js')
 # Schuifritten alias (SCHUIFALIAS_VERSION, eigen levenscyclus).
 syntax_check('schuifalias/schuifalias.js')
+# DS Tools launcher (LAUNCHER_VERSION, eigen levenscyclus).
+syntax_check('launcher/launcher.js')
+# Service Check (Tool David), overgenomen bladwijzercode die de launcher laadt.
+syntax_check('extern/service-check.js')
 
 # ── STAP 1b: GEDEELDE STIJL VERGELIJKEN ──────────────────────────────────────
 # ds-logboek.js en tourtool/extra-rijtijd.js dragen allebei een letterlijk
