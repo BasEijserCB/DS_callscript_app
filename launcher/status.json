@@ -10,7 +10,7 @@
     "next-day-text": "productie",
     "service-check": "productie",
     "sft": "productie",
-    "sft-autopilot": "test",
+    "sft-autopilot": "productie",
     "vanessa-orders": "test",
     "vanessa-refurbished": "test",
     "vanessa-deck": "test"
