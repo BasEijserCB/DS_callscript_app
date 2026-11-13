@@ -22,7 +22,7 @@
   de balk dicht; nog een klik op de bookmarklet ook.
 */
 (function () {
-  var LAUNCHER_VERSION = '1.2.1';
+  var LAUNCHER_VERSION = '1.2.2';
   var ID = 'ds-tools-launcher';
   var BASE = 'https://raw.githubusercontent.com/BasEijserCB/DS_callscript_app/main/';
   var BEHEER_URL = 'https://baseijsercb.github.io/DS_callscript_app/launcher/beheer.html';
@@ -156,8 +156,12 @@
   }
 
   // ── Status: standaard uit TOOLS, overschreven door launcher/status.json ──────
-  // Zelfde stale-while-revalidate: de gecachete status geldt meteen, de verse komt
-  // in de achtergrond en tekent de balk opnieuw als hij nog open is.
+  // De balk wacht op de verse status (max. STATUS_WACHT ms) voordat hij verschijnt.
+  // Eerst tekenen en daarna bijwerken liet een uitgezette tool even zien — en klikbaar —
+  // vooral bij een eerste keer op een origin, waar alleen de standaard uit TOOLS bekend is.
+  // Komt GitHub niet op tijd, dan de laatst bekende status (cache), anders de standaard;
+  // een late status tekent de balk alsnog opnieuw.
+  var STATUS_WACHT = 1500;
   var statusTekst = null;
   try { statusTekst = localStorage.getItem(STATUS_CACHE); } catch (e) {}
   var override = leesStatus(statusTekst);
@@ -166,12 +170,14 @@
   fetch(BASE + 'launcher/status.json?t=' + Date.now(), { cache: 'no-store' })
     .then(function (r) { return r.ok ? r.text() : null; })
     .then(function (t) {
-      if (!t || t === statusTekst || !Object.keys(leesStatus(t)).length) return;
-      try { localStorage.setItem(STATUS_CACHE, t); } catch (e) {}
-      override = leesStatus(t);
-      if (frame.isConnected) { menuOpen = false; verdeel(); teken(); }
+      if (t && t !== statusTekst && Object.keys(leesStatus(t)).length) {
+        try { localStorage.setItem(STATUS_CACHE, t); } catch (e) {}
+        override = leesStatus(t);
+        if (getoond && frame.isConnected) { menuOpen = false; verdeel(); teken(); return; }
+      }
+      toon();
     })
-    .catch(function (e) { console.error('[DS Tools] status ophalen mislukt:', e); });
+    .catch(function (e) { console.error('[DS Tools] status ophalen mislukt:', e); toon(); });
 
   function start(tool) {
     sluit();
@@ -223,7 +229,7 @@
   frame.id = ID;
   frame.setAttribute('title', 'DS Tools');
   frame.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:35px;border:0;margin:0;padding:0;' +
-    'z-index:2147483000;background:transparent;color-scheme:light;';
+    'z-index:2147483000;background:transparent;color-scheme:light;visibility:hidden;';
   document.body.appendChild(frame);
   var fdoc = frame.contentDocument;
   fdoc.open();
@@ -288,8 +294,8 @@
     }
   }
   // In de balk zelf altijd; in de pagina niet op AppStream (daar typ je in Vanessa).
+  // Die laatste pas in toon(): vóór die tijd staat er nog geen balk om uit te kiezen.
   fdoc.addEventListener('keydown', toets, true);
-  if (!opAppStream) document.addEventListener('keydown', toets, true);
 
   function sluit() {
     document.removeEventListener('keydown', toets, true);
@@ -302,7 +308,19 @@
     }
   }
 
-  teken();
-  // Eén keer inschuiven; teken() bouwt de inhoud opnieuw op, dus de animatie hoort op het iframe.
-  try { frame.animate([{ transform: 'translateY(-100%)' }, { transform: 'none' }], { duration: 120, easing: 'ease-out' }); } catch (e) {}
+  // Het iframe staat er al (onzichtbaar), zodat een tweede klik op de bookmarklet hem
+  // ook tijdens het wachten weghaalt. toon() maakt hem zichtbaar: na de status, of na
+  // STATUS_WACHT als GitHub niet op tijd antwoordt.
+  var getoond = false;
+  function toon() {
+    if (getoond || !frame.isConnected) return;
+    getoond = true;
+    verdeel();
+    teken();
+    frame.style.visibility = 'visible';
+    if (!opAppStream) document.addEventListener('keydown', toets, true);
+    // Eén keer inschuiven; teken() bouwt de inhoud opnieuw op, dus de animatie hoort op het iframe.
+    try { frame.animate([{ transform: 'translateY(-100%)' }, { transform: 'none' }], { duration: 120, easing: 'ease-out' }); } catch (e) {}
+  }
+  setTimeout(toon, STATUS_WACHT);
 })();
