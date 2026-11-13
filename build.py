@@ -42,6 +42,8 @@ syntax_check('tourtool/extra-rijtijd.js')
 syntax_check('laadvermogen/laadvermogen.js')
 # Planning-instellingen (PLANNING_VERSION), geladen door de Planning-combi loader.
 syntax_check('laadvermogen/planning-instellingen.js')
+# Schuifritten alias (SCHUIFALIAS_VERSION, eigen levenscyclus).
+syntax_check('schuifalias/schuifalias.js')
 
 # ── STAP 1b: GEDEELDE STIJL VERGELIJKEN ──────────────────────────────────────
 # ds-logboek.js en tourtool/extra-rijtijd.js dragen allebei een letterlijk
