@@ -11,7 +11,7 @@
     "service-check": "productie",
     "sft": "productie",
     "sft-autopilot": "productie",
-    "vanessa-orders": "test",
+    "vanessa-orders": "productie",
     "vanessa-refurbished": "test",
     "vanessa-deck": "test"
   }
