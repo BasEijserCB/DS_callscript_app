@@ -1,0 +1,18 @@
+{
+  "_uitleg": "Status per tool in DS Tools: productie (iedereen) of test (alleen de dev-bookmarklet). Beheren via launcher/beheer.html. Ontbreekt een tool hier, dan geldt de status uit TOOLS in launcher.js.",
+  "tools": {
+    "ds-logboek": "productie",
+    "ds-plakken": "productie",
+    "planning-combi": "productie",
+    "schuifalias": "productie",
+    "extra-rijtijd": "productie",
+    "same-day-text": "productie",
+    "next-day-text": "productie",
+    "service-check": "productie",
+    "sft": "productie",
+    "sft-autopilot": "test",
+    "vanessa-orders": "test",
+    "vanessa-refurbished": "test",
+    "vanessa-deck": "test"
+  }
+}

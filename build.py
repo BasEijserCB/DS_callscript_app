@@ -48,6 +48,13 @@ syntax_check('schuifalias/schuifalias.js')
 syntax_check('launcher/launcher.js')
 # Service Check (Tool David), overgenomen bladwijzercode die de launcher laadt.
 syntax_check('extern/service-check.js')
+# Vanessa-tools (kopieën uit ~/Documents/Vanessa en Vanessa-Refurbished).
+for f in ('extern/vanessa-order.js', 'extern/vanessa-refurbished.js', 'extern/vanessa-deck.js'):
+    syntax_check(f)
+# status.json moet geldige JSON zijn, anders valt de launcher terug op de standaard.
+import json
+json.load(open('launcher/status.json', encoding='utf-8'))
+print('launcher/status.json geldig.')
 
 # ── STAP 1b: GEDEELDE STIJL VERGELIJKEN ──────────────────────────────────────
 # ds-logboek.js en tourtool/extra-rijtijd.js dragen allebei een letterlijk
