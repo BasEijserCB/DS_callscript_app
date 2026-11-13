@@ -655,7 +655,7 @@ Eén bookmarklet in plaats van een volle bladwijzerbalk (nov. 2026). Een klik sc
 - **Paginaherkenning** per tool in `TOOLS[].hier`: `ModulePlanning` → Planning-combi, Schuifritten alias · `ModuleTourMonitor` → Extra rijtijd · `coolbluebezorgt.dirextion.nl` en `/Basic` → DS Logboek · `/Import/` (Import-formulier, `coolblue.dirextion.nl/Import/ShipmentFiles`) → DS Plakken · `/Basic/orders` → ook Same day text, Next day text, Service Check · coolblue.nl/.be/.de → Service Check · Sophia → SFT · AppStream (`*.appstream2.<regio>.aws.amazon.com`) → de drie Vanessa-tools. Een misser is onschuldig: alles blijft bereikbaar onder "Andere tools", en op een onbekende pagina staat alles open.
 - **Gedeelde cache.** Elke tool laadt met de cache key van zijn eigen loader (`ds_app_prod_cache`, `ds_paste_prod_cache`, `ds_planning_combi_*`, `ds_schuifalias_prod_cache`, `ds_rijtijd_prod_cache`). De losse bookmarklets blijven daardoor werken zonder dubbele downloads.
 - **Synchrone eval binnen de klik.** De gecachete code draait direct in de click-handler; de paste-tool leest het klembord en heeft die gebruikersactie nodig. Direct `eval`, niet `(0,eval)`: zoals de losse loaders, zodat top-level declaraties van een tool niet in de globale scope landen en een tweede start niet botst.
-- **Een tool toevoegen** = een regel in `TOOLS` en `LAUNCHER_VERSION` ophogen. De launcher haalt zichzelf ook stale-while-revalidate op, dus niemand hoeft opnieuw te slepen. Losse `Laadvermogen` en `planning refresh` staan er bewust niet apart in: Planning-combi doet beide.
+- **Een tool toevoegen** = een regel in `TOOLS` en `LAUNCHER_VERSION` ophogen — zie het stappenplan **Een nieuwe tool toevoegen** hieronder. Losse `Laadvermogen` en `planning refresh` staan er bewust niet apart in: Planning-combi doet beide.
 - **Tools van buiten deze repo** (sinds 13-11-2026 erin):
   - **Same day text / Next day text** — bestonden alleen als bladwijzer, nergens als bestand. Eén script met een andere tekst; staat nu letterlijk als `opmerkingTekst(TXT)` in `launcher.js`. Draait op `/Basic/orders`: klikt op de `+`, vult `Remark_I` en drukt op Opslaan (`btnUpdate`).
   - **Service Check** — via `extern/service-check.js`, op `/Basic/orders` en op coolblue.nl/.be/.de.
@@ -667,6 +667,40 @@ Eén bookmarklet in plaats van een volle bladwijzerbalk (nov. 2026). Een klik sc
 - **Dev-modus via de loader, niet via een instelling.** `DS_TOOLS_MODUS` staat als `var` in de dev-loader; de launcher ziet hem omdat hij met direct `eval` binnen die loader draait. Een `localStorage`-vlag zou per origin opnieuw gezet moeten worden (DireXtion, Sophia, AppStream…).
 - **De balk is een iframe (v1.2.0)**, geen shadow-DOM-div. Op AppStream lekken klikken en toetsen uit een div door naar de stream en dus naar Vanessa — dezelfde reden waarom de Vanessa-panelen iframes zijn. Bij een open menu beslaat het (doorzichtige) iframe even het hele venster, zodat een klik ernaast het menu sluit zonder in de pagina te landen.
 - **AppStream.** Geen sneltoetsen in de pagina (je typt in Vanessa). `sluit()` zet de focus terug op het element dat hem had bij het klikken van de bookmarklet — Vanessa stuurt zijn toetsen naar `document.activeElement` bij het starten. `sluit()` doet ook `window.focus()`: de paste-tool leest het klembord, en dat mag alleen als het document focus heeft. **Nog niet in AppStream zelf getest**, net als of de pagina `fetch` naar GitHub + `eval` toestaat (CSP onbekend); de Vanessa-bookmarklets zelf laden niets van buiten.
+
+### Een nieuwe tool toevoegen
+
+Niemand hoeft iets opnieuw te installeren: de launcher haalt zichzelf via stale-while-revalidate op, dus een nieuwe regel in `TOOLS` staat na een push vanzelf in de balken. De beheerpagina kan alleen de status van bestaande tools wisselen; een tool toevoegen is altijd een codewijziging — bewust, zodat er niets in de balk van collega's belandt zonder commit.
+
+**1. De code in de repo.**
+- **Eigen tool:** een eigen map met een `.js`-bestand, zoals `schuifalias/schuifalias.js`. Zet een versieconstante bovenin (`var NAAM_VERSION = '1.0.0';`) — de update-toast leest die — en hoog hem op bij elke wijziging. Voeg een `syntax_check(...)` toe in `build.py`.
+- **Bestaande bookmarklet uit een ander project:** kopieer de broncode (of de URL van de bladwijzer zonder `javascript:`, ge-unquote) naar `extern/<naam>.js`, met een kopregel waar het origineel staat en dat het daar bewerkt wordt. Heeft hij geen versieconstante, zet er dan een in de kopregel (`// NAAM_VERSION = 'jjjj-mm-dd'`, zoals `extern/service-check.js`). Kopieën lopen niet vanzelf mee: wijzigt het origineel, dan opnieuw kopiëren.
+- **Een piepklein script** (een paar regels, geen eigen bestand waard) kan ook inline, als `start`-functie in `TOOLS` — zoals Same day / Next day text.
+- **Eisen aan de code:** hij moet werken als hij met `eval` binnen een functie draait (net als een bookmarklet): alles in een IIFE, geen top-level `const`/`let` die bij een tweede start botsen, en een tweede start moet een eventueel open paneel vervangen of sluiten. Leest hij het klembord, dan synchroon na de klik beginnen (de gecachete versie draait binnen de klik; zie de paste-tool).
+
+**2. Een regel in `TOOLS` in `launcher/launcher.js`:**
+```javascript
+{ id: 'mijn-tool', status: 'test', waar: 'Planningsmodule', naam: 'Mijn tool', icoon: '🧪', uitleg: 'Wat hij doet, in één regel',
+  hier: opPlanning,                 // op welke pagina hij bovenaan de balk staat
+  kleur: '#0f766e',                 // kleur van de update-toast
+  bestanden: [{ naam: 'Mijn tool', cache: 'ds_mijntool_cache', src: 'mijntool/mijntool.js', versie: /MIJNTOOL_VERSION\s*=\s*['"]([^'"]+)['"]/ }] },
+```
+- `id`: kort en **voorgoed vast** — `status.json` verwijst ernaar. Nooit hergebruiken.
+- `status`: altijd `'test'` voor een nieuwe tool. Dat is ook wat geldt zolang `status.json` hem niet noemt.
+- `hier`: een van de paginavlaggen bovenin de launcher (`opPlanning`, `opRitmonitor`, `opBasicOrders`, `opDirextion`, `opPortal`, `opCoolblue`, `opSophia`, `opAppStream`), of een combinatie. Nieuwe site? Voeg een vlag toe op hostnaam/pad.
+- `alleenHier: true` als de tool op andere pagina's zinloos is (dan ook niet onder "Andere tools"). Voor tools van een ander team of op een ander systeem (Sophia, AppStream) altijd.
+- `cache`: een eigen, nieuwe `localStorage`-sleutel. Bestaat er al een losse loader voor deze tool, gebruik dan **diens** sleutel, zodat ze de cache delen.
+- `waar`: leesbare paginanaam voor de installatiepagina's.
+- In plaats van `bestanden` kan `start: function () { … }` (inline). Meerdere bestanden na elkaar (zoals Planning-combi) = meerdere regels in `bestanden`.
+- Een eigen paneel? Rechtsboven of rechtsonder is prima: de balk sluit zodra de tool start.
+
+**3. Ophogen en pushen.** `LAUNCHER_VERSION` ophogen, `python3 build.py`, commit, `git pull --rebase` (de beheerpagina commit ook), push. **Wacht ~5 minuten** (CDN, zie **Build & deploy**) en controleer met `curl -s "<raw-url van launcher.js>" | grep LAUNCHER_VERSION`. Dan staat de tool in de **dev-balk**, met een amber `test`-label.
+
+**4. Testen op de echte pagina's** via de dev-balk. Eerste klik op DS Tools dev = update-toast, tweede klik = nieuwe launcher; de eerste klik op de tool zelf haalt zijn code op.
+
+**5. Vrijgeven.** Op de beheerpagina op **Productie** zetten en opslaan. Binnen ~5 minuten staat hij in ieders balk en op de installatiepagina (`index.html` bouwt zijn lijst zelf uit `TOOLS` + `status.json`). Niets aan `index.html` of `install-dev.html` te doen.
+
+**Weghalen.** Tijdelijk: op de beheerpagina terug naar Test. Voorgoed: de regel uit `TOOLS` halen (de `id` in `status.json` mag blijven staan; die wordt dan genegeerd) en `LAUNCHER_VERSION` ophogen.
 
 ## Laadvermogen-tool (`laadvermogen/`) — los van de widget
 
