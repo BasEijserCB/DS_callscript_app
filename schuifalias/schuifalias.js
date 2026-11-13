@@ -39,7 +39,7 @@
 (function () {
   'use strict';
 
-  var SCHUIFALIAS_VERSION = '1.0.0';
+  var SCHUIFALIAS_VERSION = '1.1.0';
 
   // /exec-URL van de Schuifritten web-app. Leeg = de tool meldt dat en doet niets.
   // Toegang "Iedereen binnen Coolblue": de <script>-tag stuurt de Google-login mee.
@@ -308,7 +308,7 @@
       data = d;
       if (dag && dag !== d.datum) throw new Error('planning staat op ' + dag + ', de sheet geeft ritten van ' + d.datum);
       var depots = groepeer(d.ritten);
-      if (!depots.length) { toon('Geen schuifritten vandaag.'); return; }
+      if (!depots.length) return;   // toonPlan() meldt "Geen schuifritten vandaag"
       var i = 0;
       function volgende() {
         if (i >= depots.length) return Promise.resolve();
@@ -579,9 +579,35 @@
       (primair ? 'background:#0090e3;color:#fff;border:1px solid #0090e3;' : 'background:#F2F7FC;color:#285dab;border:1px solid #cce9f9;');
   }
 
+  // Statusregel: zijn de aantallen al gecontroleerd met het rittenrapport (Rapport.gs)?
+  // Het endpoint geeft de corrigeerde aantallen; dit zegt of die correctie vandaag gedraaid heeft.
+  function controleRegel() {
+    var c = data && data.controle;
+    if (!c) return '';
+    var blok = function (kleur, vlak, rand, tekst) {
+      return '<div style="margin:0 12px 8px;padding:6px 8px;font-size:12px;color:' + kleur + ';background:' + vlak +
+        ';border-left:3px solid ' + rand + ';border-radius:0 6px 6px 0;">' + tekst + '</div>';
+    };
+    if (c.status === 'gedaan') {
+      var delen = [];
+      if (c.gebruikt) delen.push(c.gebruikt + ' gebruikt');
+      if (c.verlaagd) delen.push(c.verlaagd + ' verlaagd');
+      if (c.onduidelijk) delen.push(c.onduidelijk + ' onduidelijk');
+      return blok('#155724', '#d4edda', '#00B900', '✓ Aantallen gecontroleerd met het rittenrapport' +
+        (c.tijd ? ' om ' + esc(c.tijd) : '') + (c.ritten ? ' — ' + c.ritten + ' ritten' + (delen.length ? ': ' + delen.join(', ') : '') : '') + '.');
+    }
+    if (c.status === 'mislukt') return blok('#856404', '#fff8e1', '#ffc107',
+      '⚠ De rittenrapport-controle is vandaag gestopt zonder aanpassingen. De aantallen zijn zoals gepland, niet gecontroleerd.');
+    if (c.status === 'nog niet') return blok('#856404', '#fff8e1', '#ffc107',
+      '⚠ De rittenrapport-controle heeft vandaag nog niet gedraaid. De aantallen zijn nog niet gecontroleerd.');
+    return blok('#856404', '#fff8e1', '#ffc107', 'Stand van de rittenrapport-controle onbekend' + (c.fout ? ' (' + esc(c.fout) + ')' : '') + '.');
+  }
+
   function toonPlan() {
     var p = paneel(), h = kop(), open = 0;
     h += '<div style="padding:8px 12px;font-size:11px;color:#999999;">Sheet ' + esc(data ? data.datum + ', opgehaald ' + data.opgehaald : '') + '</div>';
+    h += controleRegel();
+    if (!plan.length) h += '<div style="padding:4px 12px 10px;">Geen schuifritten vandaag.</div>';
     plan.forEach(function (d, di) {
       var hier = bekeken === d.depot.code;
       h += '<div style="padding:6px 12px;border-top:1px solid #F3F3F3;' + (hier ? 'background:#F2F7FC;' : '') + '">' +
