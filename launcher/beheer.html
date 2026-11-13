@@ -46,7 +46,7 @@
 <body>
 <div class="wrap">
   <h1>DS Tools — beheer</h1>
-  <p class="sub">Per tool: <b>productie</b> (iedereen ziet hem in DS Tools) of <b>test</b> (alleen jouw dev-bookmarklet).</p>
+  <p class="sub">Per tool: <b>productie</b> (iedereen ziet hem in DS Tools) of <b>test</b> (alleen jouw dev-bookmarklet). Een wijziging is binnen ongeveer 5 minuten overal zichtbaar.</p>
 
   <div class="card">
     <h2>Tools</h2>
@@ -173,7 +173,7 @@
         teken();
         var c = x.j.commit;
         meld('ok', '✓ Opgeslagen — commit <a href="' + c.html_url + '" target="_blank">' + c.sha.slice(0, 7) + '</a>. ' +
-          'Collega’s zien het bij hun volgende klik op DS Tools (de status wordt in de achtergrond opgehaald, dus soms pas de klik daarna).');
+          'Binnen ongeveer <b>5 minuten</b> ziet iedereen het: GitHub bewaart bestanden tot 5 minuten in zijn cache, ook als de launcher om een verse versie vraagt.');
       })
       .catch(function (e) { meld('fout', esc(e.message)); teken(); });
   });
