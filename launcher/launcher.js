@@ -1,8 +1,8 @@
 /*
   DS Tools — één bookmarklet voor alle tools
   ==========================================
-  Opent een klein paneel met de tools. Bovenaan wat bij deze pagina hoort,
-  daaronder (ingeklapt) de rest. Een klik laadt de tool precies zoals zijn eigen
+  Opent een balk bovenin de pagina, als een tweede bladwijzerbalk, met de tools
+  die bij deze pagina horen; de rest zit achter "Andere tools ▾". Een klik laadt de tool precies zoals zijn eigen
   loader dat doet: zelfde cache key, zelfde geharde stale-while-revalidate,
   zelfde toastkleur. De losse bookmarklets blijven dus werken en delen hun cache
   met deze launcher.
@@ -10,10 +10,11 @@
   Een tool toevoegen = een regel in TOOLS. Geen nieuwe bookmarklet nodig: de
   launcher haalt zichzelf ook via stale-while-revalidate op.
 
-  Sneltoetsen zolang het paneel open is: 1–9 start de zoveelste tool, Esc sluit.
+  Sneltoetsen zolang de balk open is: 1–9 start de zoveelste tool in de balk, Esc sluit.
+  Na het starten van een tool gaat de balk dicht; nog een klik op de bookmarklet ook.
 */
 (function () {
-  var LAUNCHER_VERSION = '1.0.0';
+  var LAUNCHER_VERSION = '1.1.0';
   var ID = 'ds-tools-launcher';
   var BASE = 'https://raw.githubusercontent.com/BasEijserCB/DS_callscript_app/main/';
 
@@ -122,86 +123,106 @@
     tool.bestanden.forEach(function (b, i) { laad(b, tool.kleur, 20 + i * 80); });
   }
 
-  // ── Paneel (shadow DOM: de pagina-CSS van DireXtion kan er niet bij) ─────────
+  // ── Balk bovenin de pagina, als een tweede bladwijzerbalk ────────────────────
+  // Shadow DOM: de pagina-CSS van DireXtion kan er niet bij, en andersom.
   var zichtbaar = TOOLS.filter(function (t) { return !t.verborgen && (t.hier || !t.alleenHier); });
   var hier = zichtbaar.filter(function (t) { return t.hier; });
-  var rest = zichtbaar.filter(function (t) { return !t.hier; });
-  var volgorde = hier.concat(rest);
-  var openRest = !hier.length;
+  // Herkent de launcher de pagina niet, dan staat alles in de balk.
+  var inBalk = hier.length ? hier : zichtbaar;
+  var inMenu = hier.length ? zichtbaar.filter(function (t) { return !t.hier; }) : [];
+  var menuOpen = false;
 
   var host_ = document.createElement('div');
   host_.id = ID;
-  host_.style.cssText = 'position:fixed;top:16px;right:16px;z-index:1000002;';
+  host_.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:2147483000;';
   var root = host_.attachShadow({ mode: 'open' });
 
   var CSS =
     ':host{all:initial}' +
-    '.p{width:280px;background:#fff;border-radius:10px;box-shadow:0 8px 28px rgba(0,0,0,.25);font:13px "Segoe UI",Arial,sans-serif;color:#333333;overflow:hidden}' +
-    '.h{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid #DDDDDD}' +
-    '.h b{font-size:15px;color:#285dab}' +
-    '.x{background:none;border:none;font-size:18px;color:#999999;cursor:pointer;line-height:1;padding:0 2px}' +
-    '.x:hover{color:#333333}' +
-    '.k{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#999999;padding:10px 12px 4px}' +
-    '.l{padding:0 8px 8px}' +
-    '.t{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:#fff;border:1px solid #DDDDDD;border-radius:8px;padding:8px 10px;margin-top:6px;cursor:pointer;font:inherit;color:inherit}' +
-    '.t:hover,.t:focus{border-color:#0090e3;background:#F2F7FC;outline:none}' +
-    '.i{font-size:18px;width:22px;text-align:center}' +
-    '.n{font-weight:600}' +
-    '.u{font-size:11px;color:#999999}' +
-    '.s{margin-left:auto;font-size:11px;color:#999999;border:1px solid #DDDDDD;border-radius:4px;padding:0 5px}' +
-    '.m{display:block;width:100%;background:none;border:none;border-top:1px solid #DDDDDD;padding:8px 12px;text-align:left;color:#0090e3;cursor:pointer;font:inherit;font-size:12px}' +
-    '.m:hover{background:#F2F7FC}' +
-    '.v{background:#F3F3F3;color:#999999;font-size:10px;padding:4px 12px;text-align:right}';
+    '.b{display:flex;align-items:center;gap:2px;height:34px;padding:0 6px;background:#fff;border-bottom:1px solid #DDDDDD;' +
+      'box-shadow:0 2px 8px rgba(0,0,0,.12);font:13px "Segoe UI",Arial,sans-serif;color:#333333}' +
+    '.r{display:flex;align-items:center;gap:2px;min-width:0;overflow-x:auto;scrollbar-width:none}' +
+    '.c{display:flex;align-items:center;gap:6px;flex:none;height:28px;padding:0 10px;border:none;border-radius:14px;' +
+      'background:none;font:inherit;color:inherit;cursor:pointer;white-space:nowrap}' +
+    '.c:hover,.c:focus-visible{background:#F2F7FC;outline:none}' +
+    '.c.o{background:#F2F7FC;color:#285dab}' +
+    '.m1{color:#285dab;font-weight:600;padding-right:8px}' +
+    '.sep{flex:none;width:1px;height:18px;background:#DDDDDD;margin:0 4px}' +
+    '.g{flex:1}' +
+    '.v{flex:none;font-size:10px;color:#999999;margin-right:4px}' +
+    '.x{flex:none;width:26px;height:26px;border:none;border-radius:13px;background:none;font-size:17px;line-height:1;color:#999999;cursor:pointer}' +
+    '.x:hover{background:#F3F3F3;color:#333333}' +
+    '.d{position:absolute;top:36px;width:280px;background:#fff;border:1px solid #DDDDDD;border-radius:8px;' +
+      'box-shadow:0 8px 24px rgba(0,0,0,.18);padding:4px;font:13px "Segoe UI",Arial,sans-serif;color:#333333}' +
+    '.t{display:flex;align-items:center;gap:10px;width:100%;padding:6px 8px;border:none;border-radius:6px;background:none;' +
+      'font:inherit;color:inherit;text-align:left;cursor:pointer}' +
+    '.t:hover,.t:focus-visible{background:#F2F7FC;outline:none}' +
+    '.t .i{font-size:16px;width:20px;text-align:center}' +
+    '.u{font-size:11px;color:#999999}';
 
-  function knop(tool) {
-    var nr = volgorde.indexOf(tool) + 1;
-    return '<button class="t" data-i="' + (nr - 1) + '"><span class="i">' + tool.icoon + '</span>' +
-      '<span><div class="n">' + tool.naam + '</div><div class="u">' + tool.uitleg + '</div></span>' +
-      (nr <= 9 ? '<span class="s">' + nr + '</span>' : '') + '</button>';
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+
+  function chip(tool, nr) {
+    return '<button class="c" data-t="' + zichtbaar.indexOf(tool) + '" title="' + esc(tool.uitleg + (nr <= 9 ? ' — toets ' + nr : '')) + '">' +
+      '<span>' + tool.icoon + '</span><span>' + esc(tool.naam) + '</span></button>';
+  }
+
+  function regel(tool) {
+    return '<button class="t" data-t="' + zichtbaar.indexOf(tool) + '"><span class="i">' + tool.icoon + '</span>' +
+      '<span><div>' + esc(tool.naam) + '</div><div class="u">' + esc(tool.uitleg) + '</div></span></button>';
   }
 
   function teken() {
-    var h = '<div class="p"><div class="h"><b>DS Tools</b><button class="x" data-a="sluit" title="Sluiten (Esc)">×</button></div>';
-    if (hier.length) h += '<div class="k">Op deze pagina</div><div class="l">' + hier.map(knop).join('') + '</div>';
-    if (rest.length) {
-      if (hier.length) h += '<button class="m" data-a="rest">' + (openRest ? '▾' : '▸') + ' Andere tools (' + rest.length + ')</button>';
-      if (openRest) h += (hier.length ? '' : '<div class="k">Geen tool voor deze pagina — alle tools</div>') +
-        '<div class="l">' + rest.map(knop).join('') + '</div>';
-    }
-    h += '<div class="v">v' + LAUNCHER_VERSION + '</div></div>';
+    var h = '<div class="b"><div class="r">' +
+      '<span class="c m1" title="DS Tools — Esc sluit">🧰 DS Tools</span><span class="sep"></span>' +
+      inBalk.map(function (t, i) { return chip(t, i + 1); }).join('');
+    if (inMenu.length) h += '<span class="sep"></span><button class="c' + (menuOpen ? ' o' : '') + '" data-a="menu">Andere tools ▾</button>';
+    h += '</div><span class="g"></span><span class="v">v' + LAUNCHER_VERSION + '</span>' +
+      '<button class="x" data-a="sluit" title="Sluiten (Esc)">×</button></div>';
+    if (menuOpen) h += '<div class="d">' + inMenu.map(regel).join('') + '</div>';
     root.innerHTML = '<style>' + CSS + '</style>' + h;
-    var eerste = root.querySelector('.t');
-    if (eerste) eerste.focus();
+    if (menuOpen) {
+      // Het menu hangt onder zijn knop.
+      var k = root.querySelector('[data-a="menu"]').getBoundingClientRect();
+      root.querySelector('.d').style.left = Math.max(4, Math.min(k.left, window.innerWidth - 288)) + 'px';
+    }
   }
 
   root.addEventListener('click', function (e) {
     var el = e.target.closest('button');
     if (!el) return;
     if (el.dataset.a === 'sluit') return sluit();
-    if (el.dataset.a === 'rest') { openRest = !openRest; return teken(); }
-    if (el.dataset.i != null) start(volgorde[+el.dataset.i]);
+    if (el.dataset.a === 'menu') { menuOpen = !menuOpen; return teken(); }
+    if (el.dataset.t != null) start(zichtbaar[+el.dataset.t]);
   });
 
+  // Klik ergens anders op de pagina: menu dicht, balk blijft.
+  function buiten(e) {
+    if (menuOpen && e.target !== host_) { menuOpen = false; teken(); }
+  }
+
   function toets(e) {
-    if (e.key === 'Escape') { sluit(); return; }
+    if (e.key === 'Escape') { if (menuOpen) { menuOpen = false; teken(); } else sluit(); return; }
     // Typen in een veld van de pagina mag geen tool starten.
     var doel = e.target;
     if (doel !== host_ && doel && (doel.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(doel.tagName))) return;
     var n = parseInt(e.key, 10);
-    if (n >= 1 && n <= volgorde.length && n <= 9) {
-      // Een tool uit de ingeklapte groep alleen als die zichtbaar is.
-      if (n > hier.length && !openRest && hier.length) return;
+    if (n >= 1 && n <= 9 && n <= inBalk.length) {
       e.preventDefault();
-      start(volgorde[n - 1]);
+      start(inBalk[n - 1]);
     }
   }
 
   function sluit() {
     document.removeEventListener('keydown', toets, true);
+    document.removeEventListener('mousedown', buiten, true);
     host_.remove();
   }
 
   document.addEventListener('keydown', toets, true);
+  document.addEventListener('mousedown', buiten, true);
   document.body.appendChild(host_);
   teken();
+  // Eén keer inschuiven; teken() bouwt de inhoud opnieuw op, dus de animatie hoort op de host.
+  try { host_.animate([{ transform: 'translateY(-100%)' }, { transform: 'none' }], { duration: 120, easing: 'ease-out' }); } catch (e) {}
 })();
